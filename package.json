@@ -1,0 +1,33 @@
+{
+  "name": "scalus-treasury",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Parameterization and operations for the Cardano treasury withdrawal funding Scalus Application Platform and Node Diversity",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "gen-keys": "bun scripts/gen-keys.ts",
+    "init": "bun scripts/01-init-registry.ts",
+    "register": "bun scripts/02-register-scripts.ts",
+    "gov": "bun scripts/03-build-gov-action.ts",
+    "withdraw": "bun scripts/04-withdraw.ts",
+    "fund": "bun scripts/05-fund-vendor.ts",
+    "vendor-withdraw": "bun scripts/06-vendor-withdraw.ts"
+  },
+  "dependencies": {
+    "@sundaeswap/treasury-funds": "0.0.25",
+    "@blaze-cardano/sdk": "^0.2.33",
+    "@blaze-cardano/core": "^0.6.4",
+    "@blaze-cardano/data": "^0.6.0",
+    "@blaze-cardano/query": "^0.5.0",
+    "@blaze-cardano/uplc": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "5.8.3"
+  },
+  "engines": {
+    "bun": ">=1.1"
+  }
+}

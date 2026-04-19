@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# generated state - never commit
+keys/
+deployment/
+
+# editor + OS noise
+.DS_Store
+.idea/
+.vscode/
+*.log
