@@ -11,6 +11,7 @@
         "@blaze-cardano/sdk": "^0.2.33",
         "@blaze-cardano/uplc": "^0.4.1",
         "@sundaeswap/treasury-funds": "0.0.25",
+        "bech32": "2.0.0",
       },
       "devDependencies": {
         "@types/bun": "latest",
