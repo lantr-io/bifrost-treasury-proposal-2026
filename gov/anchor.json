@@ -1,0 +1,24 @@
+{
+  "@context": {
+    "@language": "en-us",
+    "CIP100": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0100/README.md#",
+    "CIP108": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0108/README.md#",
+    "hashAlgorithm": "CIP100:hashAlgorithm",
+    "body": "CIP108:body",
+    "title": "CIP108:title",
+    "abstract": "CIP108:abstract",
+    "motivation": "CIP108:motivation",
+    "rationale": "CIP108:rationale",
+    "references": "CIP108:references"
+  },
+  "hashAlgorithm": "blake2b-256",
+  "body": {
+    "title": "Scalus Application Platform and Node Diversity",
+    "abstract": "PREPROD STUB — see https://scalus.org for the real proposal text.",
+    "motivation": "PREPROD STUB",
+    "rationale": "PREPROD STUB",
+    "references": [
+      { "@type": "Other", "label": "Scalus", "uri": "https://scalus.org" }
+    ]
+  }
+}

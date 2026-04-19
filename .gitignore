@@ -9,6 +9,10 @@ build/
 keys/
 deployment/
 
+# generated governance-action JSONs (committed anchor.json stays tracked)
+gov/preprod-*.json
+gov/mainnet-*.json
+
 # editor + OS noise
 .DS_Store
 .idea/
