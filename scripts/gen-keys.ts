@@ -2,7 +2,7 @@
 import sodium from "libsodium-wrappers-sumo";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Ed25519PrivateKey } from "@blaze-cardano/core";
+import { Ed25519PrivateKey, Hash28ByteBase16 } from "@blaze-cardano/core";
 import { Core } from "@blaze-cardano/sdk";
 
 /**
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
     networkId: Core.NetworkId.Testnet,
     paymentPart: {
       type: Core.CredentialType.KeyHash,
-      hash: pkhHex,
+      hash: Hash28ByteBase16(pkhHex),
     },
   });
 
