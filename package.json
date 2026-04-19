@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Parameterization and operations for the Cardano treasury withdrawal funding Scalus Application Platform and Node Diversity",
   "scripts": {
+    "postinstall": "bun scripts/patch-libsodium.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "gen-keys": "bun scripts/gen-keys.ts",
@@ -30,5 +31,10 @@
   },
   "engines": {
     "bun": ">=1.1"
-  }
+  },
+  "overrides": {
+    "libsodium-wrappers-sumo": "0.7.16",
+    "libsodium-sumo": "0.7.16"
+  },
+  "trustedDependencies": ["libsodium-sumo", "libsodium-wrappers-sumo"]
 }
