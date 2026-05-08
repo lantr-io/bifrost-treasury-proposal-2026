@@ -3,12 +3,15 @@ import { dirname } from "node:path";
 
 /**
  * Persistent record of IPFS-pinned artifacts. Acts as the source of truth
- * for the URLs that go into the anchor body (proposal markdown ref) and the
- * gov-action anchor URL. Committed to git so the on-chain references are
- * traceable from the repo.
+ * for the URLs that go into the anchor body (per-piece markdown refs) and
+ * the gov-action anchor URL. Committed to git so the on-chain references
+ * are traceable from the repo.
  */
 export interface PinnedRegistry {
-  proposal?: PinnedEntry;
+  "proposal-main"?: PinnedEntry;
+  annex1?: PinnedEntry;
+  annex2?: PinnedEntry;
+  annex3?: PinnedEntry;
   anchor?: PinnedEntry;
 }
 
@@ -20,7 +23,20 @@ export interface PinnedEntry {
   pinnedAt: string;
 }
 
-export type PinRole = "proposal" | "anchor";
+export type PinRole =
+  | "proposal-main"
+  | "annex1"
+  | "annex2"
+  | "annex3"
+  | "anchor";
+
+export const PIN_ROLES: readonly PinRole[] = [
+  "proposal-main",
+  "annex1",
+  "annex2",
+  "annex3",
+  "anchor",
+];
 
 export const PINNED_PATH = "gov/pinned.json";
 

@@ -39,14 +39,36 @@ are filled in.
 
 ## Stage 1 — Anchor preparation (Track A)
 
-### 1.0 Decide what gets pinned
+### 1.0 Pinning strategy
 
-`docs/proposal.md` has no local assets — all referenced URLs are external
-HTTPS (audit PDFs on GitHub, scalus.org, lantr.io, hackmd.io). The
-"Attached documents (IPFS)" section currently inlines the four annexes.
+Voters reading the anchor through gov.tools can click any entry in
+`body.references`. Splitting the proposal into individually-addressable
+IPFS objects gives them: (a) stable per-annex CIDs that don't change if
+the parent proposal text is reorganized; (b) the option to pull a
+specific annex without downloading the full document; (c) a single
+`proposal-main` CID for readers who want only the main argument.
 
-Decision for preprod test: **minimal** — pin only `proposal.md` (one CID
-covers all inline annexes) and the built anchor JSON.
+The full proposal text (with annexes inline) still lives inside the
+anchor's `body.rationale`, so the anchor remains self-contained — the
+per-piece CIDs are *additional* references, not replacements.
+
+Files to pin (one CID each):
+
+| File                     | Role           | Source                              |
+|--------------------------|----------------|-------------------------------------|
+| `docs/proposal-main.md`  | `proposal-main`| proposal.md minus the annex bodies  |
+| `docs/annex-1.md`        | `annex1`       | "### Annex 1: Detailed Scope …"     |
+| `docs/annex-2.md`        | `annex2`       | "### Annex 2: Product Development …"|
+| `docs/annex-3.md`        | `annex3`       | "### Annex 3: 2025 Retrospective"   |
+| `gov/anchor.preprod.json`| `anchor`       | built by `build-anchor` (final URL) |
+
+(Annex 4 in `proposal.md` is currently a `<!-- … -->` placeholder; skip.)
+
+`docs/proposal.md` stays as the canonical HackMD-mirrored full text and
+is the input that `build-anchor` reads to populate `body.rationale`. The
+four split files are derived from it via a deterministic extraction
+step (1.2). Drift between them is impossible as long as you re-run the
+extract step before each pin batch.
 
 ### 1.1 Set up pinning credentials
 
@@ -59,34 +81,56 @@ BLOCKFROST_IPFS_PROJECT_ID= # separate from BLOCKFROST_PROJECT_ID (chain)
 
 At least one is required. Setting both gets redundancy.
 
-### 1.2 Pin the proposal markdown
+### 1.2 Extract the split files
 
 ```
-bun run pin docs/proposal.md --role proposal --name scalus-treasury-proposal
+bun run extract-pieces
 ```
 
-Writes `gov/pinned.json` (committed) with the resulting CID. The script
-verifies retrievability via a public gateway before exiting.
+Reads `docs/proposal.md` and writes:
+- `docs/proposal-main.md` (everything outside the annex section)
+- `docs/annex-1.md`, `docs/annex-2.md`, `docs/annex-3.md`
 
-### 1.3 Build the anchor
+Idempotent. Re-run after any `proposal.md` edit so the split files stay
+in sync. Files are committed to git so the IPFS-pinned bytes are
+auditable from the repo.
+
+### 1.3 Pin proposal-main and each annex
+
+```
+bun run pin docs/proposal-main.md --role proposal-main --name scalus-treasury-proposal-main
+bun run pin docs/annex-1.md       --role annex1        --name scalus-treasury-annex-1-scope
+bun run pin docs/annex-2.md       --role annex2        --name scalus-treasury-annex-2-methodology
+bun run pin docs/annex-3.md       --role annex3        --name scalus-treasury-annex-3-retrospective
+```
+
+Each pin verifies public-gateway retrievability before recording its
+CID into `gov/pinned.json`.
+
+### 1.4 Build the anchor
 
 ```
 bun run build-anchor -- --network preprod
 ```
 
-Reads `gov/pinned.json` for the proposal CID; writes
-`gov/anchor.preprod.json`. Re-run any time `proposal.md` or the proposal
-CID changes — the on-chain hash will change with it.
+Reads all four CIDs from `gov/pinned.json` and emits
+`gov/anchor.preprod.json` with:
+- `body.rationale` = full proposal text (annexes inline) — voters see
+  this rendered in their wallet/gov.tools UI without leaving the anchor.
+- `body.references` = `ipfs://` link for `proposal-main` + one per annex,
+  plus the existing external links (HackMD, Scalus, audits, etc).
 
-### 1.4 Pin the anchor
+Re-run after any of the underlying CIDs change — the on-chain hash
+changes with it.
+
+### 1.5 Pin the anchor
 
 ```
 bun run pin gov/anchor.preprod.json --role anchor --name scalus-treasury-anchor-preprod
 ```
 
-Updates `gov/pinned.json` with the anchor CID.
-`03-build-gov-action.ts` will read it and use `ipfs://<cid>` as the
-on-chain URL.
+The resulting CID becomes `ANCHOR_URL` in the gov action.
+`03-build-gov-action.ts` reads it from `gov/pinned.json` automatically.
 
 ---
 

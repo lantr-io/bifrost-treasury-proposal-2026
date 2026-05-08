@@ -126,7 +126,10 @@ function buildAnchor(md: string, network: Network): unknown {
   const rationale = lines.slice(rationaleStart + 1).join("\n").trim();
 
   const cfg = NETWORK_CONFIG[network];
-  const proposalPin = requirePin("proposal");
+  const proposalMainPin = requirePin("proposal-main");
+  const annex1Pin = requirePin("annex1");
+  const annex2Pin = requirePin("annex2");
+  const annex3Pin = requirePin("annex3");
   const body: Record<string, unknown> = {
     title: titleSection.heading,
     abstract,
@@ -135,8 +138,23 @@ function buildAnchor(md: string, network: Network): unknown {
     references: [
       {
         "@type": "Other",
-        label: "Full proposal (markdown, IPFS-pinned)",
-        uri: `ipfs://${proposalPin.cid}`,
+        label: "Proposal main text (markdown, IPFS-pinned)",
+        uri: `ipfs://${proposalMainPin.cid}`,
+      },
+      {
+        "@type": "Other",
+        label: "Annex 1: Detailed Scope and Workstreams",
+        uri: `ipfs://${annex1Pin.cid}`,
+      },
+      {
+        "@type": "Other",
+        label: "Annex 2: Product Development Methodology",
+        uri: `ipfs://${annex2Pin.cid}`,
+      },
+      {
+        "@type": "Other",
+        label: "Annex 3: 2025 Retrospective",
+        uri: `ipfs://${annex3Pin.cid}`,
       },
       {
         "@type": "Other",

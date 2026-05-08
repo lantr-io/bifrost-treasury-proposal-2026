@@ -4,7 +4,9 @@
  * is retrievable from a public gateway before exiting.
  *
  * Usage:
- *   bun scripts/pin.ts <path> [--name <label>] [--role <proposal|anchor>]
+ *   bun scripts/pin.ts <path> [--name <label>] [--role <role>]
+ *
+ * Roles: proposal-main | annex1 | annex2 | annex3 | anchor
  *
  * --role records the resulting CID in gov/pinned.json so downstream scripts
  * (build-anchor, 03-build-gov-action) read it as the source of truth. Omit
@@ -22,7 +24,7 @@
 
 import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
-import { recordPin, type PinRole } from "./lib/pinned";
+import { PIN_ROLES, recordPin, type PinRole } from "./lib/pinned";
 
 interface PinResult {
   service: string;
@@ -132,10 +134,12 @@ function parseArgs(argv: string[]): ParsedArgs {
       label = argv[++i];
     } else if (a === "--role") {
       const v = argv[++i];
-      if (v !== "proposal" && v !== "anchor") {
-        throw new Error(`--role must be "proposal" or "anchor" (got "${v}")`);
+      if (!v || !(PIN_ROLES as readonly string[]).includes(v)) {
+        throw new Error(
+          `--role must be one of ${PIN_ROLES.join(", ")} (got "${v}")`,
+        );
       }
-      role = v;
+      role = v as PinRole;
     } else if (a.startsWith("--")) {
       throw new Error(`unknown flag: ${a}`);
     } else {
@@ -144,7 +148,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   }
   if (positional.length !== 1) {
     throw new Error(
-      "usage: bun scripts/pin.ts <path> [--name <label>] [--role <proposal|anchor>]",
+      `usage: bun scripts/pin.ts <path> [--name <label>] [--role <${PIN_ROLES.join("|")}>]`,
     );
   }
   const path = positional[0]!;
