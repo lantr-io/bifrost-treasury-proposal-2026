@@ -14,6 +14,15 @@ package. **Does not port or reimplement contracts.**
 - Scalus monorepo: `/Users/nau/projects/lantr/scalus/` — consult for Scalus
   API patterns if a Scalus-side counterpart is ever added.
 
+## Dev environment
+
+- `flake.nix` provides the toolchain: `bun`, `nodejs`, `jq`, `nixpkgs-fmt`,
+  and `cardano-cli` (from the IOG `cardano-node` flake, cached at
+  `cache.iog.io`).
+- Enter with `nix develop` (or via direnv). Pinned to `nixpkgs/nixos-25.11`.
+- The first shell entry pulls the cardano-cli closure from `cache.iog.io`;
+  subsequent entries are instant.
+
 ## Conventions
 
 - **Never hand-edit** `deployment/*.json` or `keys/*` — both are machine-written
@@ -31,12 +40,15 @@ package. **Does not port or reimplement contracts.**
 1. `bun run gen-keys`
 2. `bun run init` — mint one-shot registry NFT, publish registry datum.
 3. `bun run register` — register + delegate both scripts to AlwaysAbstain DRep.
-4. `bun run gov` — emit the `treasuryWithdrawal` governance-action JSON.
-5. (Manual) submit the gov action via `cardano-cli`, wait for it to pass.
-6. `bun run withdraw` — pull ADA from the treasury reward account.
-7. `bun run fund` — treasury → vendor contract with the single milestone.
-8. (Wait for milestone maturation.)
-9. `bun run vendor-withdraw` — admin claims the matured payout.
+4. `bun run build-anchor -- --network preprod` — regenerate
+   `gov/anchor.preprod.json` from `docs/proposal.md` (committed source of
+   truth for the CIP-108 anchor body).
+5. `bun run gov` — emit the `treasuryWithdrawal` governance-action JSON.
+6. (Manual) submit the gov action via `cardano-cli`, wait for it to pass.
+7. `bun run withdraw` — pull ADA from the treasury reward account.
+8. `bun run fund` — treasury → vendor contract with the single milestone.
+9. (Wait for milestone maturation.)
+10. `bun run vendor-withdraw` — admin claims the matured payout.
 
 ## What NOT to do
 
