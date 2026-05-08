@@ -11,6 +11,8 @@
     "gen-keys": "bun scripts/gen-keys.ts",
     "init": "bun scripts/01-init-registry.ts",
     "register": "bun scripts/02-register-scripts.ts",
+    "build-anchor": "bun scripts/build-anchor.ts",
+    "pin": "bun scripts/pin.ts",
     "gov": "bun scripts/03-build-gov-action.ts",
     "withdraw": "bun scripts/04-withdraw.ts",
     "fund": "bun scripts/05-fund-vendor.ts",

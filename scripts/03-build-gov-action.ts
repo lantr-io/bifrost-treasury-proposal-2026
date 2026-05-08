@@ -1,6 +1,12 @@
 #!/usr/bin/env bun
-import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+// libsodium-wrappers-sumo ships no type declarations; narrow to what we use.
+import sodiumDefault from "libsodium-wrappers-sumo";
+const sodium = sodiumDefault as unknown as {
+  ready: Promise<void>;
+  to_hex: (input: Uint8Array) => string;
+  crypto_generichash: (outlen: number, input: Uint8Array) => Uint8Array;
+};
 import {
   CredentialType,
   Hash28ByteBase16,
@@ -8,25 +14,27 @@ import {
 } from "@blaze-cardano/core";
 import { Core } from "@blaze-cardano/sdk";
 import { loadDeployment } from "./lib/deployment";
+import { requirePin } from "./lib/pinned";
 import { preprodRawConfig } from "../params/preprod";
 
-const ANCHOR_PATH = "gov/anchor.json";
-const ANCHOR_URL = "https://scalus.org";
+const ANCHOR_PATH = "gov/anchor.preprod.json";
 const OUT_PATH = "gov/preprod-withdrawal.json";
 
-function main(): void {
+async function main(): Promise<void> {
+  await sodium.ready;
+
   const state = loadDeployment("deployment/preprod.json");
   if (!state) throw new Error("Run 01-init-registry.ts --submit first.");
 
+  const anchorPin = requirePin("anchor");
+  const anchorUrl = `ipfs://${anchorPin.cid}`;
   const anchorBytes = readFileSync(ANCHOR_PATH);
 
-  // CIP-100 mandates blake2b-256 of the served anchor bytes. We do not
-  // currently depend on a blake2b implementation, so for the preprod stub we
-  // use SHA-256 and clearly document that the URL and hash need not agree
-  // with served content. Mainnet MUST replace this with blake2b-256.
-  const anchorHashHex = createHash("sha256")
-    .update(anchorBytes)
-    .digest("hex");
+  // CIP-100 mandates blake2b-256 of the served anchor bytes.
+  // crypto_generichash with outlen=32 and no key is blake2b-256.
+  const anchorHashHex = sodium.to_hex(
+    sodium.crypto_generichash(32, anchorBytes),
+  );
 
   const treasuryRewardAccount = RewardAccount.fromCredential(
     {
@@ -42,10 +50,8 @@ function main(): void {
     amountLovelace: preprodRawConfig.amountLovelace.toString(),
     rewardAccount: treasuryRewardAccount.toString(),
     anchor: {
-      url: ANCHOR_URL,
+      url: anchorUrl,
       dataHash: anchorHashHex,
-      note:
-        "preprod stub — hash is SHA-256 of local gov/anchor.json, not blake2b-256 of served content",
     },
     returnAddress: preprodRawConfig.adminAddress,
   };
@@ -63,9 +69,9 @@ function main(): void {
   console.log("      \"$(cardano-cli conway query gov-state --testnet-magic 1 \\");
   console.log("        | jq '.currentPParams.govActionDeposit')\" \\");
   console.log(
-    `    --deposit-return-stake-address-bech32 ${preprodRawConfig.adminAddress} \\`,
+    "    --deposit-return-stake-address \"$(cat keys/admin.stake.addr)\" \\",
   );
-  console.log(`    --anchor-url ${ANCHOR_URL} \\`);
+  console.log(`    --anchor-url ${anchorUrl} \\`);
   console.log(`    --anchor-data-hash ${anchorHashHex} \\`);
   console.log(
     `    --funds-receiving-stake-address ${treasuryRewardAccount.toString()} \\`,
@@ -73,7 +79,11 @@ function main(): void {
   console.log(`    --transfer ${preprodRawConfig.amountLovelace.toString()} \\`);
   console.log("    --out-file gov/action.draft");
   console.log("");
-  console.log("Then build, sign, and submit a tx that includes --proposal-file gov/action.draft.");
+  console.log("Then build, sign, and submit a tx that includes --proposal-file gov/action.draft");
+  console.log("with --testnet-magic 1 (preprod magic).");
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
