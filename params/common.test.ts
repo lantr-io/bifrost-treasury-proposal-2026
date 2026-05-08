@@ -27,6 +27,11 @@ describe("resolveConfig", () => {
     network: "preprod",
     adminAddress:
       "addr_test1qzwg0u9fpl8dac9rkramkcgzerjsfdlqgkw0q8hy5vwk8tzk5pgcmdpe5jeh92guy4mke4zdmagv228nucldzxv95clq68fray",
+    boardPkhs: [
+      "00".repeat(28),
+      "11".repeat(28),
+      "22".repeat(28),
+    ],
     amountLovelace: 8_503_000_000_000n,
     treasuryExpirationISO: "2027-09-01T00:00:00Z",
     vendorExpirationGraceDays: 30,

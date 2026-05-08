@@ -4,10 +4,15 @@ export type Network = "preprod" | "mainnet";
 
 export interface RawConfig {
   network: Network;
-  /** Bech32 Shelley address whose payment key hash is the single admin.
-   *  Base address required for any flow that needs a deposit-return stake
-   *  part (e.g. the gov-action submission). */
+  /** Bech32 Shelley address of the operator (K_op). Base address required
+   *  for any flow that needs a deposit-return stake part (e.g. the
+   *  gov-action submission). */
   adminAddress: string;
+  /** Pubkey hashes (hex, 56 chars each) of the three oversight board
+   *  members K_1, K_2, K_3. Hashes go into the multisig validators baked
+   *  into treasury and vendor script parameters at registry-mint time;
+   *  immutable thereafter. */
+  boardPkhs: readonly [string, string, string];
   /** Total amount to withdraw from the Cardano treasury, in lovelace.
    *  Held at the treasury script after enactment; vendor milestones are
    *  funded from this pool at fund-vendor time and any unallocated balance
@@ -28,6 +33,7 @@ export interface ResolvedConfig {
   network: Network;
   adminAddress: string;
   adminPkhHex: string;
+  boardPkhs: readonly [string, string, string];
   amountLovelace: bigint;
   /** POSIX ms; matches RawConfig.treasuryExpirationISO. */
   treasuryExpirationMs: bigint;
@@ -102,10 +108,19 @@ export function resolveConfig(raw: RawConfig): ResolvedConfig {
   const vendorMs =
     treasuryMs + BigInt(raw.vendorExpirationGraceDays) * MS_PER_DAY;
 
+  for (const [i, pkh] of raw.boardPkhs.entries()) {
+    if (!/^[0-9a-f]{56}$/.test(pkh)) {
+      throw new Error(
+        `boardPkhs[${i}] is not a 56-char hex pkh: "${pkh}"`,
+      );
+    }
+  }
+
   return {
     network: raw.network,
     adminAddress,
     adminPkhHex: addressPaymentKeyHash(adminAddress),
+    boardPkhs: raw.boardPkhs,
     amountLovelace: raw.amountLovelace,
     treasuryExpirationMs: treasuryMs,
     vendorExpirationMs: vendorMs,
