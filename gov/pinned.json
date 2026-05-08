@@ -1,0 +1,27 @@
+{
+  "proposal-main": {
+    "cid": "QmQWsVQVfoFMyvzc77V4sLn1QEWqPAvywDqkRRkV5o8eaU",
+    "name": "scalus-treasury-proposal-main",
+    "pinnedAt": "2026-05-08T13:45:10.281Z"
+  },
+  "annex1": {
+    "cid": "Qmaruov2fJWF9Hxe39RaUAVkrkWca5jkPovJHKne5wv8fj",
+    "name": "scalus-treasury-annex-1-scope",
+    "pinnedAt": "2026-05-08T13:45:54.884Z"
+  },
+  "annex2": {
+    "cid": "QmcCa4zMrsWe4hhfvu3ueeY7qK4GMQhrbG4xSxtQS1NsXG",
+    "name": "scalus-treasury-annex-2-methodology",
+    "pinnedAt": "2026-05-08T13:46:18.333Z"
+  },
+  "annex3": {
+    "cid": "QmR1yJ8pxfsSECMXUgFXATcBJvqjjZJ9QbYpUDvpwhmepx",
+    "name": "scalus-treasury-annex-3-retrospective",
+    "pinnedAt": "2026-05-08T13:46:50.958Z"
+  },
+  "anchor": {
+    "cid": "QmXRdcbXAeGVGctsbh2TGbgvtD4A3bTbmg4tupXxMcTWWx",
+    "name": "scalus-treasury-anchor-preprod",
+    "pinnedAt": "2026-05-08T13:47:35.943Z"
+  }
+}
