@@ -13,8 +13,6 @@ package. **Does not port or reimplement contracts.**
   audited by TxPipe and MLabs).
 - Scalus monorepo: `/Users/nau/projects/lantr/scalus/` — consult for Scalus
   API patterns if a Scalus-side counterpart is ever added.
-- Spec: `docs/superpowers/specs/2026-04-19-treasury-withdrawal-setup-design.md`.
-- Plan: `docs/superpowers/plans/2026-04-19-treasury-withdrawal-setup.md`.
 
 ## Conventions
 
