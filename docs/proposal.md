@@ -1049,6 +1049,8 @@ Blaster
 * Scalus repository: https://github.com/scalus3 
 * Scalus Club: https://luma.com/scalus 
 * Lantr website: https://lantr.io/ 
+* Proposal repository: https://github.com/lantr-io/scalus-treasury-proposal-2026 
+* Public transaction journal: https://github.com/lantr-io/scalus-treasury-proposal-2026/tree/main/journal 
 * Treasury-contracts framework - Sundae Swap: https://github.com/SundaeSwap-finance/treasury-contracts 
 * Treasury-contracts framework - MLabs Audit: https://github.com/SundaeSwap-finance/treasury-contracts/blob/dea9e52671f7a696f0ec6a0f475c7fbe52689c9b/audits/mlabs.pdf
 * Treasury-contracts framework - TxPipe Audit: https://github.com/SundaeSwap-finance/treasury-contracts/blob/dea9e52671f7a696f0ec6a0f475c7fbe52689c9b/audits/txpipe.pdf

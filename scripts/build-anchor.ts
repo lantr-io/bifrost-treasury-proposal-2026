@@ -143,6 +143,17 @@ function buildAnchor(md: string, network: Network): unknown {
         label: "Proposal (HackMD, human-readable mirror)",
         uri: "https://hackmd.io/@lantr/scalus2026",
       },
+      {
+        "@type": "Other",
+        label: "Proposal repository",
+        uri: "https://github.com/lantr-io/scalus-treasury-proposal-2026",
+      },
+      {
+        "@type": "Other",
+        label: "Public transaction journal",
+        uri:
+          "https://github.com/lantr-io/scalus-treasury-proposal-2026/tree/main/journal",
+      },
       { "@type": "Other", label: "Scalus", uri: "https://scalus.org/" },
       { "@type": "Other", label: "Lantr Engineering", uri: "https://lantr.io/" },
       {
