@@ -25,6 +25,7 @@
           buildInputs = [ pkgs.bashInteractive ];
           packages = with pkgs; [
             git
+            gh
             bun
             nodejs
             jq
