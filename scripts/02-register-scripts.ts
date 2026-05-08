@@ -7,8 +7,8 @@ import {
   Credential,
   CredentialType,
   Ed25519KeyHashHex,
-  Ed25519PublicKeyHex,
   Ed25519PublicKey,
+  Ed25519PublicKeyHex,
   Hash28ByteBase16,
   RewardAccount,
 } from "@blaze-cardano/core";
@@ -38,7 +38,11 @@ async function main(): Promise<void> {
   const resolved = resolveConfig(preprodRawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, state.registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, state.registryPolicyHex);
-  const scripts = Utils.loadScripts(network, treasuryCfg, vendorCfg);
+  // trace=true selects the stripped (production) bytecode in the
+  // patched @sundaeswap/treasury-funds package. Without this we'd ship
+  // the trace-bloated variant, which pushes vendor over the 16 KB
+  // max-tx-size cap. See scripts/patch-sundae.ts.
+  const scripts = Utils.loadScripts(network, treasuryCfg, vendorCfg, true);
   const adminPkh = Ed25519KeyHashHex(resolved.adminPkhHex);
 
   const treasuryHash = scripts.treasuryScript.script.Script.hash();
@@ -55,9 +59,8 @@ async function main(): Promise<void> {
 
   // Admin stake credential — registered (no delegation) so the gov-action
   // deposit refund (~100k tADA on ratify or expire) lands in a usable
-  // reward account. Personal stake, not treasury-held, so the
-  // AlwaysAbstain rule does not apply; the operator can delegate to a
-  // real DRep later if they want voting rights on other gov actions.
+  // reward account. Personal stake, not treasury-held, so AlwaysAbstain
+  // does not apply.
   const stakeVkHex = readFileSync("keys/admin.stake.vkey", "utf8").trim();
   const adminStakeVk = Ed25519PublicKey.fromHex(Ed25519PublicKeyHex(stakeVkHex));
   const adminStakePkhHex = (await adminStakeVk.hash()).hex();
@@ -66,9 +69,11 @@ async function main(): Promise<void> {
     hash: Hash28ByteBase16(adminStakePkhHex),
   });
 
-  // Article IV §5 of the Cardano constitution requires treasury-held ADA to
-  // delegate voting power to AlwaysAbstain so the funds never influence
-  // governance.
+  // Article IV §5 of the Cardano constitution requires treasury-held ADA
+  // to delegate voting power to AlwaysAbstain so the funds never
+  // influence governance. Admin stake (gov-action deposit refund) is
+  // registered without delegation; the operator can delegate to a real
+  // DRep later if they want voting rights.
   const tx = blaze.newTransaction();
   tx.addRegisterStake(treasuryCred);
   tx.addVoteDelegation(treasuryCred, "alwaysAbstain", Void());

@@ -67,14 +67,18 @@ async function main(): Promise<void> {
   };
 
   // Compile the oneshot minting policy parameterized by the seed UTxO.
-  const oneshotScript = new OneshotOneshotMint(seedUtxoData);
+  // trace=true selects the stripped (production) bytecode in the
+  // patched @sundaeswap/treasury-funds package — keeps the registry
+  // policy hash consistent with how subsequent scripts compile their
+  // validators. See scripts/patch-sundae.ts.
+  const oneshotScript = new OneshotOneshotMint(seedUtxoData, true);
   const registryPolicyHex = oneshotScript.Script.hash();
   const registryAssetNameHex = toHex(Buffer.from("REGISTRY"));
 
   const resolved = resolveConfig(preprodRawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, registryPolicyHex);
-  const compiled = Utils.loadScripts(network, treasuryCfg, vendorCfg);
+  const compiled = Utils.loadScripts(network, treasuryCfg, vendorCfg, true);
 
   const treasuryHash = compiled.treasuryScript.script.Script.hash();
   const vendorHash = compiled.vendorScript.script.Script.hash();

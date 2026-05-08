@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   const vendorCfg = buildVendorConfig(resolved, state.registryPolicyHex);
   const adminPkh = Ed25519KeyHashHex(resolved.adminPkhHex);
 
-  const scripts = Utils.loadScripts(network, treasuryCfg, vendorCfg);
+  const scripts = Utils.loadScripts(network, treasuryCfg, vendorCfg, true);
   const vendorUtxos = await blaze.provider.getUnspentOutputs(
     scripts.vendorScript.scriptAddress,
   );
