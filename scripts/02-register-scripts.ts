@@ -7,6 +7,8 @@ import {
   Credential,
   CredentialType,
   Ed25519KeyHashHex,
+  Ed25519PublicKeyHex,
+  Ed25519PublicKey,
   Hash28ByteBase16,
   RewardAccount,
 } from "@blaze-cardano/core";
@@ -51,6 +53,19 @@ async function main(): Promise<void> {
     hash: Hash28ByteBase16(vendorHash),
   });
 
+  // Admin stake credential — registered (no delegation) so the gov-action
+  // deposit refund (~100k tADA on ratify or expire) lands in a usable
+  // reward account. Personal stake, not treasury-held, so the
+  // AlwaysAbstain rule does not apply; the operator can delegate to a
+  // real DRep later if they want voting rights on other gov actions.
+  const stakeVkHex = readFileSync("keys/admin.stake.vkey", "utf8").trim();
+  const adminStakeVk = Ed25519PublicKey.fromHex(Ed25519PublicKeyHex(stakeVkHex));
+  const adminStakePkhHex = (await adminStakeVk.hash()).hex();
+  const adminStakeCred = Credential.fromCore({
+    type: CredentialType.KeyHash,
+    hash: Hash28ByteBase16(adminStakePkhHex),
+  });
+
   // Article IV §5 of the Cardano constitution requires treasury-held ADA to
   // delegate voting power to AlwaysAbstain so the funds never influence
   // governance.
@@ -59,6 +74,7 @@ async function main(): Promise<void> {
   tx.addVoteDelegation(treasuryCred, "alwaysAbstain", Void());
   tx.addRegisterStake(vendorCred);
   tx.addVoteDelegation(vendorCred, "alwaysAbstain", Void());
+  tx.addRegisterStake(adminStakeCred);
   tx.provideScript(scripts.treasuryScript.script.Script);
   tx.provideScript(scripts.vendorScript.script.Script);
   tx.addRequiredSigner(adminPkh);
@@ -73,12 +89,17 @@ async function main(): Promise<void> {
     { type: CredentialType.ScriptHash, hash: Hash28ByteBase16(vendorHash) },
     network,
   );
+  const adminStakeReward = RewardAccount.fromCredential(
+    { type: CredentialType.KeyHash, hash: Hash28ByteBase16(adminStakePkhHex) },
+    network,
+  );
 
   console.log(
     `Built register+delegate tx. CBOR size: ${built.toCbor().toString().length / 2} bytes`,
   );
   console.log(`  Treasury reward acct: ${treasuryReward}`);
   console.log(`  Vendor   reward acct: ${vendorReward}`);
+  console.log(`  Admin    reward acct: ${adminStakeReward}`);
 
   if (DRY_RUN) {
     console.log(

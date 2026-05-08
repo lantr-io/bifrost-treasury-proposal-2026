@@ -20,7 +20,7 @@ describe("preprod raw config", () => {
 
   test("admin address matches the designated proposer address", () => {
     expect(preprodRawConfig.adminAddress).toBe(
-      "addr_test1qzwg0u9fpl8dac9rkramkcgzerjsfdlqgkw0q8hy5vwk8tzk5pgcmdpe5jeh92guy4mke4zdmagv228nucldzxv95clq68fray",
+      "addr_test1qqhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdspa5c55",
     );
   });
 });

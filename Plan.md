@@ -140,14 +140,15 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 - [ ] Confirm `keys/admin.addr` is a base address (`addr_test1q…`,
       ~108 chars) and `keys/admin.stake.addr` is a stake address
       (`stake_test1u…`).
-- [ ] **Point `params/preprod.ts` at the freshly-generated key.**
-      `params/preprod.ts:adminAddress` is hardcoded to a previous
-      operator's address. Either edit the file in place to use
-      `cat keys/admin.addr`, or set
-      `export ADMIN_ADDRESS_OVERRIDE=$(cat keys/admin.addr)` for the
-      session. Without one or the other, `bun run init` will sign with
-      the freshly-generated key but require the hardcoded pkh as a
-      required signer — and fail.
+- [ ] **Confirm `params/preprod.ts:adminAddress` matches `keys/admin.addr`.**
+      The committed value is the canonical preprod proposer; if you
+      regenerate keys, edit `params/preprod.ts` (and the matching
+      assertion in `params/preprod.test.ts`) to the new address.
+      Mismatch will make `bun run init` sign with the new key while
+      requiring the old pkh as a `--required-signer` — and fail.
+      `ADMIN_ADDRESS_OVERRIDE` exists for Yaci devnet runs only (see
+      Stage 5); avoid it on real preprod so config and signing key
+      stay coupled in committed source.
 - [ ] Fund admin address from preprod faucet
       (https://docs.cardano.org/cardano-testnets/tools/faucet). The
       gov-action deposit is a protocol parameter — query it before
@@ -170,11 +171,17 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
       (https://preprod.cardanoscan.io/transaction/<txhash>) that the
       registry NFT is locked at the registry script address. Capture
       txhash from `deployment/preprod.json:txs.initRegistry`.
-- [ ] `bun run register --submit`. Verify both treasury and vendor reward
-      accounts now exist:
+- [ ] `bun run register --submit`. Registers **three** stake credentials
+      in one tx: treasury (vote-delegated to AlwaysAbstain), vendor
+      (same), and the admin's personal stake key (no delegation —
+      registered only so the gov-action deposit refund can land in a
+      usable reward account when the action ratifies or expires).
+      Verify all three exist:
       ```
       cardano-cli conway query stake-address-info \
         --address <treasuryReward> --testnet-magic 1
+      cardano-cli conway query stake-address-info \
+        --address $(cat keys/admin.stake.addr) --testnet-magic 1
       ```
 - [ ] `bun run gov` to emit `gov/preprod-withdrawal.json` and the
       cardano-cli draft template. Sanity-check the printed hash matches
@@ -219,7 +226,9 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 **Stop point for Track A.** Whether the action ratifies depends on DRep
 activity we don't drive. Optionally post in Intersect's voltaire-testnet
 channel to nudge votes. If it expires (`govActionLifetime` epochs), the
-deposit returns to our stake address.
+~100k tADA deposit lands in the admin reward account (registered in
+Stage 3) — recover it with a `Withdrawals` tx signed by
+`keys/admin.stake.skey`.
 
 ---
 

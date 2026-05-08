@@ -57,7 +57,10 @@ package. **Does not port or reimplement contracts.**
 5. `bun run pin gov/anchor.preprod.json --role anchor --name …` — the
    resulting CID becomes `ANCHOR_URL` in the gov action.
 6. `bun run init` — mint one-shot registry NFT, publish registry datum.
-7. `bun run register` — register + delegate both scripts to AlwaysAbstain DRep.
+7. `bun run register` — register all three stake credentials in one tx:
+   treasury + vendor (vote-delegated to AlwaysAbstain per constitution)
+   and the admin's personal stake key (registered without delegation,
+   so the gov-action deposit refund can land in a usable reward account).
 8. `bun run gov` — emit the `treasuryWithdrawal` governance-action JSON.
 9. (Manual) submit the gov action via `cardano-cli`, wait for it to pass.
 10. `bun run withdraw` — pull ADA from the treasury reward account.
