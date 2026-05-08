@@ -2,20 +2,12 @@
 
 Goal: prove the full proposal pipeline on preprod before mainnet. The
 upstream-facing pieces (anchor format, gov-action submission, deposit
-mechanics) only exist on a real network, so they run against preprod. The
-contract-validator pieces (treasury withdraw → vendor fund → milestone
-maturation → vendor claim) cannot be reliably exercised on preprod because
-ratification depends on DRep activity we don't control; those run on Yaci
-DevKit in parallel.
-
-**Two parallel tracks, not a fallback chain:**
-
-| Track | Network | Scope                                                          |
-|-------|---------|----------------------------------------------------------------|
-| A     | preprod | anchor pin, init, register, gov-action submission, observe     |
-| B     | Yaci    | init, register, hand-fund treasury, withdraw, fund, vendor-withdraw |
-
-Mainnet readiness = both tracks green.
+mechanics) only exist on a real network. The contract-validator pieces
+(treasury withdraw → vendor fund → milestone maturation → vendor claim)
+only run after the gov action ratifies — and ratification depends on
+DRep activity we don't control. If the action expires without
+ratification, those later stages don't get exercised on preprod and we
+defer them to mainnet readiness review on a case-by-case basis.
 
 ## Confirmed parameters (from HackMD proposal, 2026-05-08)
 
@@ -37,8 +29,7 @@ are filled in.
 
 ---
 
-## Stage 1 — Anchor preparation (Track A)
-
+## Stage 1 — Anchor preparation
 ### 1.0 Pinning strategy
 
 Voters reading the anchor through gov.tools can click any entry in
@@ -134,8 +125,7 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 
 ---
 
-## Stage 2 — Operator wallet (Track A)
-
+## Stage 2 — Operator wallet
 - [ ] `bun run gen-keys` (idempotent — keep existing keys if present).
 - [ ] Confirm `keys/admin.addr` is a base address (`addr_test1q…`,
       ~108 chars) and `keys/admin.stake.addr` is a stake address
@@ -146,9 +136,6 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
       assertion in `params/preprod.test.ts`) to the new address.
       Mismatch will make `bun run init` sign with the new key while
       requiring the old pkh as a `--required-signer` — and fail.
-      `ADMIN_ADDRESS_OVERRIDE` exists for Yaci devnet runs only (see
-      Stage 5); avoid it on real preprod so config and signing key
-      stay coupled in committed source.
 - [ ] Fund admin address from preprod faucet
       (https://docs.cardano.org/cardano-testnets/tools/faucet). The
       gov-action deposit is a protocol parameter — query it before
@@ -165,8 +152,7 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 
 ---
 
-## Stage 3 — Init & register scripts (Track A)
-
+## Stage 3 — Init & register scripts
 - [ ] `bun run init --submit`. Verify on Cardanoscan
       (https://preprod.cardanoscan.io/transaction/<txhash>) that the
       registry NFT is locked at the registry script address. Capture
@@ -190,8 +176,7 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 
 ---
 
-## Stage 4 — Gov-action submission (Track A)
-
+## Stage 4 — Gov-action submission
 - [ ] Build the action draft (template printed by `bun run gov`):
       ```
       cardano-cli conway governance action create-treasury-withdrawal \
@@ -223,64 +208,56 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
       rendered proposal looks correct (title, abstract, motivation,
       rationale render in the UI).
 
-**Stop point for Track A.** Whether the action ratifies depends on DRep
-activity we don't drive. Optionally post in Intersect's voltaire-testnet
-channel to nudge votes. If it expires (`govActionLifetime` epochs), the
-~100k tADA deposit lands in the admin reward account (registered in
-Stage 3) — recover it with a `Withdrawals` tx signed by
-`keys/admin.stake.skey`.
+**Two outcomes from here:**
+- **Ratification** — DReps approve, action enacts at the next epoch
+  boundary, treasury reward account credited. Continue with Stage 5.
+- **Expiry** — `govActionLifetime` (~6 epochs ≈ 6 days on preprod)
+  passes without enough DRep approval. The 100k tADA deposit lands in
+  the admin reward account (registered in Stage 3); recover it with a
+  `Withdrawals` tx signed by `keys/admin.stake.skey`. The validator
+  pieces (Stage 5) don't get exercised on preprod — note this for the
+  mainnet readiness review.
+
+Optionally post in Intersect's voltaire-testnet channel to nudge votes.
 
 ---
 
-## Stage 5 — Local end-to-end on Yaci DevKit (Track B)
+## Stage 5 — Withdraw, fund vendor, vendor claim (only after ratification)
 
-The provider already supports Yaci via `BLOCKFROST_URL` +
-`YACI_GENESIS_DIR` (see `scripts/lib/provider.ts:50-64`). Use Yaci to
-exercise stages 6–7 against the real validators, with manually-injected
-treasury funds (skipping the gov-action ratification path).
+Only run if Stage 4 reaches ratification. If the action expires, skip
+this stage and note for the mainnet readiness review that the validator
+pieces weren't exercised on preprod.
 
-- [ ] Install Yaci DevKit (https://github.com/bloxbean/yaci-devkit).
-- [ ] Start with Conway era enabled and short epoch length (~30s).
-- [ ] In `.env` (or per-shell): set
-      ```
-      BLOCKFROST_URL=http://localhost:8080/api/v1/
-      YACI_GENESIS_DIR=/path/to/yaci/genesis
-      ADMIN_ADDRESS_OVERRIDE=<yaci-funded base address>
-      ```
-- [ ] Hand-fund the treasury script's *reward account* via Yaci's admin
-      RPC (this is what a successful gov-action ratification would do on
-      mainnet). Yaci's `yaci-cli` exposes a treasury-injection command;
-      check current docs for exact name.
-- [ ] Run `bun run init --submit` → `bun run register --submit` →
-      `bun run withdraw --submit`.
+- [ ] `bun run withdraw --submit`. Pulls the ratified amount from the
+      treasury reward account into a UTxO at the treasury script.
 - [ ] **Wire `05-fund-vendor.ts` schedule first** (see
       `TODO(milestone-schedule)` in that file), then
-      `bun run fund --submit`.
-- [ ] Wait until first milestone matures (Yaci can advance time by
-      epoch-rolling so this isn't actually a 30-day wait).
+      `bun run fund --submit`. Locks the milestone schedule at the
+      vendor script; contingency change stays at the treasury script.
+- [ ] Wait until the first milestone matures (real-time on preprod, so
+      this is a real-clock wait).
 - [ ] `bun run vendor-withdraw --submit`. Verify admin wallet received
       the first milestone payout.
-- [ ] Wait until last milestone matures, run `vendor-withdraw` again to
-      drain.
+- [ ] Wait for subsequent milestones, repeat `vendor-withdraw`.
 - [ ] Optionally test sweep-after-expiration (need `07-sweep.ts` —
       currently missing).
-
-If anything fails at this stage, the failure is in our parameterization,
-not the SundaeSwap contracts. Catalogue the bug, fix it, re-run from the
-appropriate point.
 
 ---
 
 ## Stage 6 — Mainnet readiness signoff
 
-Both tracks must be green before mainnet promotion. Specifically:
+Mainnet promotion requires the upstream-facing flow to be green on
+preprod:
 
-- Track A: gov-action visible on chain with correct anchor URL + hash;
-  rendered correctly in gov.tools; either ratified-and-funds-received or
-  cleanly expired-and-deposit-returned.
-- Track B: full pipeline runs end-to-end on Yaci against the real
-  validators with our parameterization. Vendor claim succeeds at exactly
-  the maturation timestamp; rejected before.
+- Stage 4 outcome: gov-action visible on chain with correct anchor URL
+  + hash; rendered correctly in gov.tools; deposit handled (ratified
+  with funds received, or expired with deposit returned).
+
+Stage 5 (validator exercises) is best-effort on preprod — only
+exercised if the action ratifies. If it expires without ratification,
+note that on the mainnet readiness review and decide whether to
+re-submit on preprod with negotiated DRep votes, or accept the
+mainnet-only verification of the validator path.
 
 Then proceed with the mainnet-specific work below (multisig topology,
 final pkhs).

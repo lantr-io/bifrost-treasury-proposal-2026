@@ -84,14 +84,13 @@ export function addressPaymentKeyHash(addr: string): string {
 }
 
 /**
- * Resolve a RawConfig to its derived form. Pure function of static input
- * (apart from the ADMIN_ADDRESS_OVERRIDE escape hatch for local Yaci
- * testing) — every call returns identical bytes, so Utils.loadScripts
- * produces the same treasury+vendor script hashes at registry mint and
- * at every subsequent script invocation.
+ * Resolve a RawConfig to its derived form. Pure function of static input —
+ * every call returns identical bytes, so Utils.loadScripts produces the
+ * same treasury+vendor script hashes at registry mint and at every
+ * subsequent script invocation.
  */
 export function resolveConfig(raw: RawConfig): ResolvedConfig {
-  const adminAddress = process.env.ADMIN_ADDRESS_OVERRIDE ?? raw.adminAddress;
+  const adminAddress = raw.adminAddress;
 
   const parsed = Date.parse(raw.treasuryExpirationISO);
   if (Number.isNaN(parsed)) {

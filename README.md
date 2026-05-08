@@ -102,13 +102,13 @@ clean clone:
 ```sh
 git submodule update --init
 nix develop                  # or `direnv allow` if you use direnv
-bun install                  # postinstall patches blaze + libsodium
+bun install                  # postinstall patches libsodium
 bun test
 bun run typecheck
 ```
 
-The full preprod end-to-end runbook (anchor pinning, gov-action submission,
-local Yaci DevKit pipeline) lives in [Plan.md](Plan.md).
+The full preprod end-to-end runbook (anchor pinning, gov-action submission)
+lives in [Plan.md](Plan.md).
 
 Operator scripts default to `--dry-run` (build the tx, print a summary, do
 not submit). Submission requires the explicit `--submit` flag.

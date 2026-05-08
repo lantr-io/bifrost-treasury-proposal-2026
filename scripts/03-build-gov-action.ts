@@ -27,9 +27,6 @@ async function main(): Promise<void> {
   const state = loadDeployment("deployment/preprod.json");
   if (!state) throw new Error("Run 01-init-registry.ts --submit first.");
 
-  // Honour ADMIN_ADDRESS_OVERRIDE so the gov action's returnAddress
-  // matches the actual signing key (gen-keys output) rather than the
-  // hardcoded "designated proposer" address in params/preprod.ts.
   const resolved = resolveConfig(preprodRawConfig);
 
   const anchorPin = requirePin("anchor");
