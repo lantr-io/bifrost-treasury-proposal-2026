@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Parameterization and operations for the Cardano treasury withdrawal funding Scalus Application Platform and Node Diversity",
   "scripts": {
-    "postinstall": "bun scripts/patch-libsodium.ts",
+    "postinstall": "bun scripts/patch-libsodium.ts && bun scripts/patch-blaze.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "gen-keys": "bun scripts/gen-keys.ts",
