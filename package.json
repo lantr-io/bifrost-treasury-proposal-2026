@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "license": "Apache-2.0",
   "description": "Parameterization and operations for the Cardano treasury withdrawal funding Scalus Application Platform and Node Diversity",
   "scripts": {
     "postinstall": "bun scripts/patch-libsodium.ts && bun scripts/patch-blaze.ts",
