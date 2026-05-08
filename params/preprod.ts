@@ -6,18 +6,28 @@ import type {
 import type { RawConfig, ResolvedConfig } from "./common";
 
 /**
- * Preprod concrete config. 1,000,000 tADA, single milestone, single admin key
- * (derived from the proposer address) used for every permission.
+ * Preprod concrete config. Uses the real proposal totals and dates so the
+ * preprod test exercises the same script parameters that mainnet will mint
+ * (single admin key for testing instead of the full operator+board
+ * multisig — that change is mainnet-only).
+ *
+ *   amount   : ₳8,503,000 (incl. 10% refundable contingency, per HackMD
+ *              proposal as of 2026-05-08)
+ *   T_max    : 2027-09-01 = end of 12-month delivery (May 2027) + 3-month
+ *              contingency window
+ *   vendor.expiration: T_max + 30 days
+ *
+ * Milestone schedule is NOT defined here. It is decided at fund-vendor
+ * time (vendor datum, not script parameter), and the existing
+ * 05-fund-vendor.ts will need a wired schedule before it can run.
  */
 export const preprodRawConfig: RawConfig = {
   network: "preprod",
   adminAddress:
     "addr_test1qzwg0u9fpl8dac9rkramkcgzerjsfdlqgkw0q8hy5vwk8tzk5pgcmdpe5jeh92guy4mke4zdmagv228nucldzxv95clq68fray",
-  amountLovelace: 1_000_000_000_000n,
-  milestoneCount: 1,
-  milestoneSpacingDays: 30,
-  firstMilestoneOffsetDays: 30,
-  expirationGraceDays: 180,
+  amountLovelace: 8_503_000_000_000n,
+  treasuryExpirationISO: "2027-09-01T00:00:00Z",
+  vendorExpirationGraceDays: 30,
 };
 
 function adminSig(resolved: ResolvedConfig): MultisigScript {
@@ -54,7 +64,7 @@ export function buildVendorConfig(
       resume: sig,
       modify: sig,
     },
-    expiration: resolved.treasuryExpirationMs,
+    expiration: resolved.vendorExpirationMs,
   };
 }
 

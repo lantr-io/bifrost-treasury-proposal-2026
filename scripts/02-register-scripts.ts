@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   const { blaze, network } = await loadProvider(skHex);
   if (network !== Core.NetworkId.Testnet) throw new Error("Expected testnet");
 
-  const resolved = resolveConfig(preprodRawConfig, new Date());
+  const resolved = resolveConfig(preprodRawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, state.registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, state.registryPolicyHex);
   const scripts = Utils.loadScripts(network, treasuryCfg, vendorCfg);

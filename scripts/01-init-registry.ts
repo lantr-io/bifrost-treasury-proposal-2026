@@ -71,7 +71,7 @@ async function main(): Promise<void> {
   const registryPolicyHex = oneshotScript.Script.hash();
   const registryAssetNameHex = toHex(Buffer.from("REGISTRY"));
 
-  const resolved = resolveConfig(preprodRawConfig, new Date());
+  const resolved = resolveConfig(preprodRawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, registryPolicyHex);
   const compiled = Utils.loadScripts(network, treasuryCfg, vendorCfg);

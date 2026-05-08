@@ -2,17 +2,20 @@ import { describe, expect, test } from "bun:test";
 import { preprodRawConfig, buildTreasuryConfig, buildVendorConfig } from "./preprod";
 import { resolveConfig } from "./common";
 
-const FIXED_NOW = new Date("2026-05-01T00:00:00Z");
 const FAKE_REGISTRY_POLICY =
   "cafebabecafebabecafebabecafebabecafebabecafebabecafebabe";
 
 describe("preprod raw config", () => {
-  test("withdrawal amount is 1,000,000 tADA", () => {
-    expect(preprodRawConfig.amountLovelace).toBe(1_000_000_000_000n);
+  test("withdrawal amount matches the proposal total (₳8,503,000)", () => {
+    expect(preprodRawConfig.amountLovelace).toBe(8_503_000_000_000n);
   });
 
-  test("single milestone configuration", () => {
-    expect(preprodRawConfig.milestoneCount).toBe(1);
+  test("treasury expires 2027-09-01 (12-month delivery + 3-month contingency)", () => {
+    expect(preprodRawConfig.treasuryExpirationISO).toBe("2027-09-01T00:00:00Z");
+  });
+
+  test("vendor grace is 30 days", () => {
+    expect(preprodRawConfig.vendorExpirationGraceDays).toBe(30);
   });
 
   test("admin address matches the designated proposer address", () => {
@@ -24,7 +27,7 @@ describe("preprod raw config", () => {
 
 describe("buildTreasuryConfig", () => {
   test("uses the supplied registry policy and resolved expiration", () => {
-    const resolved = resolveConfig(preprodRawConfig, FIXED_NOW);
+    const resolved = resolveConfig(preprodRawConfig);
     const cfg = buildTreasuryConfig(resolved, FAKE_REGISTRY_POLICY);
     expect(cfg.registry_token).toBe(FAKE_REGISTRY_POLICY);
     expect(cfg.expiration).toBe(resolved.treasuryExpirationMs);
@@ -32,7 +35,7 @@ describe("buildTreasuryConfig", () => {
   });
 
   test("all four treasury permissions are a Signature over the admin pkh", () => {
-    const resolved = resolveConfig(preprodRawConfig, FIXED_NOW);
+    const resolved = resolveConfig(preprodRawConfig);
     const cfg = buildTreasuryConfig(resolved, FAKE_REGISTRY_POLICY);
     for (const ms of [
       cfg.permissions.reorganize,
@@ -49,11 +52,12 @@ describe("buildTreasuryConfig", () => {
 });
 
 describe("buildVendorConfig", () => {
-  test("registry + expiration match treasury; three permissions use admin", () => {
-    const resolved = resolveConfig(preprodRawConfig, FIXED_NOW);
+  test("vendor expiration = treasury expiration + grace; permissions use admin", () => {
+    const resolved = resolveConfig(preprodRawConfig);
     const cfg = buildVendorConfig(resolved, FAKE_REGISTRY_POLICY);
     expect(cfg.registry_token).toBe(FAKE_REGISTRY_POLICY);
-    expect(cfg.expiration).toBe(resolved.treasuryExpirationMs);
+    expect(cfg.expiration).toBe(resolved.vendorExpirationMs);
+    expect(cfg.expiration).toBeGreaterThan(resolved.treasuryExpirationMs);
     for (const ms of [
       cfg.permissions.pause,
       cfg.permissions.resume,

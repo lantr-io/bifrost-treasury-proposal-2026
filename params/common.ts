@@ -4,23 +4,24 @@ export type Network = "preprod" | "mainnet";
 
 export interface RawConfig {
   network: Network;
-  /** Bech32 Shelley base address whose payment key hash is the single admin. */
+  /** Bech32 Shelley address whose payment key hash is the single admin.
+   *  Base address required for any flow that needs a deposit-return stake
+   *  part (e.g. the gov-action submission). */
   adminAddress: string;
-  /** Total amount to withdraw from the Cardano treasury, in lovelace. */
+  /** Total amount to withdraw from the Cardano treasury, in lovelace.
+   *  Held at the treasury script after enactment; vendor milestones are
+   *  funded from this pool at fund-vendor time and any unallocated balance
+   *  remains at the treasury script as contingency reserve. */
   amountLovelace: bigint;
-  /** How many vendor milestones to split the amount into. >= 1, <= 24. */
-  milestoneCount: number;
-  /** Days of spacing between consecutive milestones. */
-  milestoneSpacingDays: number;
-  /** Days after "now" when the first milestone matures. */
-  firstMilestoneOffsetDays: number;
-  /** Grace window between the last milestone and treasury expiration. */
-  expirationGraceDays: number;
-}
-
-export interface MilestoneEntry {
-  maturation: Date;
-  amountLovelace: bigint;
+  /** Absolute treasury expiration timestamp (ISO 8601, UTC). Baked into
+   *  treasury and vendor script parameters at registry-mint time;
+   *  immutable thereafter. After this point the treasury can be swept
+   *  back to the Cardano treasury. */
+  treasuryExpirationISO: string;
+  /** vendor.expiration = treasury.expiration + this many days. Grace
+   *  window for late Modify / sweep cleanup. Baked into vendor script
+   *  parameters; immutable. */
+  vendorExpirationGraceDays: number;
 }
 
 export interface ResolvedConfig {
@@ -28,10 +29,12 @@ export interface ResolvedConfig {
   adminAddress: string;
   adminPkhHex: string;
   amountLovelace: bigint;
-  schedule: MilestoneEntry[];
-  /** POSIX ms after which funds can be swept back to the Cardano treasury. */
+  /** POSIX ms; matches RawConfig.treasuryExpirationISO. */
   treasuryExpirationMs: bigint;
-  /** POSIX ms: hard cap on any milestone maturation the committee may pick. */
+  /** POSIX ms; = treasuryExpirationMs + vendorExpirationGraceDays days. */
+  vendorExpirationMs: bigint;
+  /** POSIX ms; hard cap on any milestone maturation the schedule may pick.
+   *  Equal to treasuryExpirationMs by construction. */
   vendorPayoutUpperboundMs: bigint;
 }
 
@@ -81,51 +84,32 @@ export function addressPaymentKeyHash(addr: string): string {
 }
 
 /**
- * Build an even milestone schedule from the raw config. The last milestone
- * absorbs any rounding remainder so total payouts exactly equal amountLovelace.
+ * Resolve a RawConfig to its derived form. Pure function of static input
+ * (apart from the ADMIN_ADDRESS_OVERRIDE escape hatch for local Yaci
+ * testing) — every call returns identical bytes, so Utils.loadScripts
+ * produces the same treasury+vendor script hashes at registry mint and
+ * at every subsequent script invocation.
  */
-export function resolveSchedule(
-  raw: RawConfig,
-  now: Date = new Date(),
-): MilestoneEntry[] {
-  if (raw.milestoneCount < 1 || raw.milestoneCount > 24) {
+export function resolveConfig(raw: RawConfig): ResolvedConfig {
+  const adminAddress = process.env.ADMIN_ADDRESS_OVERRIDE ?? raw.adminAddress;
+
+  const parsed = Date.parse(raw.treasuryExpirationISO);
+  if (Number.isNaN(parsed)) {
     throw new Error(
-      `milestoneCount must be between 1 and 24 (got ${raw.milestoneCount})`,
+      `Could not parse treasuryExpirationISO: ${raw.treasuryExpirationISO}`,
     );
   }
-  const per = raw.amountLovelace / BigInt(raw.milestoneCount);
-  const remainder =
-    raw.amountLovelace - per * BigInt(raw.milestoneCount);
-  const baseMs =
-    BigInt(now.getTime()) + BigInt(raw.firstMilestoneOffsetDays) * MS_PER_DAY;
-  const entries: MilestoneEntry[] = [];
-  for (let i = 0; i < raw.milestoneCount; i++) {
-    const matMs =
-      baseMs + BigInt(i) * BigInt(raw.milestoneSpacingDays) * MS_PER_DAY;
-    const amount = i === raw.milestoneCount - 1 ? per + remainder : per;
-    entries.push({
-      maturation: new Date(Number(matMs)),
-      amountLovelace: amount,
-    });
-  }
-  return entries;
-}
+  const treasuryMs = BigInt(parsed);
+  const vendorMs =
+    treasuryMs + BigInt(raw.vendorExpirationGraceDays) * MS_PER_DAY;
 
-export function resolveConfig(
-  raw: RawConfig,
-  now: Date = new Date(),
-): ResolvedConfig {
-  const schedule = resolveSchedule(raw, now);
-  const lastMs = BigInt(schedule[schedule.length - 1]!.maturation.getTime());
-  const treasuryExpirationMs =
-    lastMs + BigInt(raw.expirationGraceDays) * MS_PER_DAY;
   return {
     network: raw.network,
-    adminAddress: raw.adminAddress,
-    adminPkhHex: addressPaymentKeyHash(raw.adminAddress),
+    adminAddress,
+    adminPkhHex: addressPaymentKeyHash(adminAddress),
     amountLovelace: raw.amountLovelace,
-    schedule,
-    treasuryExpirationMs,
-    vendorPayoutUpperboundMs: treasuryExpirationMs,
+    treasuryExpirationMs: treasuryMs,
+    vendorExpirationMs: vendorMs,
+    vendorPayoutUpperboundMs: treasuryMs,
   };
 }

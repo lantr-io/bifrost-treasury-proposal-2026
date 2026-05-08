@@ -11,10 +11,7 @@ beforeAll(async () => {
 describe("compileScripts", () => {
   test("produces stable script hashes for fixed inputs", async () => {
     const { Core } = await import("@blaze-cardano/sdk");
-    const resolved = resolveConfig(
-      preprodRawConfig,
-      new Date("2026-05-01T00:00:00Z"),
-    );
+    const resolved = resolveConfig(preprodRawConfig);
     const fakeRegistry =
       "cafebabecafebabecafebabecafebabecafebabecafebabecafebabe";
     const treasuryCfg = buildTreasuryConfig(resolved, fakeRegistry);
@@ -32,10 +29,7 @@ describe("compileScripts", () => {
 
   test("different registry token yields different script hashes", async () => {
     const { Core } = await import("@blaze-cardano/sdk");
-    const resolved = resolveConfig(
-      preprodRawConfig,
-      new Date("2026-05-01T00:00:00Z"),
-    );
+    const resolved = resolveConfig(preprodRawConfig);
     const reg1 = "ca".repeat(28);
     const reg2 = "ab".repeat(28);
     const a = compileScripts(
