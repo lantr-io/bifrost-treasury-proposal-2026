@@ -177,36 +177,35 @@ The resulting CID becomes `ANCHOR_URL` in the gov action.
 ---
 
 ## Stage 4 — Gov-action submission
-- [ ] Build the action draft (template printed by `bun run gov`):
-      ```
-      cardano-cli conway governance action create-treasury-withdrawal \
-        --testnet \
-        --governance-action-deposit "$(cardano-cli conway query gov-state \
-          --testnet-magic 1 | jq '.currentPParams.govActionDeposit')" \
-        --deposit-return-stake-address "$(cat keys/admin.stake.addr)" \
-        --anchor-url ipfs://<anchorCid> \
-        --anchor-data-hash <blake2b256-hex> \
-        --funds-receiving-stake-address <treasuryReward> \
-        --transfer 8503000000000 \
-        --out-file gov/action.draft
-      ```
-- [ ] Build a tx that includes the proposal:
-      ```
-      cardano-cli conway transaction build \
-        --testnet-magic 1 \
-        --tx-in <admin-utxo> \
-        --change-address $(cat keys/admin.addr) \
-        --proposal-file gov/action.draft \
-        --out-file gov/action.tx
-      ```
-- [ ] Sign with `keys/admin.skey`, submit, capture tx hash and
-      gov-action ID.
+- [ ] `bun run gov --submit`. Builds and broadcasts the
+      `treasury_withdrawals_action` proposal via Blaze + Blockfrost
+      (no local cardano-node needed). The script:
+      - reads `state.treasuryScriptHashHex` from
+        `deployment/preprod.json` and derives the funds-receiving stake
+        address;
+      - fetches the live `gov_action_deposit` from Blockfrost
+        `/epochs/latest/parameters` (currently 100,000 tADA);
+      - sets `policyHash` to the constitution's guardrails hash
+        (preprod: `fa24fb30…d4a64`) — Conway requires this;
+      - manually wires up the Proposing redeemer (`Void` data) and
+        registers the guardrails script as required, since Blaze's
+        `addProposal()` doesn't (see CLAUDE.md "Gotchas");
+      - fetches the guardrails script CBOR from Blockfrost, applies the
+        extra CBOR `bytes(...)` wrapper Blaze expects, and provides it
+        as a witness;
+      - signs with `keys/admin.skey`, submits, and writes the tx hash
+        to `deployment/preprod.json:txs.govAction`.
 - [ ] Verify on https://preprod.cardanoscan.io/govactions and
       https://gov.tools/?network=preprod that the action is listed with
       our anchor URL and hash.
 - [ ] Click through to the anchor URL in gov.tools to confirm the
       rendered proposal looks correct (title, abstract, motivation,
       rationale render in the UI).
+
+`bun run gov` (no `--submit`) emits `gov/preprod-withdrawal.json` (a
+human-readable summary) and prints the equivalent `cardano-cli` flow
+for documentation. We don't run the cli flow because it requires a
+synced node socket; our path is Blaze-only.
 
 **Two outcomes from here:**
 - **Ratification** — DReps approve, action enacts at the next epoch

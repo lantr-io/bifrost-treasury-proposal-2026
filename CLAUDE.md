@@ -75,3 +75,67 @@ package. **Does not port or reimplement contracts.**
   contract logic, raise it upstream with SundaeSwap.
 - Do not add business-logic tests for SundaeSwap's package — we trust it.
 - Do not commit secrets, `.env`, or anything under `keys/` / `deployment/`.
+
+## Gotchas (lessons that cost real time)
+
+- **`@sundaeswap/treasury-funds@0.0.25` ships traced (debug) bytecode by
+  default.** The codegen has a bug: each validator constructor reads
+  `arguments[1]` into a local `var trace` but never assigns `this.trace`,
+  so the ternary `this.trace ? <stripped> : <traced>` always picks
+  TRACED. Result: vendor validator at ~17 KB exceeds the 16,384-byte
+  `max_tx_size` and cannot be witnessed in any single tx — registration
+  silently impossible. Workaround: `scripts/patch-sundae.ts`
+  (postinstall) rewrites `this.trace` → `trace`, and we pass `trace:
+  true` to `Utils.loadScripts(...)` and `OneshotOneshotMint(...)` to
+  select the stripped (production) variant. Filed upstream:
+  https://github.com/SundaeSwap-finance/treasury-contracts/issues/53.
+- **`max_tx_size` is 16,384 bytes on BOTH preprod and mainnet** — the
+  script-bloat ceiling is not preprod-specific. Verify with `gh
+  query` / Blockfrost `/epochs/latest/parameters`.
+- **Conway treasury withdrawals must reference the constitution's
+  guardrails script.** Set `policyHash` in the
+  `treasury_withdrawals_action` to the constitution's script hash (on
+  preprod: `fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64`;
+  query via `cardano-cli conway query constitution --testnet-magic 1`).
+  The script must also be present as a witness with a Proposing
+  redeemer (Unit/Void data), or the ledger rejects with
+  `InvalidGuardrailsScriptHash` / `MissingScriptWitnessesUTXOW`.
+- **Blaze's `addProposal()` does not auto-wire the Proposing redeemer
+  or the guardrails script witness.** Manually:
+  `tx.requiredPlutusScripts.add(scriptHash)`, push a `Redeemer` with
+  `purpose: RedeemerPurpose.propose, index: 0n, data: Void().toCore()`
+  into `tx.redeemers`, and `tx.provideScript(guardrailsScript)`. Same
+  internal mechanics Blaze uses for `addRegisterStake` with a script
+  credential, just not exposed via API. See
+  `scripts/03-build-gov-action.ts`.
+- **Blockfrost vs Blaze script CBOR wrap.** Blockfrost
+  `/scripts/{hash}/cbor` serves scripts as single-wrap
+  `bytes(flat_uplc)`. Blaze's `PlutusV3Script.fromCbor` expects
+  double-wrap `bytes(bytes(flat_uplc))` because that's the on-chain
+  witness encoding it hashes from. Add one more CBOR `bytes(...)`
+  header to a Blockfrost script before passing to `fromCbor` — see
+  `fetchScriptCbor` in `03-build-gov-action.ts`.
+- **`HotSingleWallet` produces an enterprise address unless you pass a
+  stake skey.** `loadProvider` auto-loads `keys/admin.stake.skey` if
+  present so the wallet's `address` is the base form (matches
+  `keys/admin.addr`). Without it, `blaze.wallet.getUnspentOutputs()`
+  queries the wrong address and finds zero UTxOs even when you
+  funded the base address.
+- **Multi-key signing for the operator+board multisig is not wired
+  yet.** `01-init` and `02-register` only need K_op's signature.
+  `treasury.fund` / `disburse` / `sweep` / `vendor.modify` will need
+  loading `keys/board-{1,2,3}.skey`, signing each, and accumulating
+  witnesses. Not blocking gov-action submission; relevant only
+  post-ratification.
+- **Conway preprod gov-action params:** `gov_action_deposit` is
+  100,000 tADA (same as mainnet) and `gov_action_lifetime` is 6
+  epochs (~6 days, NOT 30). Standard preprod faucet caps at 10k/24h
+  per IP, so sourcing the deposit takes either ~10 days of pulls or
+  elevated quota from Intersect.
+- **CIP-100 anchor hash is blake2b-256, not SHA-256.** Use
+  `sodium.crypto_generichash(32, anchorBytes)`. Verify independently
+  with `b2sum -l 256`.
+- **Bare `$` in `docs/proposal.md` triggers MathJax rendering** on
+  GitHub, HackMD, and gov.tools. Escape as `\$`. The HackMD-sync
+  pipeline drops escapes — the local fix is one-way until HackMD is
+  also corrected.
