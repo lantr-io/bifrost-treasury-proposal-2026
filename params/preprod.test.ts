@@ -55,11 +55,11 @@ describe("buildTreasuryConfig — operator+board topology", () => {
     expect(cfg.permissions.reorganize).toEqual(op);
   });
 
-  test("disburse = K_op + 1-of-3 board", () => {
-    expect(cfg.permissions.disburse).toEqual(opPlus1);
+  test("disburse = K_op + 2-of-3 board (same as fund — both value-out)", () => {
+    expect(cfg.permissions.disburse).toEqual(opPlus2);
   });
 
-  test("sweep = K_op + 1-of-3 board (same as disburse)", () => {
+  test("sweep = K_op + 1-of-3 board (reversible: returns funds to Cardano treasury)", () => {
     expect(cfg.permissions.sweep).toEqual(opPlus1);
   });
 
