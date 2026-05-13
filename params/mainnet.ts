@@ -21,8 +21,8 @@ export function mainnetRawConfig(): RawConfig {
   //   network: "mainnet",
   //   adminAddress: "addr1q...",                          // TODO(mainnet): operator (K_op) base address (production key)
   //   boardPkhs: [
-  //     "TODO(mainnet): K_1 pubkey hash",
-  //     "TODO(mainnet): K_2 pubkey hash",
+  //     "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), collected 2026-05-13
+  //     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), collected 2026-05-13
   //     "TODO(mainnet): K_3 pubkey hash",
   //   ],
   //   amountLovelace: 8_503_000_000_000n,                 // ₳8,503,000 per HackMD proposal (2026-05-08)

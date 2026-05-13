@@ -6,8 +6,9 @@ import type {
 import type { RawConfig, ResolvedConfig } from "./common";
 
 /**
- * Preprod concrete config. Uses the real proposal totals and dates so the
- * preprod test exercises the same script parameters that mainnet will mint.
+ * Preprod / preview concrete config (preview re-exports from this module).
+ * Uses the real proposal totals and dates so testnet exercises the same
+ * script parameters that mainnet will mint.
  *
  *   amount   : ₳8,503,000 (incl. 10% refundable contingency, per HackMD
  *              proposal as of 2026-05-08)
@@ -15,7 +16,25 @@ import type { RawConfig, ResolvedConfig } from "./common";
  *              contingency window
  *   vendor.expiration: T_max + 30 days
  *   topology : operator (K_op) + 3-board (K_1..K_3) per Plan.md.
- *              Board pkhs come from gen-keys (keys/board-{1,2,3}.pkh).
+ *
+ * Board pkhs: K_1 and K_2 are the production board members' pubkey hashes
+ * (same as in params/mainnet.ts) so testnet rehearsals exercise the real
+ * multisig topology. K_3 is still a local dev placeholder from
+ * gen-keys (keys/board-3.pkh) pending the production K_3 onboarding.
+ *
+ * Consequence: keys/board-1.skey and keys/board-2.skey no longer
+ * correspond to anything in the on-chain script — local signing as K_1
+ * or K_2 is no longer possible on testnet. Any future fund/disburse/
+ * sweep test on preprod/preview will require K_1/K_2 hardware signatures
+ * from the actual board members.
+ *
+ * Also: the existing preview deployment (deployment/preview.json) was
+ * minted with the OLD dev pkhs and has on-chain script hashes
+ *   treasury: da192329...656b   vendor: 32e27ef4...28c2
+ * which do NOT reproduce from this updated source. Subsequent scripts
+ * (02-register, 03-build-gov-action) read those hashes from the
+ * deployment file directly, so the live preview action continues to
+ * work; only future fresh `init` runs use the new pkhs.
  *
  * Milestone schedule is NOT defined here. It is decided at fund-vendor
  * time (vendor datum, not script parameter), and the existing
@@ -26,9 +45,9 @@ export const preprodRawConfig: RawConfig = {
   adminAddress:
     "addr_test1qqhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdspa5c55",
   boardPkhs: [
-    "8ae3b48af447444ecce58fd4f0f16798249be8f34f8aef61a5ea3a4b", // K_1
-    "39a878cc3c3a7d953959b4b45553094503e7a39ce81b9ba58186e0b9", // K_2
-    "9099b86b980c7f0c6c8fa879395b7bbfc06ea3ea4c2b6bb61517334d", // K_3
+    "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), 2026-05-13
+    "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), 2026-05-13
+    "9099b86b980c7f0c6c8fa879395b7bbfc06ea3ea4c2b6bb61517334d", // K_3 — TODO: production pkh; currently keys/board-3.pkh dev placeholder
   ],
   amountLovelace: 8_503_000_000_000n,
   treasuryExpirationISO: "2027-09-01T00:00:00Z",

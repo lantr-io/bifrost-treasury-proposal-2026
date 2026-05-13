@@ -11,6 +11,7 @@ deployment/
 
 # generated governance-action JSONs (committed anchor.json stays tracked)
 gov/preprod-*.json
+gov/preview-*.json
 gov/mainnet-*.json
 
 # editor + OS noise
