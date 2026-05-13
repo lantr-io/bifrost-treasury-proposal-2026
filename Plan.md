@@ -318,7 +318,7 @@ ops (`reorganize`) are operator-only.
 | Action               | Multisig                                     | Plain English                |
 |----------------------|----------------------------------------------|------------------------------|
 | `treasury.reorganize`| `K_op`                                       | operator alone (no value leaves) |
-| `treasury.disburse`  | `AllOf [K_op, AtLeast(1, [K_1, K_2, K_3])]`  | operator + 1-of-3 board      |
+| `treasury.disburse`  | `AllOf [K_op, AtLeast(2, [K_1, K_2, K_3])]`  | operator + 2-of-3 board      |
 | `treasury.sweep`     | `AllOf [K_op, AtLeast(1, [K_1, K_2, K_3])]`  | operator + 1-of-3 board      |
 | `treasury.fund`      | `AllOf [K_op, AtLeast(2, [K_1, K_2, K_3])]`  | operator + 2-of-3 board      |
 | `vendor.pause`       | `AtLeast(1, [K_1, K_2, K_3])`                | 1-of-3 board (cheap to flag) |

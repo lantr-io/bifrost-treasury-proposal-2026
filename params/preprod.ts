@@ -79,10 +79,14 @@ export function buildTreasuryConfig(
     permissions: {
       // K_op alone — no value leaves the script.
       reorganize: opSig,
-      // Operator + 1-of-3 board.
-      disburse: opPlus1,
+      // Operator + 1-of-3 board (cheap, reversible: sweep just returns
+      // funds to the Cardano treasury at expiry).
       sweep: opPlus1,
-      // Operator + 2-of-3 board (commits funds to a milestone schedule).
+      // Operator + 2-of-3 board (board majority). Disburse moves funds
+      // out of the treasury script to a recipient address; fund commits
+      // funds to a vendor milestone schedule. Both are value-out
+      // operations, so both require the same elevated threshold.
+      disburse: opPlus2,
       fund: opPlus2,
     },
     expiration: resolved.treasuryExpirationMs,
