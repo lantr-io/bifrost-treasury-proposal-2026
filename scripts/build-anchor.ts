@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { requirePin } from "./lib/pinned";
 import { assertAnchorValid } from "./lib/validate-anchor";
 
-type Network = "preprod" | "mainnet";
+type Network = "preprod" | "preview" | "mainnet";
 
 /** Display name that appears in the anchor's `authors` array. */
 const AUTHOR_NAME = "Lantr Engineering";
@@ -84,7 +84,7 @@ function parseArgs(argv: string[]): { network: Network } {
     throw new Error("missing --network <preprod|mainnet>");
   }
   const v = argv[i + 1]!;
-  if (v !== "preprod" && v !== "mainnet") {
+  if (v !== "preprod" && v !== "preview" && v !== "mainnet") {
     throw new Error(`bad --network: ${v}`);
   }
   return { network: v };

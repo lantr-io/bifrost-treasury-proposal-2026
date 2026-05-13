@@ -1,6 +1,6 @@
 import { bech32 } from "bech32";
 
-export type Network = "preprod" | "mainnet";
+export type Network = "preprod" | "preview" | "mainnet";
 
 export interface RawConfig {
   network: Network;

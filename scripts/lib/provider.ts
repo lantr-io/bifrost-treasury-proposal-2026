@@ -41,13 +41,23 @@ export async function loadProvider(
   await sodium.ready;
 
   const net = requireEnv("NETWORK");
-  if (net !== "preprod" && net !== "mainnet") {
-    throw new Error(`Unsupported NETWORK=${net}; expected "preprod" or "mainnet"`);
+  if (net !== "preprod" && net !== "preview" && net !== "mainnet") {
+    throw new Error(
+      `Unsupported NETWORK=${net}; expected "preprod", "preview", or "mainnet"`,
+    );
   }
   const projectId = requireEnv("BLOCKFROST_PROJECT_ID");
   const network =
     net === "mainnet" ? Core.NetworkId.Mainnet : Core.NetworkId.Testnet;
-  const blockfrostNetwork = net === "mainnet" ? "cardano-mainnet" : "cardano-preprod";
+  // Blockfrost project IDs are network-scoped (preprod_*, preview_*, mainnet_*),
+  // so the URL prefix MUST match the project ID's network — they fail in
+  // confusing ways otherwise.
+  const blockfrostNetwork =
+    net === "mainnet"
+      ? "cardano-mainnet"
+      : net === "preview"
+        ? "cardano-preview"
+        : "cardano-preprod";
 
   const provider = new Blockfrost({
     network: blockfrostNetwork,

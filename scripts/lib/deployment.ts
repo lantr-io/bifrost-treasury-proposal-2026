@@ -7,7 +7,7 @@ export interface SeedUtxo {
 }
 
 export interface DeploymentState {
-  network: "preprod" | "mainnet";
+  network: "preprod" | "preview" | "mainnet";
   seedUtxo: SeedUtxo;
   registryPolicyHex: string;
   /** "REGISTRY" as hex. */

@@ -15,14 +15,12 @@ import {
 import { Core } from "@blaze-cardano/sdk";
 import { loadProvider } from "./lib/provider";
 import { loadDeployment, saveDeployment } from "./lib/deployment";
-import {
-  preprodRawConfig,
-  buildTreasuryConfig,
-  buildVendorConfig,
-} from "../params/preprod";
+import { buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
 import { resolveConfig } from "../params/common";
+import { selectRawConfig } from "../params/select";
 
-const DEPLOYMENT_PATH = "deployment/preprod.json";
+const rawConfig = selectRawConfig();
+const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const DRY_RUN = !process.argv.includes("--submit");
 
 async function main(): Promise<void> {
@@ -35,7 +33,7 @@ async function main(): Promise<void> {
   const { blaze, network } = await loadProvider(skHex);
   if (network !== Core.NetworkId.Testnet) throw new Error("Expected testnet");
 
-  const resolved = resolveConfig(preprodRawConfig);
+  const resolved = resolveConfig(rawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, state.registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, state.registryPolicyHex);
   // trace=true selects the stripped (production) bytecode in the

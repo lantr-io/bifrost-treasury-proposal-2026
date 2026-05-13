@@ -24,22 +24,17 @@ import {
   saveDeployment,
   type DeploymentState,
 } from "./lib/deployment";
-import {
-  preprodRawConfig,
-  buildTreasuryConfig,
-  buildVendorConfig,
-} from "../params/preprod";
+import { buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
 import { resolveConfig } from "../params/common";
+import { selectRawConfig } from "../params/select";
 
-const DEPLOYMENT_PATH = "deployment/preprod.json";
+const rawConfig = selectRawConfig();
+const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const DRY_RUN = !process.argv.includes("--submit");
 
 async function main(): Promise<void> {
   await sodium.ready;
 
-  if (preprodRawConfig.network !== "preprod") {
-    throw new Error("This script is preprod-only.");
-  }
   if (loadDeployment(DEPLOYMENT_PATH)) {
     console.log(`${DEPLOYMENT_PATH} already exists. Init already ran. Skipping.`);
     return;
@@ -56,7 +51,7 @@ async function main(): Promise<void> {
   if (walletUtxos.length === 0) {
     const addrs = await blaze.wallet.getUsedAddresses();
     throw new Error(
-      `Admin wallet has no UTxOs. Fund ${addrs[0]?.toBech32()} on preprod faucet first.`,
+      `Admin wallet has no UTxOs. Fund ${addrs[0]?.toBech32()} on ${rawConfig.network} faucet first.`,
     );
   }
   const seed = walletUtxos[0]!;
@@ -75,7 +70,7 @@ async function main(): Promise<void> {
   const registryPolicyHex = oneshotScript.Script.hash();
   const registryAssetNameHex = toHex(Buffer.from("REGISTRY"));
 
-  const resolved = resolveConfig(preprodRawConfig);
+  const resolved = resolveConfig(rawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, registryPolicyHex);
   const vendorCfg = buildVendorConfig(resolved, registryPolicyHex);
   const compiled = Utils.loadScripts(network, treasuryCfg, vendorCfg, true);
@@ -147,7 +142,7 @@ async function main(): Promise<void> {
   console.log(`Submitted. Tx hash: ${txHash}`);
 
   const state: DeploymentState = {
-    network: "preprod",
+    network: rawConfig.network,
     seedUtxo: {
       txId: seedInput.transactionId().toString(),
       outputIndex: Number(seedInput.index()),

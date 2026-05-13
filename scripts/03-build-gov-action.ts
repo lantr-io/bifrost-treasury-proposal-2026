@@ -25,21 +25,25 @@ import { Core } from "@blaze-cardano/sdk";
 import { loadProvider } from "./lib/provider";
 import { loadDeployment, saveDeployment } from "./lib/deployment";
 import { requirePin } from "./lib/pinned";
-import { preprodRawConfig } from "../params/preprod";
+import { selectRawConfig } from "../params/select";
 import { resolveConfig } from "../params/common";
 
-const DEPLOYMENT_PATH = "deployment/preprod.json";
-const ANCHOR_PATH = "gov/anchor.preprod.json";
-const OUT_PATH = "gov/preprod-withdrawal.json";
+const rawConfig = selectRawConfig();
+const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
+const ANCHOR_PATH = `gov/anchor.${rawConfig.network}.json`;
+const OUT_PATH = `gov/${rawConfig.network}-withdrawal.json`;
 const SUBMIT = process.argv.includes("--submit");
+
+// Blockfrost project IDs are network-scoped, so the URL prefix MUST match the
+// project ID's network. Mirrors the same dispatch in scripts/lib/provider.ts.
+const BLOCKFROST_BASE = `https://cardano-${rawConfig.network}.blockfrost.io/api/v0`;
 
 async function fetchGovActionDeposit(): Promise<bigint> {
   const projectId = process.env.BLOCKFROST_PROJECT_ID;
   if (!projectId) throw new Error("BLOCKFROST_PROJECT_ID not set");
-  const resp = await fetch(
-    "https://cardano-preprod.blockfrost.io/api/v0/epochs/latest/parameters",
-    { headers: { project_id: projectId } },
-  );
+  const resp = await fetch(`${BLOCKFROST_BASE}/epochs/latest/parameters`, {
+    headers: { project_id: projectId },
+  });
   if (!resp.ok) {
     throw new Error(`Blockfrost params ${resp.status}: ${await resp.text()}`);
   }
@@ -50,10 +54,9 @@ async function fetchGovActionDeposit(): Promise<bigint> {
 async function fetchScriptCbor(scriptHash: string): Promise<string> {
   const projectId = process.env.BLOCKFROST_PROJECT_ID;
   if (!projectId) throw new Error("BLOCKFROST_PROJECT_ID not set");
-  const resp = await fetch(
-    `https://cardano-preprod.blockfrost.io/api/v0/scripts/${scriptHash}/cbor`,
-    { headers: { project_id: projectId } },
-  );
+  const resp = await fetch(`${BLOCKFROST_BASE}/scripts/${scriptHash}/cbor`, {
+    headers: { project_id: projectId },
+  });
   if (!resp.ok) {
     throw new Error(
       `Blockfrost script ${scriptHash} ${resp.status}: ${await resp.text()}`,
@@ -78,7 +81,7 @@ async function main(): Promise<void> {
   const state = loadDeployment(DEPLOYMENT_PATH);
   if (!state) throw new Error("Run 01-init-registry.ts --submit first.");
 
-  const resolved = resolveConfig(preprodRawConfig);
+  const resolved = resolveConfig(rawConfig);
 
   const anchorPin = requirePin("anchor");
   // Use the Pinata HTTPS gateway URL rather than `ipfs://` because
@@ -103,8 +106,8 @@ async function main(): Promise<void> {
   // Always emit the human-readable summary JSON.
   const action = {
     type: "treasuryWithdrawal",
-    network: "preprod",
-    amountLovelace: preprodRawConfig.amountLovelace.toString(),
+    network: rawConfig.network,
+    amountLovelace: rawConfig.amountLovelace.toString(),
     rewardAccount: treasuryRewardAccount.toString(),
     anchor: { url: anchorUrl, dataHash: anchorHashHex },
     returnAddress: resolved.adminAddress,
@@ -124,10 +127,11 @@ async function main(): Promise<void> {
       "Equivalent cardano-cli flow (requires a synced node socket; we use Blaze instead):",
     );
     console.log("");
+    const testnetMagic = rawConfig.network === "preview" ? 2 : 1;
     console.log("  cardano-cli conway governance action create-treasury-withdrawal \\");
     console.log("    --testnet \\");
     console.log("    --governance-action-deposit \\");
-    console.log("      \"$(cardano-cli conway query gov-state --testnet-magic 1 \\");
+    console.log(`      "$(cardano-cli conway query gov-state --testnet-magic ${testnetMagic} \\`);
     console.log("        | jq '.currentPParams.govActionDeposit')\" \\");
     console.log(
       "    --deposit-return-stake-address \"$(cat keys/admin.stake.addr)\" \\",
@@ -137,7 +141,7 @@ async function main(): Promise<void> {
     console.log(
       `    --funds-receiving-stake-address ${treasuryRewardAccount.toString()} \\`,
     );
-    console.log(`    --transfer ${preprodRawConfig.amountLovelace.toString()} \\`);
+    console.log(`    --transfer ${rawConfig.amountLovelace.toString()} \\`);
     console.log("    --out-file gov/action.draft");
     return;
   }
@@ -158,15 +162,17 @@ async function main(): Promise<void> {
     "utf8",
   ).trim() as Cardano.RewardAccount;
 
-  // Preprod constitution's guardrails script hash. Conway requires every
+  // Constitution's guardrails script hash. Conway requires every
   // treasury_withdrawals_action to reference this hash, so the CC-elected
-  // guardrails script gets a chance to validate the proposal. The value
-  // is committed to chain via the active constitution; verify with
-  //   cardano-cli conway query constitution --testnet-magic 1
-  // when a node socket is available. Currently
-  //   fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64
-  // (matches the InvalidGuardrailsScriptHash error returned when this
-  // field was null).
+  // guardrails script gets a chance to validate the proposal.
+  //
+  // Same value on preprod AND preview (genesis default guardrails script —
+  // neither testnet has enacted a NewConstitution to replace it; verified
+  // via book.world.dev.cardano.org/environments/{preprod,preview}/conway-genesis.json
+  // and 0 enacted NewConstitution proposals on either chain).
+  //
+  // Mainnet will need a separate value queried at submission time:
+  //   cardano-cli conway query constitution --mainnet
   const guardrailsScriptHash = Hash28ByteBase16(
     "fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64",
   );
@@ -175,7 +181,7 @@ async function main(): Promise<void> {
     withdrawals: new Set([
       {
         rewardAccount: treasuryRewardAccount.toString() as Cardano.RewardAccount,
-        coin: preprodRawConfig.amountLovelace,
+        coin: rawConfig.amountLovelace,
       },
     ]),
     policyHash: guardrailsScriptHash,
@@ -234,7 +240,7 @@ async function main(): Promise<void> {
   console.log(`  Anchor URL : ${anchorUrl}`);
   console.log(`  Anchor hash: ${anchorHashHex}`);
   console.log(`  Withdraw to: ${treasuryRewardAccount.toString()}`);
-  console.log(`  Amount     : ${preprodRawConfig.amountLovelace} lovelace`);
+  console.log(`  Amount     : ${rawConfig.amountLovelace} lovelace`);
   console.log(`  Deposit    : ${deposit} lovelace (returned to ${depositReturnReward})`);
 
   const signed = await blaze.signTransaction(built);
