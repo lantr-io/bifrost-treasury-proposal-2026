@@ -14,6 +14,7 @@
     "register": "bun scripts/02-register-scripts.ts",
     "extract-pieces": "bun scripts/extract-pieces.ts",
     "build-anchor": "bun scripts/build-anchor.ts",
+    "sign-anchor": "bun scripts/sign-anchor.ts",
     "pin": "bun scripts/pin.ts",
     "gov": "bun scripts/03-build-gov-action.ts",
     "withdraw": "bun scripts/04-withdraw.ts",
@@ -27,10 +28,13 @@
     "@blaze-cardano/sdk": "^0.2.33",
     "@blaze-cardano/uplc": "^0.4.1",
     "@sundaeswap/treasury-funds": "0.0.25",
-    "bech32": "2.0.0"
+    "ajv": "8.20.0",
+    "bech32": "2.0.0",
+    "jsonld": "9.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/jsonld": "1.5.15",
     "typescript": "5.8.3"
   },
   "engines": {

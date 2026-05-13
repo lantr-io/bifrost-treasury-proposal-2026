@@ -4,12 +4,47 @@
     "CIP100": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0100/README.md#",
     "CIP108": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0108/README.md#",
     "hashAlgorithm": "CIP100:hashAlgorithm",
-    "body": "CIP108:body",
-    "title": "CIP108:title",
-    "abstract": "CIP108:abstract",
-    "motivation": "CIP108:motivation",
-    "rationale": "CIP108:rationale",
-    "references": "CIP108:references"
+    "body": {
+      "@id": "CIP108:body",
+      "@context": {
+        "references": {
+          "@id": "CIP108:references",
+          "@container": "@set",
+          "@context": {
+            "GovernanceMetadata": "CIP100:GovernanceMetadataReference",
+            "Other": "CIP100:OtherReference",
+            "label": "CIP100:reference-label",
+            "uri": "CIP100:reference-uri",
+            "referenceHash": {
+              "@id": "CIP108:referenceHash",
+              "@context": {
+                "hashDigest": "CIP108:hashDigest",
+                "hashAlgorithm": "CIP100:hashAlgorithm"
+              }
+            }
+          }
+        },
+        "title": "CIP108:title",
+        "abstract": "CIP108:abstract",
+        "motivation": "CIP108:motivation",
+        "rationale": "CIP108:rationale"
+      }
+    },
+    "authors": {
+      "@id": "CIP100:authors",
+      "@container": "@set",
+      "@context": {
+        "name": "http://xmlns.com/foaf/0.1/name",
+        "witness": {
+          "@id": "CIP100:witness",
+          "@context": {
+            "witnessAlgorithm": "CIP100:witnessAlgorithm",
+            "publicKey": "CIP100:publicKey",
+            "signature": "CIP100:signature"
+          }
+        }
+      }
+    }
   },
   "hashAlgorithm": "blake2b-256",
   "body": {
@@ -83,7 +118,16 @@
         "label": "TxPipe audit (treasury-contracts)",
         "uri": "https://github.com/SundaeSwap-finance/treasury-contracts/blob/dea9e52671f7a696f0ec6a0f475c7fbe52689c9b/audits/txpipe.pdf"
       }
-    ],
-    "note": "preprod test anchor — content mirrors mainnet proposal but the action targets the preprod treasury"
-  }
+    ]
+  },
+  "authors": [
+    {
+      "name": "Lantr Engineering",
+      "witness": {
+        "witnessAlgorithm": "ed25519",
+        "publicKey": "dc0e56f34210fcd20d7deb3fd0759dbd4def00e53d2482c9ab43d7304950fbb5",
+        "signature": "556e98a352457f1cd038e584a2ec1f7c36d79722b1c305ee395c55dafc44c7b7ec9b90fecf16255955b55b60eb5a4896f0e24e9a06bc21ef75a3793cf4aa740b"
+      }
+    }
+  ]
 }

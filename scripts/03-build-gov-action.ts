@@ -81,7 +81,12 @@ async function main(): Promise<void> {
   const resolved = resolveConfig(preprodRawConfig);
 
   const anchorPin = requirePin("anchor");
-  const anchorUrl = `ipfs://${anchorPin.cid}`;
+  // Use the Pinata HTTPS gateway URL rather than `ipfs://` because
+  // governance indexers (Blockfrost, cexplorer, gov.tools) only resolve
+  // HTTPS — `ipfs://` anchors render as "invalid metadata" even when the
+  // bytes at the CID match the on-chain hash. The content is identical;
+  // only the URL scheme differs. See CLAUDE.md Gotchas.
+  const anchorUrl = `https://gateway.pinata.cloud/ipfs/${anchorPin.cid}`;
   const anchorBytes = readFileSync(ANCHOR_PATH);
   const anchorHashHex = sodium.to_hex(
     sodium.crypto_generichash(32, anchorBytes),

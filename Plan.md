@@ -106,22 +106,45 @@ bun run build-anchor -- --network preprod
 
 Reads all four CIDs from `gov/pinned.json` and emits
 `gov/anchor.preprod.json` with:
+- the canonical CIP-100 / CIP-108 nested `@context` (matches the
+  reference example in the CIP-0108 repo so URDNA2015 canonicalization
+  expands cleanly);
 - `body.rationale` = full proposal text (annexes inline) — voters see
-  this rendered in their wallet/gov.tools UI without leaving the anchor.
+  this rendered in their wallet/gov.tools UI without leaving the anchor;
 - `body.references` = `ipfs://` link for `proposal-main` + one per annex,
-  plus the existing external links (HackMD, Scalus, audits, etc).
+  plus the existing external links (HackMD, Scalus, audits, etc);
+- an `authors` array with one entry (Lantr Engineering) whose `witness`
+  fields are blank placeholders, filled in by the next step.
 
-Re-run after any of the underlying CIDs change — the on-chain hash
-changes with it.
+The script validates its output against `schemas/cip-0108.common.schema.json`
+before writing — fails fast on any spec violation.
 
-### 1.5 Pin the anchor
+### 1.5 Sign the anchor
+
+```
+bun run sign-anchor gov/anchor.preprod.json
+```
+
+Computes the URDNA2015 canonical form of `{@context, body}`, hashes it
+with blake2b-256, ed25519-signs that hash with `keys/admin.skey`, and
+writes the `publicKey` + `signature` into `authors[0].witness`. The
+body and `@context` are untouched.
+
+Re-validates the result against the schema. The signature round-trips
+(verifiable with libsodium's `crypto_sign_verify_detached`).
+
+### 1.6 Pin the anchor
 
 ```
 bun run pin gov/anchor.preprod.json --role anchor --name scalus-treasury-anchor-preprod
 ```
 
-The resulting CID becomes `ANCHOR_URL` in the gov action.
-`03-build-gov-action.ts` reads it from `gov/pinned.json` automatically.
+The resulting CID becomes the anchor URL in the gov action.
+`03-build-gov-action.ts` reads it from `gov/pinned.json` automatically
+and constructs the on-chain URL as
+`https://gateway.pinata.cloud/ipfs/<cid>` — HTTPS rather than
+`ipfs://` because indexers (Blockfrost, cexplorer, gov.tools) only
+fetch HTTPS. See CLAUDE.md "Gotchas".
 
 ---
 
@@ -346,3 +369,13 @@ Already wired into `params/preprod.ts`. Same values copy into
   stub — non-runnable until decided.
 - New `scripts/07-sweep.ts`: post-expiration sweep back to Cardano
   treasury (currently missing entirely).
+- **Switch anchor URL from `ipfs://` to `https://`.** Preprod gov
+  action `gov_action1xvzf2t…` showed "invalid metadata" on cexplorer
+  because indexers (Blockfrost + downstream tools) only resolve
+  HTTPS — voters never see the rendered description. For mainnet:
+  publish `gov/anchor.mainnet.json` to
+  `github.com/lantr-io/scalus-treasury-proposal-2026` and use the
+  raw URL as `ANCHOR_URL`. Keep IPFS pins as `body.references`
+  entries inside the anchor for content-addressed redundancy. Update
+  `scripts/03-build-gov-action.ts` to read the URL from a state field
+  that the pin/publish step writes (instead of `requirePin('anchor').cid`).

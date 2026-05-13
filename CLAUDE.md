@@ -135,6 +135,37 @@ package. **Does not port or reimplement contracts.**
 - **CIP-100 anchor hash is blake2b-256, not SHA-256.** Use
   `sodium.crypto_generichash(32, anchorBytes)`. Verify independently
   with `b2sum -l 256`.
+- **Governance indexers don't fetch `ipfs://` URLs.** Blockfrost's
+  `/governance/proposals/{id}/metadata` returns `json_metadata: null`
+  for `ipfs://` anchors even when the bytes at the CID match the
+  on-chain hash perfectly. Cexplorer (and gov.tools, by extension)
+  report "invalid metadata" because they can't resolve the URL.
+  **The on-chain action is valid** — the ledger doesn't fetch
+  anchors, only hashes. But voters see no description in their UI.
+  Fix: `03-build-gov-action.ts` constructs the URL as
+  `https://gateway.pinata.cloud/ipfs/<cid>` instead of `ipfs://<cid>` —
+  same content-addressed bytes, but HTTPS so indexers can fetch.
+- **CIP-100 / CIP-108 spec compliance is enforced by some tools.**
+  The JSON Schema at
+  `https://raw.githubusercontent.com/cardano-foundation/CIPs/master/CIP-0108/cip-0108.common.schema.json`
+  marks `authors` as required at the top level — but plenty of
+  real-world anchors (e.g. HLABS budget 2026) omit it without
+  observable rejection. To be safe, our pipeline emits a fully
+  canonical anchor: nested `@context` matching the CIP-108 reference
+  example, populated `authors[]` with an ed25519 witness over the
+  URDNA2015-canonicalized body, no extra body fields. Schema validation
+  runs at the end of both `build-anchor` and `sign-anchor` via
+  `scripts/lib/validate-anchor.ts` (using `schemas/cip-0108.common.schema.json`
+  vendored at a pinned version).
+- **CIP-100 body signing is URDNA2015 → blake2b-256 → ed25519.** Filter
+  the JSON-LD document to `{@context, body}`, canonicalize via
+  `jsonld.canonize` with `algorithm: "URDNA2015", format: "application/n-quads"`,
+  ensure the trailing newline is present, blake2b-256 the UTF-8 bytes,
+  ed25519-sign that 32-byte hash. The signature lives in
+  `authors[*].witness.signature` (hex). See `scripts/sign-anchor.ts`.
+  Filtering at the JSON-LD level (rather than canonicalizing the full
+  doc and then trying to extract the body subgraph from N-Quads) is the
+  trick used by `gitmachtl/cardano-signer` — saves a lot of complexity.
 - **Bare `$` in `docs/proposal.md` triggers MathJax rendering** on
   GitHub, HackMD, and gov.tools. Escape as `\$`. The HackMD-sync
   pipeline drops escapes — the local fix is one-way until HackMD is

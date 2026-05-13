@@ -14,20 +14,12 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { requirePin } from "./lib/pinned";
+import { assertAnchorValid } from "./lib/validate-anchor";
 
 type Network = "preprod" | "mainnet";
 
-interface NetworkAnchorConfig {
-  /** Optional note appended to the anchor body for testnet stubs. */
-  note?: string;
-}
-
-const NETWORK_CONFIG: Record<Network, NetworkAnchorConfig> = {
-  preprod: {
-    note: "preprod test anchor — content mirrors mainnet proposal but the action targets the preprod treasury",
-  },
-  mainnet: {},
-};
+/** Display name that appears in the anchor's `authors` array. */
+const AUTHOR_NAME = "Lantr Engineering";
 
 interface Section {
   level: number;
@@ -125,7 +117,7 @@ function buildAnchor(md: string, network: Network): unknown {
   if (rationaleStart < 0) throw new Error("`## Rationale` heading not found");
   const rationale = lines.slice(rationaleStart + 1).join("\n").trim();
 
-  const cfg = NETWORK_CONFIG[network];
+  void network; // network selector is currently informational only
   const proposalMainPin = requirePin("proposal-main");
   const annex1Pin = requirePin("annex1");
   const annex2Pin = requirePin("annex2");
@@ -198,25 +190,81 @@ function buildAnchor(md: string, network: Network): unknown {
       },
     ],
   };
-  if (cfg.note) body.note = cfg.note;
+
+  // Canonical CIP-100 + CIP-108 @context with nested @id sub-contexts.
+  // Matches the reference example at
+  // https://github.com/cardano-foundation/CIPs/tree/master/CIP-0108/examples
+  // — strict JSON-LD parsers expand this correctly during URDNA2015
+  // canonicalization, which authors[*].witness.signature depends on.
+  const context = {
+    "@language": "en-us",
+    CIP100:
+      "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0100/README.md#",
+    CIP108:
+      "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0108/README.md#",
+    hashAlgorithm: "CIP100:hashAlgorithm",
+    body: {
+      "@id": "CIP108:body",
+      "@context": {
+        references: {
+          "@id": "CIP108:references",
+          "@container": "@set",
+          "@context": {
+            GovernanceMetadata: "CIP100:GovernanceMetadataReference",
+            Other: "CIP100:OtherReference",
+            label: "CIP100:reference-label",
+            uri: "CIP100:reference-uri",
+            referenceHash: {
+              "@id": "CIP108:referenceHash",
+              "@context": {
+                hashDigest: "CIP108:hashDigest",
+                hashAlgorithm: "CIP100:hashAlgorithm",
+              },
+            },
+          },
+        },
+        title: "CIP108:title",
+        abstract: "CIP108:abstract",
+        motivation: "CIP108:motivation",
+        rationale: "CIP108:rationale",
+      },
+    },
+    authors: {
+      "@id": "CIP100:authors",
+      "@container": "@set",
+      "@context": {
+        name: "http://xmlns.com/foaf/0.1/name",
+        witness: {
+          "@id": "CIP100:witness",
+          "@context": {
+            witnessAlgorithm: "CIP100:witnessAlgorithm",
+            publicKey: "CIP100:publicKey",
+            signature: "CIP100:signature",
+          },
+        },
+      },
+    },
+  };
+
+  // authors[*].witness is filled in by scripts/sign-anchor.ts after the
+  // body is canonicalized and hashed. Emit placeholders here so the JSON
+  // round-trips through any tool that round-trips by key.
+  const authors = [
+    {
+      name: AUTHOR_NAME,
+      witness: {
+        witnessAlgorithm: "ed25519",
+        publicKey: "",
+        signature: "",
+      },
+    },
+  ];
 
   return {
-    "@context": {
-      "@language": "en-us",
-      CIP100:
-        "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0100/README.md#",
-      CIP108:
-        "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0108/README.md#",
-      hashAlgorithm: "CIP100:hashAlgorithm",
-      body: "CIP108:body",
-      title: "CIP108:title",
-      abstract: "CIP108:abstract",
-      motivation: "CIP108:motivation",
-      rationale: "CIP108:rationale",
-      references: "CIP108:references",
-    },
+    "@context": context,
     hashAlgorithm: "blake2b-256",
     body,
+    authors,
   };
 }
 
@@ -224,9 +272,13 @@ function main(): void {
   const { network } = parseArgs(process.argv.slice(2));
   const md = readFileSync("docs/proposal.md", "utf8");
   const anchor = buildAnchor(md, network);
+  assertAnchorValid(anchor, `built anchor (network=${network})`);
   const out = `gov/anchor.${network}.json`;
   writeFileSync(out, JSON.stringify(anchor, null, 2) + "\n");
-  console.log(`Wrote ${out} (${(JSON.stringify(anchor).length / 1024).toFixed(1)} KB)`);
+  console.log(
+    `Wrote ${out} (${(JSON.stringify(anchor).length / 1024).toFixed(1)} KB, schema-valid)`,
+  );
+  console.log(`Next: bun run sign-anchor ${out}`);
 }
 
 main();
