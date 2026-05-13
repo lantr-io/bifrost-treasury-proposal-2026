@@ -19,7 +19,7 @@ export function mainnetRawConfig(): RawConfig {
   // Shape to fill in when the real proposal is finalized:
   // return {
   //   network: "mainnet",
-  //   adminAddress: "addr1q...",                          // TODO(mainnet): operator (K_op) base address (production key)
+  //   adminAddress: "addr1qyhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdsztfcct", // operator (K_op) — derived 2026-05-13 from keys/admin.{vkey,stake.vkey}; same keypair as the testnet addr_test1q... (verified by blake2b-224(vkey) → pkh match)
   //   boardPkhs: [
   //     "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), collected 2026-05-13
   //     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), collected 2026-05-13
