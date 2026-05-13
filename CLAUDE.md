@@ -135,28 +135,48 @@ package. **Does not port or reimplement contracts.**
 - **CIP-100 anchor hash is blake2b-256, not SHA-256.** Use
   `sodium.crypto_generichash(32, anchorBytes)`. Verify independently
   with `b2sum -l 256`.
-- **Governance indexers don't fetch `ipfs://` URLs.** Blockfrost's
-  `/governance/proposals/{id}/metadata` returns `json_metadata: null`
-  for `ipfs://` anchors even when the bytes at the CID match the
-  on-chain hash perfectly. Cexplorer (and gov.tools, by extension)
-  report "invalid metadata" because they can't resolve the URL.
-  **The on-chain action is valid** — the ledger doesn't fetch
-  anchors, only hashes. But voters see no description in their UI.
-  Fix: `03-build-gov-action.ts` constructs the URL as
-  `https://gateway.pinata.cloud/ipfs/<cid>` instead of `ipfs://<cid>` —
-  same content-addressed bytes, but HTTPS so indexers can fetch.
-- **CIP-100 / CIP-108 spec compliance is enforced by some tools.**
-  The JSON Schema at
+- **Anchor URL scheme: `ipfs://` works on mainnet indexers.** Surveyed
+  the last 20 mainnet gov actions on cexplorer.io (2026-05): 19/20 use
+  `ipfs://` anchor URLs and 17 of those display valid metadata. The
+  earlier hypothesis that `ipfs://` itself causes "Invalid metadata"
+  on cexplorer was based on preprod observation only — mainnet's
+  offchain fetcher resolves IPFS fine. We still emit
+  `https://gateway.pinata.cloud/ipfs/<cid>` in `03-build-gov-action.ts`
+  as belt-and-braces (HTTPS can only help; the bytes at the CID are
+  content-addressed either way), but on mainnet `ipfs://` is not the
+  bug. Preprod cexplorer may behave differently — not re-verified.
+- **Missing top-level `authors` IS the dbsync hard reject for "Invalid
+  metadata".** Out of 3 invalid-metadata actions in the mainnet survey,
+  1 (HLABS Pebble + Gerolamo 2026 Budget) is missing `authors` entirely
+  and matches the rejection pattern in
+  https://github.com/IntersectMBO/cardano-db-sync/issues/2088. The
+  other 2 invalid actions had full `authors` + ed25519 witnesses and
+  were just cexplorer's offchain fetcher failing (see next gotcha).
+  Emit `authors[]` with a real ed25519 witness — necessary, even
+  though many real-world anchors get away without it.
+- **"Invalid metadata" on cexplorer is ~10-15% noise from its own
+  offchain fetcher.** In the same mainnet survey, 2 of 3 invalid
+  actions had structurally identical anchors to valid siblings — full
+  authors+witness, hash matches, canonical structure — yet cexplorer
+  showed "Invalid metadata". Koios's `/proposal_list` returned
+  populated `meta_json` for all three. So: after submitting, don't
+  treat cexplorer's badge as authoritative. Verify via Koios; if Koios
+  shows the parsed body, the ledger and most tooling see it correctly
+  even if cexplorer's UI lags.
+- **CIP-100 / CIP-108 spec compliance is enforced by dbsync.** The
+  JSON Schema at
   `https://raw.githubusercontent.com/cardano-foundation/CIPs/master/CIP-0108/cip-0108.common.schema.json`
-  marks `authors` as required at the top level — but plenty of
-  real-world anchors (e.g. HLABS budget 2026) omit it without
-  observable rejection. To be safe, our pipeline emits a fully
-  canonical anchor: nested `@context` matching the CIP-108 reference
-  example, populated `authors[]` with an ed25519 witness over the
+  marks `authors` as required at the top level, and dbsync enforces
+  this — see the gotcha above. Our pipeline emits a fully canonical
+  anchor: nested `@context` matching the CIP-108 reference example,
+  populated `authors[]` with an ed25519 witness over the
   URDNA2015-canonicalized body, no extra body fields. Schema validation
   runs at the end of both `build-anchor` and `sign-anchor` via
   `scripts/lib/validate-anchor.ts` (using `schemas/cip-0108.common.schema.json`
-  vendored at a pinned version).
+  vendored at a pinned version). Note: 9 of 17 valid mainnet anchors
+  actually use a non-canonical flat `@context` shape, so the strict
+  nested form isn't *required* in practice — but our pipeline emits
+  it anyway as a strict superset.
 - **CIP-100 body signing is URDNA2015 → blake2b-256 → ed25519.** Filter
   the JSON-LD document to `{@context, body}`, canonicalize via
   `jsonld.canonize` with `algorithm: "URDNA2015", format: "application/n-quads"`,
