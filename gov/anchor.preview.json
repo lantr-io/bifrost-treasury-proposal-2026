@@ -125,8 +125,8 @@
       "name": "Lantr Engineering",
       "witness": {
         "witnessAlgorithm": "ed25519",
-        "publicKey": "",
-        "signature": ""
+        "publicKey": "dc0e56f34210fcd20d7deb3fd0759dbd4def00e53d2482c9ab43d7304950fbb5",
+        "signature": "556e98a352457f1cd038e584a2ec1f7c36d79722b1c305ee395c55dafc44c7b7ec9b90fecf16255955b55b60eb5a4896f0e24e9a06bc21ef75a3793cf4aa740b"
       }
     }
   ]
