@@ -64,12 +64,17 @@ audited commit).
 | Action                | Required signers                              |
 |-----------------------|-----------------------------------------------|
 | `treasury.reorganize` | operator                                      |
-| `treasury.disburse`   | operator + 1-of-3 oversight board             |
+| `treasury.disburse`   | operator + 2-of-3 oversight board             |
 | `treasury.sweep`      | operator + 1-of-3 oversight board             |
 | `treasury.fund`       | operator + 2-of-3 board (+ vendor multisig)   |
 | `vendor.pause`        | 1-of-3 board                                  |
 | `vendor.resume`       | 2-of-3 board                                  |
 | `vendor.modify`       | operator + 2-of-3 board (+ vendor multisig)   |
+
+`disburse`, `fund`, and `modify` all route value out (or commit it to a
+schedule) and share the operator + board-majority threshold. `sweep`
+only returns funds to the Cardano treasury at expiry, so it stays at
+operator + 1-of-3.
 
 Adapted from
 [Blink Labs' Dingo deployment](https://github.com/blinklabs-io/treasury-proposal).
