@@ -27,6 +27,10 @@ import { loadDeployment, saveDeployment } from "./lib/deployment";
 import { requirePin } from "./lib/pinned";
 import { selectRawConfig } from "../params/select";
 import { resolveConfig } from "../params/common";
+import {
+  manualEvaluator,
+  shouldUseManualEvaluator,
+} from "./lib/manual-evaluator";
 
 const rawConfig = selectRawConfig();
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
@@ -232,6 +236,13 @@ async function main(): Promise<void> {
   txAny.redeemers.setValues(redeemers);
 
   tx.addRequiredSigner(adminPkh);
+
+  if (shouldUseManualEvaluator()) {
+    console.log(
+      "SKIP_EVAL=1 — using manual evaluator (Blockfrost preview eval is broken)",
+    );
+    tx.useEvaluator(manualEvaluator());
+  }
 
   const built = await tx.complete();
   console.log(

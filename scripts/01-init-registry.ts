@@ -27,6 +27,10 @@ import {
 import { buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
 import { resolveConfig } from "../params/common";
 import { selectRawConfig } from "../params/select";
+import {
+  manualEvaluator,
+  shouldUseManualEvaluator,
+} from "./lib/manual-evaluator";
 
 const rawConfig = selectRawConfig();
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
@@ -113,7 +117,7 @@ async function main(): Promise<void> {
 
   const adminPkh = Ed25519KeyHashHex(resolved.adminPkhHex);
 
-  const built = await blaze
+  const txBuilder = blaze
     .newTransaction()
     .addInput(seed)
     .addOutput(registryOutput)
@@ -123,8 +127,16 @@ async function main(): Promise<void> {
       Void(),
     )
     .provideScript(oneshotScript.Script)
-    .addRequiredSigner(adminPkh)
-    .complete();
+    .addRequiredSigner(adminPkh);
+
+  if (shouldUseManualEvaluator()) {
+    console.log(
+      "SKIP_EVAL=1 — using manual evaluator (Blockfrost preview eval is broken)",
+    );
+    txBuilder.useEvaluator(manualEvaluator());
+  }
+
+  const built = await txBuilder.complete();
 
   console.log(
     `\nBuilt registry-init tx. CBOR size: ${built.toCbor().toString().length / 2} bytes.`,
