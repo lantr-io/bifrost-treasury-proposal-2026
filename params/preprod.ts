@@ -17,16 +17,14 @@ import type { RawConfig, ResolvedConfig } from "./common";
  *   vendor.expiration: T_max + 30 days
  *   topology : operator (K_op) + 3-board (K_1..K_3) per Plan.md.
  *
- * Board pkhs: K_1 and K_2 are the production board members' pubkey hashes
+ * Board pkhs: all three are the production board members' pubkey hashes
  * (same as in params/mainnet.ts) so testnet rehearsals exercise the real
- * multisig topology. K_3 is still a local dev placeholder from
- * gen-keys (keys/board-3.pkh) pending the production K_3 onboarding.
+ * multisig topology.
  *
- * Consequence: keys/board-1.skey and keys/board-2.skey no longer
- * correspond to anything in the on-chain script — local signing as K_1
- * or K_2 is no longer possible on testnet. Any future fund/disburse/
- * sweep test on preprod/preview will require K_1/K_2 hardware signatures
- * from the actual board members.
+ * Consequence: keys/board-{1,2,3}.skey no longer correspond to anything
+ * in the on-chain script — local signing as any K_i is no longer possible
+ * on testnet. Any future fund/disburse/sweep test on preprod/preview
+ * will require hardware signatures from the actual board members.
  *
  * Also: the existing preview deployment (deployment/preview.json) was
  * minted with the OLD dev pkhs and has on-chain script hashes
@@ -47,7 +45,7 @@ export const preprodRawConfig: RawConfig = {
   boardPkhs: [
     "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), 2026-05-13
     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), 2026-05-13
-    "9099b86b980c7f0c6c8fa879395b7bbfc06ea3ea4c2b6bb61517334d", // K_3 — TODO: production pkh; currently keys/board-3.pkh dev placeholder
+    "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), 2026-05-13
   ],
   amountLovelace: 8_503_000_000_000n,
   treasuryExpirationISO: "2027-09-01T00:00:00Z",

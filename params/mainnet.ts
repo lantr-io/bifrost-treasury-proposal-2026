@@ -23,7 +23,7 @@ export function mainnetRawConfig(): RawConfig {
   //   boardPkhs: [
   //     "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), collected 2026-05-13
   //     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), collected 2026-05-13
-  //     "TODO(mainnet): K_3 pubkey hash",
+  //     "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), collected 2026-05-13
   //   ],
   //   amountLovelace: 8_503_000_000_000n,                 // ₳8,503,000 per HackMD proposal (2026-05-08)
   //   treasuryExpirationISO: "2027-09-01T00:00:00Z",      // 12-month delivery (May 2027) + 3-month contingency
