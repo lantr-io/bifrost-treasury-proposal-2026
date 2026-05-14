@@ -11,6 +11,8 @@ import {
   Cardano,
   CredentialType,
   Ed25519KeyHashHex,
+  Ed25519PublicKey,
+  Ed25519PublicKeyHex,
   Hash28ByteBase16,
   Hash32ByteBase16,
   HexBlob,
@@ -117,6 +119,19 @@ async function main(): Promise<void> {
     networkId,
   );
 
+  // Derive the deposit-return reward address from the stake vkey + the
+  // resolved network. keys/admin.stake.addr is written by gen-keys.ts in
+  // testnet bech32 form (stake_test1u…), so reading it directly would
+  // smuggle a testnet address into a mainnet tx — the ledger rejects with
+  // ProposalProcedureNetworkIdMismatch. Reconstruct on the fly instead.
+  const stakeVkHex = readFileSync("keys/admin.stake.vkey", "utf8").trim();
+  const adminStakeVk = Ed25519PublicKey.fromHex(Ed25519PublicKeyHex(stakeVkHex));
+  const adminStakePkhHex = (await adminStakeVk.hash()).hex();
+  const depositReturnReward = RewardAccount.fromCredential(
+    { type: CredentialType.KeyHash, hash: Hash28ByteBase16(adminStakePkhHex) },
+    networkId,
+  );
+
   // Always emit the human-readable summary JSON.
   const action = {
     type: "treasuryWithdrawal",
@@ -151,7 +166,7 @@ async function main(): Promise<void> {
     console.log(`      "$(cardano-cli conway query gov-state ${netFlag} \\`);
     console.log("        | jq '.currentPParams.govActionDeposit')\" \\");
     console.log(
-      "    --deposit-return-stake-address \"$(cat keys/admin.stake.addr)\" \\",
+      `    --deposit-return-stake-address ${depositReturnReward} \\`,
     );
     console.log(`    --anchor-url ${anchorUrl} \\`);
     console.log(`    --anchor-data-hash ${anchorHashHex} \\`);
@@ -177,11 +192,6 @@ async function main(): Promise<void> {
     `gov_action_deposit (live from Blockfrost): ${deposit} lovelace ` +
       `(${(Number(deposit) / 1_000_000).toFixed(0)} tADA)`,
   );
-
-  const depositReturnReward = readFileSync(
-    "keys/admin.stake.addr",
-    "utf8",
-  ).trim() as Cardano.RewardAccount;
 
   // Constitution's guardrails script hash. Conway requires every
   // treasury_withdrawals_action to reference this hash, so the CC-elected
