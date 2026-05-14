@@ -1,12 +1,5 @@
 # Scalus: Cardano’s Application Platform for Building, Launching, and Scaling
 
-> [!NOTE]
-> This document is a review draft of Lantr Engineering’s proposal for the Scalus application platform and the 2026 Cardano Treasury withdrawal process.
->
-> We welcome comments, questions, and critical feedback, and will use them to improve the proposal.
->
-> It is meant as a starting point for discussing our Cardano treasury withdrawal.
-
 ## Abstract
 
 Cardano is moving. Protocol upgrades, critical integrations, DeFi liquidity, and VC capital are aligning. But the next bottleneck is no longer core infrastructure, it is application delivery.
@@ -398,9 +391,9 @@ Representative examples already building on the platform include:
 - **Sugar Rush**: L2 orderbook exchange, creating scaled trading activity, deeper liquidity, and locked value on L1.
 - **Vela**: synthetic stablecoin protocol, allowing collateral to be locked and issued stablecoin liquidity to circulate in the ecosystem.
 
-Using DeFiLlama as a public reference point, Cardano DeFi TVL stood at approximately $130M on May 5, 2026. At that scale, every new application built on Scalus that reaches production with a conservative \$5M TVL would represent roughly 4% of Cardano’s current DeFi baseline.
+Using DeFiLlama as a public reference point, Cardano DeFi TVL stood at approximately \$130M on May 5, 2026. At that scale, every new application built on Scalus that reaches production with a conservative \$5M TVL would represent roughly 4% of Cardano’s current DeFi baseline.
 
-In the same logic, if 3 serious applications reach production, each contributing \$3M-$5M in first-year TVL, that would imply an approximate 8%-11% increase in Cardano’s current DeFi TVL.
+In the same logic, if 3 serious applications reach production, each contributing \$3M-\$5M in first-year TVL, that would imply an approximate 8%-11% increase in Cardano’s current DeFi TVL.
 
 We will monitor and report indicative ecosystem impact through the applications built on Scalus, including their contribution to TVL, liquidity, and transaction-generating activity where publicly measurable.
 
@@ -426,7 +419,7 @@ Lantr commits to delivering the announced objectives within the current budget a
 
 **Methodology**
 
-Funding allocations are derived from effort estimates across the core workstreams, valued at a market rate of $210,000 per FTE-year (average \$100/hour rate) for senior software engineers and senior product leadership with deep DLT (Distributed Ledger Technology) expertise. 
+Funding allocations are derived from effort estimates across the core workstreams, valued at a market rate of \$210,000 per FTE-year (approx. \$100/hour average rate) for senior software engineers and senior product leadership with deep DLT (Distributed Ledger Technology) expertise. 
 
 The budgeted engineering capacity extends beyond the current permanent team and assumes selective hiring, contracting, and specialist contributors where needed during execution.
 
@@ -437,7 +430,7 @@ The budgeted engineering capacity extends beyond the current permanent team and 
 | Development & Engineering | \$1,470,000 | ₳5,880,000 | 76.1%  |
 | Product Management & Delivery | \$210,000 | ₳840,000 | 10.9%  |
 | Security & Audits | \$150,000  | ₳600,000  | 7.8% |
-| Documentation, Training & Developer Enablement | $52,500 | ₳210,000 | 2.7% |
+| Documentation, Training & Developer Enablement | \$52,500 | ₳210,000 | 2.7% |
 | Ecosystem Outreach & Adoption | \$50,000 | ₳200,000 | 2.6%  |
 | **Subtotal** | **\$1,932,500** | **₳7,730,000** | **100%** |
 | Contingency (10%, refundable)| \$193,250 | ₳773,000 | - |
@@ -896,8 +889,7 @@ This is where Scalus moves from tooling into an application platform: it complem
 | Observability | Yes (M3) | Yes |
 | Crash recovery | Yes (event log replay) | Yes |
 | L1 node access | Yes (in-process or standalone Scalus node) | No (uses external node, Dolos) |
-| Source language / runtime | Scala (JVM) | Rust + WASM |
-| Multi-platform deployment | JVM, native, JS/TS, WASM | WASM (cross-platform) |
+| Source language / runtime | Scala (JVM), Native | Rust, WASM |
 | Production maturity | In development | In development |
 
 * Balius: https://docs.txpipe.io/balius 
@@ -925,7 +917,7 @@ By June 2027, the target is a platform that offers chain following, ledger valid
 | Plutus VM (V1-V3) | Yes (Scalus CEK) | Yes | Yes (Rust) | Limited | Limited | In development |
 | Source language / runtime | Scala (JVM) | Haskell (GHC) | Rust | Rust | Java (JVM) | Go |
 | Embedded mode (node-as-library) | Yes | No (separate process) | No | Partial (Rust crate) | Yes (Java library) | No |
-| Multi-platform compilation | JVM, Native, JS/TS, WASM | Native | Native | Native | JVM, Native | Native |
+| Multi-platform compilation | JVM, Native, JS/TS, (experimental) WASM | Native | Native, WASM | Native | JVM, Native | Native |
 | Node Diversity conformance | Yes (M3) | Reference implementation | In progress | - | - | In progress |
 | Standard APIs | UTxO RPC, REST, sockets, in-process | Socket, cardano-db-sync | Sockets | UTxO RPC, REST | REST | Standard |
 | Storage backends | RocksDB, in-memory, IndexedDB (M1) | LSM-tree | Multiple | Multiple | Multiple | Multiple |
@@ -979,7 +971,7 @@ In 2025, Lantr Engineering received its first Cardano Treasury funding through t
 
 The objective was to deliver a Scala-based Cardano development platform that allows developers to write smart contracts, build transactions, and implement application logic using the same language and a familiar development environment.
 
-The project was funded at ₳657,692, based on a reference rate of $0.65/ADA, for 6 months of development and 4.5 FTE.
+The project was funded at ₳657,692, based on a reference rate of \$0.65/ADA, for 6 months of development and 4.5 FTE.
 
 This retrospective captures the main lessons from that cycle, what worked, what created friction, and which decisions directly shaped the design of the 2026 Scalus proposal.
 
@@ -1055,15 +1047,15 @@ For 2026, we decided to:
 
 **Observations**
 
-The 2025 proposal used a reference rate of $0.65/ADA. During execution, ADA depreciated materially, creating real pressure on delivery capacity. Milestone disbursements were received at approximately:
+The 2025 proposal used a reference rate of \$0.65/ADA. During execution, ADA depreciated materially, creating real pressure on delivery capacity. Milestone disbursements were received at approximately:
 
-- 15 Oct 2025 (Milestone 1): $0.67
-- 15 Dec 2025 (Milestone 2): $0.39
-- 15 Feb 2026 (Milestone 3): $0.28
-- 29 Mar 2026 (Milestone 4): $0.24
+- 15 Oct 2025 (Milestone 1): \$0.67
+- 15 Dec 2025 (Milestone 2): \$0.39
+- 15 Feb 2026 (Milestone 3): \$0.28
+- 29 Mar 2026 (Milestone 4): \$0.24
 
-Using actual disbursement prices for M1–M4 and assuming $0.30/ADA for
-M5 and M6, the total effective purchasing power of ₳657,692 falls from an expected $427,499.80 to $237,950.41, a shortfall of $189,549.39.
+Using actual disbursement prices for M1–M4 and assuming \$0.30/ADA for
+M5 and M6, the total effective purchasing power of ₳657,692 falls from an expected \$427,499.80 to \$237,950.41, a shortfall of \$189,549.39.
 
 The Intersect 2025 Treasury process did not provide an effective mechanism for hedging against adverse ADA price movement at the process level. Learning from the Amaru experience, where conversion into stablecoins was used effectively, made clear that proactive treasury management is necessary if delivery is to remain protected over long funding windows.
 
@@ -1184,7 +1176,7 @@ The 2026 Scalus proposal is built directly on these observations and decisions.
 * Full proposal (PDF): https://ipfs.io/ipfs/QmcCjBYA8zrx5Khqbh6xraXQ23zrgaZxuzNewr1Ni6fck7
 * Annex 1: Detailed Scope and Workstreams (PDF): https://ipfs.io/ipfs/QmQ6RiAPBZfuRqSh2bCS1HBBxSUoVoGob55bM43vimHxfJ
 * Annex 2: Product Development Methodology (PDF): https://ipfs.io/ipfs/QmUzumqPk8YGNiwWMjnLrhsaLva6ya2Hsyr9YiRoEqAzQp
-* Annex 3: Competitive Landscape (PDF): https://ipfs.io/ipfs/QmZ7acinH6gMtTSbmahvEKR61fWeLoeMPTuwxWHkwYzNDh
+* Annex 3: Competitive Landscape (PDF): https://ipfs.io/ipfs/QmSEhgYGnfVHmc432P7cZmWq2ocNrS1FhTsz3GqY2zJv84
 * Annex 4: 2025 Retrospective (PDF): https://ipfs.io/ipfs/QmaVmFXvbFnS5vjVtb9uuQugDU8tbqiWCe2QrZijbMCP6r
 * Scalus website: https://scalus.org/ 
 * Scalus repository: https://github.com/scalus3 
