@@ -10,8 +10,8 @@ describe("preprod raw config", () => {
     expect(preprodRawConfig.amountLovelace).toBe(8_503_000_000_000n);
   });
 
-  test("treasury expires 2027-09-01 (12-month delivery + 3-month contingency)", () => {
-    expect(preprodRawConfig.treasuryExpirationISO).toBe("2027-09-01T00:00:00Z");
+  test("treasury expires 2027-10-01 (12-month delivery July 2026 - June 2027 + 3-month contingency)", () => {
+    expect(preprodRawConfig.treasuryExpirationISO).toBe("2027-10-01T00:00:00Z");
   });
 
   test("vendor grace is 30 days", () => {

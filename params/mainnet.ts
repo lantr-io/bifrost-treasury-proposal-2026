@@ -25,8 +25,8 @@ export function mainnetRawConfig(): RawConfig {
   //     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), collected 2026-05-13
   //     "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), collected 2026-05-13
   //   ],
-  //   amountLovelace: 8_503_000_000_000n,                 // ₳8,503,000 per HackMD proposal (2026-05-08)
-  //   treasuryExpirationISO: "2027-09-01T00:00:00Z",      // 12-month delivery (May 2027) + 3-month contingency
-  //   vendorExpirationGraceDays: 30,                      // T_max + 30d for late Modify cleanup
+  //   amountLovelace: 8_503_000_000_000n,                 // ₳8,503,000 per HackMD proposal (2026-05-14)
+  //   treasuryExpirationISO: "2027-10-01T00:00:00Z",      // 12-month delivery (July 2026 - June 2027) + 3-month contingency
+  //   vendorExpirationGraceDays: 30,                      // T_max + 30d for late Modify cleanup (= 2027-10-31)
   // };
 }

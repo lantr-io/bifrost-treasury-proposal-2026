@@ -78,6 +78,23 @@ function sectionWithDescendants(sections: Section[], heading: string): string {
   return parts.join("\n").trim();
 }
 
+/** Rewrite known IPFS gateway URLs and ipfs:// URIs to the canonical
+ *  https://ipfs.io/ipfs/<cid> form so every reference points at the same
+ *  gateway regardless of which one the proposal author wrote. */
+function normalizeIpfsGateway(url: string): string {
+  const ipfsScheme = url.match(/^ipfs:\/\/([A-Za-z0-9]+)(\/.*)?$/);
+  if (ipfsScheme) {
+    return `https://ipfs.io/ipfs/${ipfsScheme[1]}${ipfsScheme[2] ?? ""}`;
+  }
+  const gateway = url.match(
+    /^https?:\/\/(?:gateway\.pinata\.cloud|cloudflare-ipfs\.com|ipfs\.blockfrost\.io|dweb\.link)\/ipfs\/([A-Za-z0-9]+)(\/.*)?$/,
+  );
+  if (gateway) {
+    return `https://ipfs.io/ipfs/${gateway[1]}${gateway[2] ?? ""}`;
+  }
+  return url;
+}
+
 function parseArgs(argv: string[]): { network: Network } {
   const i = argv.indexOf("--network");
   if (i < 0 || !argv[i + 1]) {
@@ -102,93 +119,74 @@ function buildAnchor(md: string, network: Network): unknown {
 
   const motivationHeadings = [
     "The Application Layer Decides the Next Chapter",
-    "The gap: The Assembly Problem",
+    "The Gap: The Assembly Problem",
   ];
   const motivation = motivationHeadings
     .map((h) => sectionWithDescendants(sections, h))
     .join("\n\n");
 
-  // Rationale = everything from the `## Rationale` heading to end of file,
-  // including the `## Attached documents (IPFS)` annexes and supporting
-  // links. The leading `## Rationale` heading itself is dropped (the field
-  // name already conveys it); all other structure is preserved verbatim.
+  // Rationale = everything from `## Rationale` to (but not including) the
+  // final `## Supporting links` section. The trailing Supporting-links list
+  // is consumed by the references[] parser below, so we drop it from the
+  // rationale prose to avoid duplicating each link in both fields.
   const lines = md.split("\n");
   const rationaleStart = lines.findIndex((l) => /^##\s+Rationale\s*$/.test(l));
   if (rationaleStart < 0) throw new Error("`## Rationale` heading not found");
-  const rationale = lines.slice(rationaleStart + 1).join("\n").trim();
+  const supportingStart = lines.findIndex(
+    (l) => /^##\s+Supporting links\s*$/.test(l),
+  );
+  if (supportingStart < 0) {
+    throw new Error("`## Supporting links` heading not found");
+  }
+  // Drop any blank lines or `---` thematic break immediately before
+  // "## Supporting links" so the rationale ends cleanly.
+  let rationaleEnd = supportingStart;
+  while (
+    rationaleEnd > rationaleStart &&
+    (lines[rationaleEnd - 1]!.trim() === "" ||
+      lines[rationaleEnd - 1]!.trim() === "---")
+  ) {
+    rationaleEnd--;
+  }
+  const rationale = lines.slice(rationaleStart + 1, rationaleEnd).join("\n").trim();
+
+  // Parse "## Supporting links" bullet list into references[]. Format:
+  //   * <label>: <https-url>
+  // Greedy on the label so entries like "Annex 1: ... (PDF)" keep their
+  // internal colon. URLs that point at an IPFS gateway are normalized to
+  // https://ipfs.io/ipfs/<cid> so indexers all see the same gateway.
+  const linkRe = /^\* (.+):\s+(https?:\/\/\S+)\s*$/;
+  const references: { "@type": string; label: string; uri: string }[] = [];
+  for (let j = supportingStart + 1; j < lines.length; j++) {
+    const m = lines[j]!.match(linkRe);
+    if (!m) continue;
+    references.push({
+      "@type": "Other",
+      label: m[1]!.trim(),
+      uri: normalizeIpfsGateway(m[2]!.trim()),
+    });
+  }
+  if (references.length === 0) {
+    throw new Error(
+      "no `* label: url` entries parsed under `## Supporting links`",
+    );
+  }
 
   void network; // network selector is currently informational only
-  const proposalMainPin = requirePin("proposal-main");
-  const annex1Pin = requirePin("annex1");
-  const annex2Pin = requirePin("annex2");
-  const annex3Pin = requirePin("annex3");
+  // Pin records aren't directly read here anymore (refs come from
+  // proposal.md), but require them so the file enforces that every PDF
+  // has been pinned before the anchor can be built.
+  requirePin("proposal");
+  requirePin("annex1");
+  requirePin("annex2");
+  requirePin("annex3");
+  requirePin("annex4");
   const body: Record<string, unknown> = {
     title: titleSection.heading,
     abstract,
     motivation,
     rationale,
-    references: [
-      {
-        "@type": "Other",
-        label: "Proposal main text (markdown, IPFS-pinned)",
-        uri: `ipfs://${proposalMainPin.cid}`,
-      },
-      {
-        "@type": "Other",
-        label: "Annex 1: Detailed Scope and Workstreams",
-        uri: `ipfs://${annex1Pin.cid}`,
-      },
-      {
-        "@type": "Other",
-        label: "Annex 2: Product Development Methodology",
-        uri: `ipfs://${annex2Pin.cid}`,
-      },
-      {
-        "@type": "Other",
-        label: "Annex 3: 2025 Retrospective",
-        uri: `ipfs://${annex3Pin.cid}`,
-      },
-      {
-        "@type": "Other",
-        label: "Proposal (HackMD, human-readable mirror)",
-        uri: "https://hackmd.io/@lantr/scalus2026",
-      },
-      {
-        "@type": "Other",
-        label: "Proposal repository",
-        uri: "https://github.com/lantr-io/scalus-treasury-proposal-2026",
-      },
-      {
-        "@type": "Other",
-        label: "Public transaction journal",
-        uri:
-          "https://github.com/lantr-io/scalus-treasury-proposal-2026/tree/main/journal",
-      },
-      { "@type": "Other", label: "Scalus", uri: "https://scalus.org/" },
-      { "@type": "Other", label: "Lantr Engineering", uri: "https://lantr.io/" },
-      {
-        "@type": "Other",
-        label: "Scalus repository",
-        uri: "https://github.com/scalus3",
-      },
-      {
-        "@type": "Other",
-        label: "SundaeSwap treasury-funds (audited contracts)",
-        uri: "https://github.com/SundaeSwap-finance/treasury-funds",
-      },
-      {
-        "@type": "Other",
-        label: "MLabs audit (treasury-contracts)",
-        uri:
-          "https://github.com/SundaeSwap-finance/treasury-contracts/blob/dea9e52671f7a696f0ec6a0f475c7fbe52689c9b/audits/mlabs.pdf",
-      },
-      {
-        "@type": "Other",
-        label: "TxPipe audit (treasury-contracts)",
-        uri:
-          "https://github.com/SundaeSwap-finance/treasury-contracts/blob/dea9e52671f7a696f0ec6a0f475c7fbe52689c9b/audits/txpipe.pdf",
-      },
-    ],
+    references,
   };
 
   // Canonical CIP-100 + CIP-108 @context with nested @id sub-contexts.

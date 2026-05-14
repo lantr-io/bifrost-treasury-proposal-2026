@@ -11,10 +11,10 @@ import type { RawConfig, ResolvedConfig } from "./common";
  * script parameters that mainnet will mint.
  *
  *   amount   : ₳8,503,000 (incl. 10% refundable contingency, per HackMD
- *              proposal as of 2026-05-08)
- *   T_max    : 2027-09-01 = end of 12-month delivery (May 2027) + 3-month
- *              contingency window
- *   vendor.expiration: T_max + 30 days
+ *              proposal as of 2026-05-14)
+ *   T_max    : 2027-10-01 = end of 12-month delivery (July 2026 - June
+ *              2027) + 3-month contingency window
+ *   vendor.expiration: T_max + 30 days (= 2027-10-31)
  *   topology : operator (K_op) + 3-board (K_1..K_3) per Plan.md.
  *
  * Board pkhs: all three are the production board members' pubkey hashes
@@ -48,7 +48,7 @@ export const preprodRawConfig: RawConfig = {
     "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), 2026-05-13
   ],
   amountLovelace: 8_503_000_000_000n,
-  treasuryExpirationISO: "2027-09-01T00:00:00Z",
+  treasuryExpirationISO: "2027-10-01T00:00:00Z",
   vendorExpirationGraceDays: 30,
 };
 
