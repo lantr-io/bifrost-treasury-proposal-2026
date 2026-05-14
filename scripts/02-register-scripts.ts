@@ -18,12 +18,16 @@ import { loadDeployment, saveDeployment } from "./lib/deployment";
 import { buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
 import { resolveConfig } from "../params/common";
 import { selectRawConfig } from "../params/select";
+import { mainnetRawConfig } from "../params/mainnet";
 import {
   manualEvaluator,
   shouldUseManualEvaluator,
 } from "./lib/manual-evaluator";
 
-const rawConfig = selectRawConfig();
+// Mainnet is intentionally out of params/select.ts; dispatch explicitly so
+// the mainnet path is visible at the import site of this script.
+const rawConfig =
+  process.env.NETWORK === "mainnet" ? mainnetRawConfig() : selectRawConfig();
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const DRY_RUN = !process.argv.includes("--submit");
 
@@ -35,7 +39,15 @@ async function main(): Promise<void> {
 
   const skHex = readFileSync("keys/admin.skey", "utf8").trim();
   const { blaze, network } = await loadProvider(skHex);
-  if (network !== Core.NetworkId.Testnet) throw new Error("Expected testnet");
+  const expectedNetwork =
+    rawConfig.network === "mainnet"
+      ? Core.NetworkId.Mainnet
+      : Core.NetworkId.Testnet;
+  if (network !== expectedNetwork) {
+    throw new Error(
+      `Network mismatch: provider gave ${network}, params says ${rawConfig.network}`,
+    );
+  }
 
   const resolved = resolveConfig(rawConfig);
   const treasuryCfg = buildTreasuryConfig(resolved, state.registryPolicyHex);

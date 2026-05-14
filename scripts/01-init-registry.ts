@@ -27,12 +27,17 @@ import {
 import { buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
 import { resolveConfig } from "../params/common";
 import { selectRawConfig } from "../params/select";
+import { mainnetRawConfig } from "../params/mainnet";
 import {
   manualEvaluator,
   shouldUseManualEvaluator,
 } from "./lib/manual-evaluator";
 
-const rawConfig = selectRawConfig();
+// Mainnet is intentionally out of params/select.ts to keep a fat-fingered
+// NETWORK=mainnet from accidentally producing a testnet-style import. We
+// dispatch here so the mainnet path is visible in this file.
+const rawConfig =
+  process.env.NETWORK === "mainnet" ? mainnetRawConfig() : selectRawConfig();
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const DRY_RUN = !process.argv.includes("--submit");
 
@@ -46,8 +51,14 @@ async function main(): Promise<void> {
 
   const skHex = readFileSync("keys/admin.skey", "utf8").trim();
   const { blaze, network } = await loadProvider(skHex);
-  if (network !== Core.NetworkId.Testnet) {
-    throw new Error(`Expected testnet network, got ${network}`);
+  const expectedNetwork =
+    rawConfig.network === "mainnet"
+      ? Core.NetworkId.Mainnet
+      : Core.NetworkId.Testnet;
+  if (network !== expectedNetwork) {
+    throw new Error(
+      `Network mismatch: provider gave ${network}, params says ${rawConfig.network} (${expectedNetwork})`,
+    );
   }
 
   // Pick any UTxO at the admin wallet to serve as the one-shot seed.

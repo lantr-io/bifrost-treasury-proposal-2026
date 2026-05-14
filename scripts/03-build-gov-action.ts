@@ -26,13 +26,17 @@ import { loadProvider } from "./lib/provider";
 import { loadDeployment, saveDeployment } from "./lib/deployment";
 import { requirePin } from "./lib/pinned";
 import { selectRawConfig } from "../params/select";
+import { mainnetRawConfig } from "../params/mainnet";
 import { resolveConfig } from "../params/common";
 import {
   manualEvaluator,
   shouldUseManualEvaluator,
 } from "./lib/manual-evaluator";
 
-const rawConfig = selectRawConfig();
+// Mainnet is intentionally out of params/select.ts; dispatch explicitly so
+// the mainnet path is visible at the import site of this script.
+const rawConfig =
+  process.env.NETWORK === "mainnet" ? mainnetRawConfig() : selectRawConfig();
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const ANCHOR_PATH = `gov/anchor.${rawConfig.network}.json`;
 const OUT_PATH = `gov/${rawConfig.network}-withdrawal.json`;
@@ -101,12 +105,16 @@ async function main(): Promise<void> {
     sodium.crypto_generichash(32, anchorBytes),
   );
 
+  const networkId =
+    rawConfig.network === "mainnet"
+      ? Core.NetworkId.Mainnet
+      : Core.NetworkId.Testnet;
   const treasuryRewardAccount = RewardAccount.fromCredential(
     {
       type: CredentialType.ScriptHash,
       hash: Hash28ByteBase16(state.treasuryScriptHashHex),
     },
-    Core.NetworkId.Testnet,
+    networkId,
   );
 
   // Always emit the human-readable summary JSON.
@@ -133,11 +141,14 @@ async function main(): Promise<void> {
       "Equivalent cardano-cli flow (requires a synced node socket; we use Blaze instead):",
     );
     console.log("");
-    const testnetMagic = rawConfig.network === "preview" ? 2 : 1;
+    const netFlag =
+      rawConfig.network === "mainnet"
+        ? "--mainnet"
+        : `--testnet-magic ${rawConfig.network === "preview" ? 2 : 1}`;
     console.log("  cardano-cli conway governance action create-treasury-withdrawal \\");
-    console.log("    --testnet \\");
+    console.log(`    ${rawConfig.network === "mainnet" ? "--mainnet" : "--testnet"} \\`);
     console.log("    --governance-action-deposit \\");
-    console.log(`      "$(cardano-cli conway query gov-state --testnet-magic ${testnetMagic} \\`);
+    console.log(`      "$(cardano-cli conway query gov-state ${netFlag} \\`);
     console.log("        | jq '.currentPParams.govActionDeposit')\" \\");
     console.log(
       "    --deposit-return-stake-address \"$(cat keys/admin.stake.addr)\" \\",
@@ -155,7 +166,11 @@ async function main(): Promise<void> {
   // Submit via Blaze.
   const skHex = readFileSync("keys/admin.skey", "utf8").trim();
   const { blaze, network } = await loadProvider(skHex);
-  if (network !== Core.NetworkId.Testnet) throw new Error("Expected testnet");
+  if (network !== networkId) {
+    throw new Error(
+      `Network mismatch: provider gave ${network}, params says ${rawConfig.network}`,
+    );
+  }
 
   const deposit = await fetchGovActionDeposit();
   console.log(
@@ -172,13 +187,14 @@ async function main(): Promise<void> {
   // treasury_withdrawals_action to reference this hash, so the CC-elected
   // guardrails script gets a chance to validate the proposal.
   //
-  // Same value on preprod AND preview (genesis default guardrails script —
-  // neither testnet has enacted a NewConstitution to replace it; verified
-  // via book.world.dev.cardano.org/environments/{preprod,preview}/conway-genesis.json
-  // and 0 enacted NewConstitution proposals on either chain).
-  //
-  // Mainnet will need a separate value queried at submission time:
-  //   cardano-cli conway query constitution --mainnet
+  // Same value on preprod, preview, AND mainnet (genesis default guardrails
+  // script — no chain has enacted a NewConstitution to replace it;
+  // verified 2026-05-14 via book.world.dev.cardano.org/environments/
+  // {preprod,preview,mainnet}/conway-genesis.json and via Koios
+  // script_info — both return script_hash =
+  // fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64, type plutusV3).
+  // Re-verify before any future submission with
+  //   cardano-cli conway query constitution {--mainnet|--testnet-magic N}
   const guardrailsScriptHash = Hash28ByteBase16(
     "fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64",
   );
