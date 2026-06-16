@@ -32,7 +32,20 @@
             nixpkgs-fmt
             cardano-cli
             age
+            scala-cli # runs m5-withdraw/m5-withdraw.scala (Scalus tx builder)
+            jdk21 # JVM for scala-cli
           ];
+
+          # Export secrets from .env (BLOCKFROST_PROJECT_ID, etc.) into the shell.
+          # Resolve the repo root so it works from any subdirectory.
+          shellHook = ''
+            root="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
+            if [ -f "$root/.env" ]; then
+              set -a
+              . "$root/.env"
+              set +a
+            fi
+          '';
         };
       })
     );

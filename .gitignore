@@ -19,3 +19,12 @@ gov/mainnet-*.json
 .idea/
 .vscode/
 *.log
+
+# scala-cli / metals build artifacts
+.metals/
+.scala-build/
+.bsp/
+
+# generated unsigned txs (regenerable, time-limited TTL)
+m5-withdraw/*.unsigned.tx
+m5-withdraw/*.unsigned.tx.json
