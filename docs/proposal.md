@@ -1,267 +1,255 @@
-# Scalus: Cardano’s Application Platform for Building, Launching, and Scaling
+# Scalus 2026: Maintenance, Dijkstra Readiness & Application Runtime
 
 ## Abstract
 
-Cardano is moving. Protocol upgrades, critical integrations, DeFi liquidity, and VC capital are aligning. But the next bottleneck is no longer core infrastructure, it is application delivery.
+Scalus is an established, open-source Cardano development platform, built by **Lantr Engineering** over three years of continuous delivery. 
 
-Teams still struggle to ship non-trivial applications because they must master and assemble too many moving parts themselves: smart contracts, formal verification, chain access, operations, and scaling. The ecosystem does not lack tools. It lacks an integrated application platform that has it all and just works.
+It is the integrated, JVM-native toolset for the complex protocols and mission-critical applications, such as **Gummiworm L2, Bifrost bridge, SugarRush DEX, Vela stablecoin, DID / DIDComm decentralised identity**, that already build on it.
 
-[Scalus](https://scalus.org/) was built to address exactly this bottleneck. It is an established Cardano smart contract and dApp development platform built by [Lantr Engineering](https://lantr.io/), with three years of continuous delivery, ecosystem adoption, and integrations. Hydrozoa and Bifrost build on it. MeshJS SDK, Cardano Client Lib, and Evolution SDK integrate it. 
+Its components are already reused inside Cardano's most widely used developer tooling: **MeshJS, Evolution SDK, Lucid Evolution, Cardano Client Lib, and YaciDevKit**. Many teams depend on Scalus without ever integrating it directly.
 
-This proposal extends Scalus from a development environment into a full application platform: one coherent stack to build, verify, launch, and scale Cardano applications, with its own L1 node, native L2 integration, formal verification, and production-grade runtime capabilities.
+This proposal funds a focused, 9-month continuation across three lines of work: 
+- **protect** the existing infrastructure through the upcoming **Dijkstra hard fork** (maintenance and readiness)
+- **deepen** its reuse across the JVM and JavaScript ecosystems (interoperability)
+- and take a first **scoped step** into the application runtime that operates the protocols already built with Scalus.
 
-Lantr Engineering requests ₳8,503,000 (including 10% contingency) from the Cardano Treasury for a 12-month delivery period (July 2026 to June 2027).
+It is a deliberately reduced resubmission. DReps recognised the previous Scalus proposal's vision, technical quality, and delivery record, but found its scope and budget too large. This version answers that directly: the ask is cut to **₳2,991,667** over 9 months, at a conservative **\$0.15/ADA** reference rate and **no contingency**.
 
-By the end of this period, both existing Cardano builders and new Java, Scala, and Kotlin teams entering the ecosystem will be able to develop and operate mission-critical and scalable applications on a unified JVM-native platform, reducing setup complexity while improving self-sovereignty and time to market.
+Delivery is milestone-based, administered through audited SundaeSwap treasury contracts with an independent oversight board and third-party assurance.
 
-For Cardano, that means a stronger application layer: more serious teams shipping, more resilient infrastructure in production, and a faster path to the applications that drive transactions, users, and TVL.
+The goal is bounded and concrete: protect prior public investment, keep Scalus and everything built on it working through the next protocol cycle, and make it more reusable across the ecosystem. It's a proportionate continuation of proven work.
+
+**At a glance**
+  - **Ask:** ₳2,991,667 (~\$448,750 at \$0.15/ADA) · 9 months · no contingency
+  - **Funds:** maintenance · Dijkstra hard-fork readiness · interoperability (JVM + JS/TS) · a scoped application runtime
+  - **Excludes:** standalone L1 node · full L2 integration · broad formal verification
+  - **Vs. previous proposal:** reduced from ₳8.5M / 12 months; node and 3d party dependencies removed
+  - **Team:** Lantr Engineering, three years building Scalus, every prior milestone delivered on time
+  - **Governance:** SundaeSwap escrow · independent oversight board · third-party assurance
+
+<!-- Scalus is an established open-source Cardano smart contract and dApp development platform built by Lantr Engineering, with 3 years of continuous delivery, adoption (Gummiworm L2, Bifrost bridge, SugarRush DEX, and others), and ecosystem integrations (MeshJS SDK, Evolution SDK, Cardano Client Lib, Lucid Evolution, YaciDevKit).
+
+This is a reduced resubmission following the previous Scalus Treasury proposal. The earlier proposal was not approved, and DRep feedback was clear: the Scalus vision and team were recognised, but the requested scope and budget were too large relative to demonstrated demand and current Treasury capacity. 
+
+This proposal responds by reducing the ask, removing production L1 node hardening, removing L2 and formal verification dependencies from the critical path, and focusing on immediate maintenance needs and adoption support.
+
+Lantr Engineering requests ₳X,XXX for a 9-month delivery period to fund the next incremental public-good step for Scalus: maintenance of existing infrastructure, Dijkstra hard fork readiness, interoperability with existing Cardano and JVM tooling, and a scoped application runtime MVP.
+
+The goal is to protect prior ecosystem investment, prepare Scalus users and integrations for the next Cardano hard fork, improve reuse across existing Cardano tooling, and validate the first application runtime step before any larger platform expansion is considered. -->
 
 ## Motivation
 
 ### The Application Layer Decides the Next Chapter
 
-Cardano has shipped the protocol foundations. The question is no longer "can Cardano do X?" but "how fast can builders ship X?". Cardano 2030 measures success by three KPIs: TVL, monthly transactions, and monthly active users. Every one of them is downstream of application usage.
+Cardano has made major progress at the protocol layer. The next bottleneck is application delivery: how fast serious teams can build, test, launch, and operate non-trivial applications.
 
-Every lever the ecosystem can pull is pointing in the same direction: more applications. Protocol upgrades are progressing. Critical integrations are advancing. DeFi liquidity is being allocated. VC fund is backing Cardano-native and integrated companies. Protocol, liquidity, and capital are aligning, and waiting for the application layer to catch up.
+Cardano 2030 outcomes (TVL, monthly transactions, and active users) are downstream of applications people and businesses actually use. Protocol upgrades, liquidity programmes, critical integrations, and VC capital only compound if teams can turn them into working products.
 
-The ingredients are there: smart contracts, SDKs, and infrastructure. Yet teams still struggle to ship non-trivial applications. Without resolving this, the gains at the protocol, liquidity, and capital layers slip away instead of compounding.
+That is why developer infrastructure still matters. Not as an abstract tooling category, but as the path from protocol capability to real applications.
 
-This is where technical progress turns into ecosystem outcomes: applications create transactions, attract users, lock value, and generate real network activity.
-
-The next chapter of Cardano is won at the application layer, and 2026 is the window to invest there.
+The application layer is not built from nothing. It rests on infrastructure that has to exist, keep working, and reach the teams who need it, and that is exactly where Scalus sits. This proposal strengthens that foundation and takes the first step beyond it.
 
 ---
 
-### The Gap: The Assembly Problem
+### What Scalus is today
 
-Pick a non-trivial use case: a prediction market, a perpetuals exchange, an AI agent marketplace. To ship it on Cardano today, a team has to solve four problems at once:
+Scalus is an established development platform, purpose-built for the protocols and mission-critical applications Cardano can't afford to get wrong: Layer 2 solutions, cross-chain bridges, DEXs, and other DeFi products where correctness, performance, and control are non-negotiable.
 
-* **Design it well**: correct UTxO modeling, composable contracts, right design patterns.
-* **Verify it's correct**: debugging, formal verification, enterprise-grade testing, security.
-* **Launch it**: without relying on operational shortcuts or external providers that weaken user trust, resilience, or self-sovereignty.
-* **Scale it**: with throughput and costs beyond what L1 alone can offer.
+For these systems, the smart contract is rarely the hardest part. The hardest part is everything around it: modelling state, building and testing transactions, simulating edge cases, optimising for cost and getting all of it right before it ever reaches production.
 
-Each problem has partial solutions. Smart contract languages, off-chain SDKs, chain-access services, testing tools, and scaling solutions have all seen real progress from excellent teams.
+Scalus brings that entire journey into one coherent JVM stack: a type-safe smart contract language, transaction building, enterprise-grade testing, advanced optimisations, an in-memory Cardano node emulator and local devnet, a library of advanced data structures, design patterns and blueprints. Scalus covers the protocol development layer: write, evaluate, optimise, test, and deploy in one integrated workflow.
 
-But the solutions exist separately. They speak different languages, live in different repositories, ship on different schedules, and only connect where the builder wires them together. That is the gap.
+---
 
-Product teams that should be building business logic spend months mastering & assembling infrastructure instead: stitching together tooling, setting up L2 environments, integrating services. The assembly is the work. The assembly is the bottleneck. 
+### Traction
 
-Teams without runway take shortcuts. Teams with budget hire specialists. Some never launch. Either way, time-to-market, operating complexity, and delivery budget all pay the price.
+Scalus has three years of continuous delivery behind it and is in active use across the Cardano ecosystem — both in the systems built directly on it and in the tooling that reuses its components.
 
-Builders don't need another tool. They need an integrated application platform that has it all, and just works.
+**Protocols & applications built on Scalus:**
+
+- **Gummiworm L2**: state-channel & custody settlement L2
+- **Bifrost**: Bitcoin-Cardano bridge
+- **SugarRush**: central limit orderbook DEX (on Gummiworm L2)
+- **Vela**: decentralised synthetic stablecoin
+- **DID / DIDComm**: decentralised identity & messaging protocol (JVM/JS)
+
+These are exactly the complex, high-stakes systems Scalus is built for.
+
+**Reused across the Cardano ecosystem** 
+
+Scalus's script evaluation, cost calculation, and in-memory L1 emulator are embedded in tooling other teams already use:
+
+- JVM: **Cardano Client Lib**, **YaciDevKit**
+- JS/TS: **MeshJS SDK**, **Evolution SDK**, **Lucid Evolution**
+
+Through these, many Cardano projects <!-- (Midgard, DeltaDeFi, Vespr, Strike, Indigo, and others)--> rely on Scalus components without ever integrating Scalus directly, as they come built into the tools these teams use every day.
+
+**Sustained Open Source delivery and reach**
+
+Three years of continuous development: 4,595 commits across 32 releases, 12 contributors.
+
+On JS/TS alone, Scalus components reach 20,000+ downloads a month through the SDKs that embed them.
+
+---
+
+### The next step: protect, deepen, expand
+
+This proposal is that next step: focused and disciplined. It builds on the foundation Scalus already is, in three moves: protecting it through the next hard fork, deepening its reach across the stacks teams already run, and taking the first step beyond it, into the application layer itself.
+
+#### Protect
+
+Scalus is already-funded public infrastructure, used directly by protocols and indirectly through developer tooling. Keeping it maintained, compatible, and safe to build on protects every team and tool that depends on it. 
+
+Dijkstra hard-fork introduces new capabilities and updates that include Plutus V4 support, nested transactions, guard script types, accounts. Those changes affect smart contract development, Plutus evaluation, transaction building, ledger rules, testing, and developer workflows. 
+
+Maintenance and Dijkstra readiness keep Scalus, and the tools and projects built on it, working through the hard-fork transition.
+
+#### Deepen
+
+Scalus is JVM-native, and its components already reach JavaScript and TypeScript ecosystem. This proposal makes them easier to reuse across the stacks teams already run.
+
+- **JS / TS integrations**: improve the interfaces, capabilities, and documentation of the Scalus components already embedded in MeshJS, Evolution SDK, and Lucid Evolution, so the teams depending on them transitively get more capability and reliably.
+- **JVM interoperability**: advance direct interoperability with Java and Kotlin (Spring Boot, Ktor) and provide cleaner integration paths with the Cardano Java stack.
+- **Multiplatform**: one codebase compiled to multiple targets (JVM, JavaScript, native, and WebAssembly), so the same components serve more environments without reimplementation.
+
+#### Expand
+
+Today, Scalus covers development flow: writing, testing, and deploying a protocol. The application runtime is the first step into operating it: running the live system around the contract, from one integrated stack.
+
+This scoped step gives applications a way to consume chain data streams, schedule time-based actions, react to on-chain events and state changes, and coordinate backend workflows.
+
+It is a minimal but useful increment, built and validated with teams already working on Scalus, so the work stays pulled by real demand rather than built ahead of it.
+
+---
+
+### What this secures for Cardano
+
+Scalus brings Cardano into the JVM ecosystem with a production-grade development platform for mission-critical applications, while reusing the same core components across JavaScript and TypeScript tooling.
+
+That matters because many of the systems Cardano wants to attract (financial applications, protocol backends, bridges, L2 infrastructure, identity systems, enterprise integrations) are built by teams that need strong typing, mature backend tooling, rigorous testing, and operational control. The JVM ecosystem is one of the strongest environments for exactly that kind of software. 
+
+These are not hypothetical systems — they are the ones already building on Scalus today: Gummiworm (L2), Bifrost (bridge), SugarRush &  Vela (financial).
+
+This proposal funds the next disciplined step: keeping that foundation maintained, current, and reusable for the team already depending on it, and and taking the first step beyond it, into the application layer.
+
+---
 
 ## Rationale
 
-### Strategic vision: Scalus - Cardano's application platform
+### What changed since the previous proposal
 
-Scalus is an integrated application platform for Cardano, built in Scala 3. It supports builders across the product journey from idea to production at scale, with one coherent stack: one codebase, one language, one development experience.
+This is a focused resubmission of “Scalus: Cardano’s Application Platform.” In the previous vote, Scalus’s vision, technical quality, and delivery record were widely recognised. At the same time, the scope and budget were considered too large relative to demonstrated demand and current Treasury capacity.
 
-The platform combines four pillars:
+This proposal responds directly to that feedback with a smaller ask, a narrower focus on existing adoption, and a scoped next step for the application layer. The most contested elements have been removed from the funded scope.
 
-1. **Smart contract development**. A type-safe Scala-native smart contract language compiling to Plutus Core, with enterprise-grade testing, an in-memory Cardano emulator, local devnet, formal verification integration, and early access to Dijkstra features. **This is the protocol layer: write, verify, optimise, test, and deploy**.
+**Changes summary**
 
-2. **Reactive application runtime**. The framework that runs the application's off-chain logic. Listen to chain events, manage workflows, schedule time-based actions, submit transactions reliably, and integrate with Cardano DeFi protocols through pre-built connectors. **This is the application layer that turns smart contracts and chain access into running applications.**
+| Area | Previous proposal | This proposal |
+|---|---|---|
+| Budget / duration | ₳8,503,000 / 12 months | ~₳2,991,667 / 9 months |
+| Reference rate | \$0.25/ADA| \$0.15/ADA |
+| FTE | 8  | 2.5  |
+| FTE-months | 99 | 22.5 |
+| Contingency | 10% | 0% | 
+| Focus | Full application platform expansion: L1 node, L2 integration, application runtime, advanced devnet | Maintenance, Dijkstra readiness, interoperability, adoption, and a scoped runtime step | 
+| Application runtime | Production-grade runtime | Scoped runtime step, ready for adoption |
+| Standalone L1 node | Hardened standalone & embedded L1 node for production operation | Removed from scope |
+| L2 solution integration | Gummiworm operator setup and full integration | Removed from scope; runtime designed to support future L2 integration |
+| Integrated local devnet & R&D |  Advanced devnet capabilities + exploratory R&D | Limited to Dijkstra/emulator needs; broader R&D deferred | 
+| Formal verification | Broad formal verification track | Out of scope; future integration may follow as IO’s Lean/Blaster framework matures |
 
-3. **Sovereign chain access**. A JVM-native **Cardano L1 node embedded directly inside the application or run as a standalone service**. Applications own their chain access end to end: reading state, following events, validating transactions, and submitting them without third-party dependencies. **This is the security and resilience layer**.
-
-4. **L2 scaling, out of the box**. Native integration with **Hydrozoa / Gummiworm state-channels L2**. Applications that need higher throughput and lower operating overhead can scale beyond what L1 alone offers, without stepping outside the same platform. **This is the scaling layer.**
-
-What makes Scalus different is not any one pillar taken in isolation. Cardano already has strong teams working on smart contracts, off-chain tooling, node implementations, and scaling. The gap is that these pieces still have to be assembled by the builder.
-
-**Scalus brings them together into one product experience**. One stack to build with. One stack to test and verify with. One stack to launch with. One stack to scale with. 
-
-And it does this in the JVM ecosystem, opening a path into one of the world’s largest developer ecosystems, with roughly 26 million developers, and the software environments where much of finance and fintech enterprises already operates.
+The reductions map directly to the concerns raised by DReps: 
+- Scale: substantially reduced ask (65%), with no contingency and a lower \$0.15/ADA reference rate
+- Breadth: one focused continuation package, not a full platform expansion
+- L1 node: standalone JVM L1 node removed from scope
+- Dependency risk: L2 integration and formal verification removed from the critical path.
 
 ---
 
 ### What makes Scalus different
 
-#### Bringing the JVM Ecosystem to Cardano
+#### Integrated development platform
 
-Scalus is built around a simple adoption principle: enterprises adopt technologies that fit the systems, talent, and operational environments they already have.
+Scalus is not only a smart contract language. It is an integrated development platform for complex Cardano protocols and applications.
 
-For a large share of finance, fintech, and enterprise software, that environment is the JVM. Java, Kotlin, and Scala power backend systems, integration layers, and business-critical infrastructure across the industries Cardano ultimately wants to reach.
+Scalus is built for the systems where the work does not stop at writing a validator, but extends into transaction construction, testing, simulation, protocol emulation, application backends, and production-oriented workflows.
 
-This pattern is well established across enterprise blockchain as well:
-* **Ethereum / Besu (Java)**: an enterprise-grade Ethereum client (~8-10% mainnet usage).
-* **R3 Corda (Kotlin)**: used across regulated financial networks and institutional workflows, \$10B+ on-chain RWA.
-* **Canton Network (Scala)**: institutional digital asset stack adopted by firms like Goldman Sachs, Deutsche Borse, and DTCC.
+This is why Scalus matters for Layer 2 systems, bridges, DEXs, synthetic assets, identity protocols, and other applications where correctness depends on the whole system around the contract, not only the contract itself.
 
-Scalus (built in Scala) gives Cardano a native path into the JVM ecosystem: one coherent application platform for Scala, Java, and Kotlin teams, built to fit the environments where finance and fintech already live.
+#### JVM-native
 
-**What about the existing Cardano Java toolset?**
+Scalus is built in Scala for the JVM, the environment that runs much of finance, fintech, and enterprise backend software. This pattern is well established across enterprise blockchain as well:
+- Besu (Java): enterprise-grade Ethereum client (~8-10% mainnet usage).
+- R3 Corda (Kotlin): regulated financial networks, \$10B+ in on-chain RWA.
+- Canton (Scala): institutional digital-asset network adopted by Goldman Sachs, Deutsche Borse, and DTCC.
 
-Cardano’s JVM ecosystem is not a blank slate. Projects such as CCL and Yaci (DevKit, Store) already provide important building blocks for JVM developers, and Scalus interoperates with that ecosystem. What remains missing is an integrated product experience: one stack that brings smart contracts, application runtime, L1 node capabilities, and L2 scaling together.
+Scalus gives Cardano a native path into that ecosystem. It complements existing Cardano JVM tooling such as Cardano Client Lib and Yaci by adding a smart contract language, enterprise testing, advanced optimisations, node emulation, and application-development layer, while improving interoperability with Java and Kotlin stacks.
 
-Scalus builds on the existing JVM toolset, where it already covers the need, and pushes further where the goal is a more complete developer experience, especially around advanced smart contract capabilities, a JS/TS toolset generated from the same codebase, and the one-node-across-the-lifecycle model described below.
+#### Multiplatform reuse
 
-#### Mission-critical applications need their own chain access
+Scalus is JVM-native, but not JVM-only. One of its core strengths is maintaining shared Cardano logic in one codebase and exporting selected components across multiple targets. 
 
-Cardano has funded several node implementations: reference node in Haskell, Amaru in Rust, Dingo in Go. They primarily optimise for SPOs and block production. Scalus targets a different audience: mission-critical applications and protocols that need their own chain access and cannot afford to depend on third-party providers for reading chain state or submitting transactions.
+Today, Scalus components such as script evaluation, cost calculation, and the in-memory node emulator are exported to JavaScript and TypeScript, which is how they already reach MeshJS, Lucid Evolution, and Evolution SDK.
 
-If a bridge, oracle, market-making system, or L2 operator depends on external providers, then part of its security and resilience depends on infrastructure it does not control. That may be acceptable for simpler applications. It is not enough for systems that need strong guarantees around availability, correctness, censorship resistance, and recovery under failure.
+This proposal continues that direction: make Scalus components easier to reuse from the environments builders already use. And keeps native and WebAssembly backends as longer-term technical targets.
 
-Recent exploits across the industry have shown the same pattern: the protocol may be sound, but dependence on external infrastructure can still become a critical weakness.
-
-Scalus addresses this by bringing Cardano chain access inside the application boundary through an embedded or standalone L1 node. That gives application developers a deployment model better suited to their needs: tighter integration, a better development experience, and less dependence on external chain-access services.
-
-#### Same node across the product lifecycle
-
-Building with Scalus means using the same node across the product lifecycle. Switch the configuration, and it serves the current need:
-
-* Prototyping protocol? In-memory node for fast iterations (seconds), with no external dependencies.
-* Developing application? Fully configurable devnet with fast blocks, custom genesis, and mainnet forking.
-* Launching testnet? The same node connects to Preview or Preprod, bootstrap from Mithril, and launch in minutes.
-* Releasing to production? Run the same node against mainnet with security, resilience, and observability built in.
-* Need scaling? Activate Hydrozoa L2. Plus, the same L1 node as the rest of your application.
-
-The same node model follows the product from local development to production operation. No parallel infrastructure. No environment drift. One integrated stack.
-
-#### Extending beyond JVM: JavaScript and TypeScript
-
-While JVM is Scalus’s primary target, its architecture extends beyond a single ecosystem. Scalus already exports core node capabilities into JavaScript and TypeScript.
-
-Today, Scalus.js is integrated into MeshJS SDK and Evolution SDK, providing script evaluation, cost calculation, and rapid testing capabilities. This proposal extends that path further with advanced devnet capabilities, and, where practical, data access and more node functionality directly in pure JS/TS.
-
-Scalus becomes the application platform for the JVM, while enabling JS/TS-native solutions to build similar application-platform experiences in the second-largest developer ecosystem: JavaScript.
-
-Scalus also explores extra deployment possibilities through Scala’s experimental WebAssembly backend.
-
-A more detailed competitive landscape is provided in the Reference documents.
-
----
-
-### Benefits for the ecosystem
-
-**A stronger application layer**
-
-Cardano’s long-term success (TVL, transactions, users) depends on applications people and businesses actually use. Scalus contributes directly by reducing the complexity of building and operating serious applications on Cardano, helping more teams move from idea to production. 
-
-**More resilient application infrastructure**
-
-By bringing an embedded or standalone L1 node and runtime capabilities closer to the application itself, Scalus reduces the need to depend on external centralized providers. That creates a more practical path toward self-hosted, censorship-resistant, and operationally resilient applications.
-
-**A broader builder base**
-
-Scalus creates a native path for JVM developers into Cardano, opening the ecosystem to experienced backend, enterprise, and financial software teams that already build in Scala, Java, and Kotlin.
-
-**Reusable public goods and long-term sustainability**
-
-Scalus is open-source infrastructure for Cardano. The capabilities funded through this proposal are designed to be reused across many teams and products, reducing repeated assembly work and strengthening the ecosystem as a whole.
-
-This is the kind of work the treasury is well placed to fund: shared application infrastructure that benefits the ecosystem beyond a single vendor or product team.
-
-Over time, we expect maintenance to be supported by a broader mix of sources rather than Treasury alone (more details in the Future Maintenance Costs section).
+A more detailed competitive landscape is provided in the reference documents.
 
 ---
 
 ### Cardano 2030 Alignment
 
-This translates into more applications reaching production and contributes directly to Cardano 2030’s goals around Adoption & Utility, Ecosystem Growth, and core usage KPIs such as Monthly Active Users (MAU), transactions, and TVL.
-
-**Core Cardano 2030 KPIs**
-
-| KPI | Alignment | Our contribution |
-|-----|-----------|------------------|
-| **TVL** | Yes | Applications built on Scalus lock value directly on Cardano. Bifrost brings BTC liquidity into Cardano DeFi, while Hydrozoa-based applications lock funds on L1 and directly increase TVL. |
-| **Monthly Transactions** | Yes | More applications in production means more on-chain activity. Applications using L2s expand effective transaction capacity and contribute to higher total ecosystem transaction volume. |
-| **Monthly Active Users (MAU)** | Yes | More reliable and self-sovereign applications improve user trust and retention. Scalus also enables more non-trivial applications, such as prediction markets and perpetuals, that can attract new users to Cardano. |
-
-**Additional Cardano 2030 KPIs**
-
-| KPI | Alignment | Our contribution |
-|-----|-----------|---------------------|
-| Reliability: Monthly Uptime (6 epochs) | Yes, partially | Application operators gain tighter control over chain following, local state derivation, and transaction submission when they can run their own L1 node instead of depending on third-party providers.|
-| Operational Resilience: Alternative Full Node Clients | Yes | Scalus contributes an alternative application-facing Scala-based node implementation for JVM and native environments, optimised for mission-critical applications and protocols, and developed in ongoing collaboration with the Node Diversity initiative. |
-| Revenue / Adoption: Annual Protocol Revenue | Yes | More applications increase L1 transaction demand and fee generation. L2 fee accrual flows back to Cardano rather than to competing ecosystems. |
-| Scalability: Throughput Capacity per day | Yes | Hydrozoa/Gummiworm support enables L2 deployments that expand Cardano's effective throughput capacity by orders of magnitude. |
+Scalus contributes at the developer and infrastructure layer, under Adoption & Utility. It does not claim direct credit for ecosystem KPIs like TVL, transactions, or MAU, those are downstream outcomes of the protocols & applications built on Scalus, not deliverables of this proposal.
 
 **Cardano 2030 Pillars**
 
 | Pillar | Focus Area | Our contribution |
 |--------|------------|------------------|
-| Pillar 1: Infrastructure & Research Excellence | Scalability & Interoperability > L2 integration | Hydrozoa, a Cardano L2 state-channel solution, is built on Scalus platform. This proposal includes explicit support for Hydrozoa operators with embedded L1 access and application-level integration for scalable Cardano applications. |
-| | Security & Resilience > Client diversity | This proposal explicitly references the further development and maintenance of an application-focused Cardano node implementation in Scala 3, supporting multi-platform deployment on JVM and native environments. Scalus's ledger rules framework already conforms to existing conformance tests developed through the Node Diversity initiative (maintained by the Amaru project). We will continue engaging with Node Diversity teams to develop, improve, and comply with conformance tests throughout this proposal. |
-| Pillar 2: Adoption & Utility | Developer Experience > Open-source incentives | Scalus is an open-source application platform with reusable tooling, starter kits, blueprints, and ecosystem integrations. The Scalus toolset is already used in MeshJS SDK, Cardano Client Lib, and Evolution SDK. |
-| | Education & migration | Scalus supports education and migration through documentation, tutorials, and training materials for Web2 developers and JVM developers moving to Cardano and the UTxO model. |
-| |  Compatibility | Scalus aligns with common Cardano off-chain tooling, technical interfaces and enables the use of smart contract blueprints and on-chain data structures generated by other Cardano languages within Scalus applications. |
-| Pillar 4: Community & Ecosystem Growth | Talent Acquisition & Retention | This proposal explicitly references the development of training materials that can align with blockchain education in schools and university curricula. Lantr contributes to this direction through its collaboration with Cardano Foundation and the UZH Blockchain Summer School at the University of Zurich (2025). |
+| Pillar 2: Adoption & Utility | Developer Experience > Open-source incentives | Open-source infrastructure reused across the ecosystem (MeshJS SDK, Lucid Evolution, Yaci Dev Kit, Cardano Client Lib, and Evolution SDK). |
+| | Education & migration | Documentation, tutorials, and training materials for Web2 developers and JVM developers moving to Cardano and the UTxO model. |
+| |  Compatibility | Interoperates with common Cardano tooling; supports blueprints and on-chain data structures generated by other Cardano languages. |
+| Pillar 4: Community & Ecosystem Growth | Talent Acquisition & Retention | Training materials that can align with blockchain education in schools and university curricula. Lantr contributes to this direction through its collaboration with Cardano Foundation and the UZH Blockchain Summer School at the University of Zurich (2025, 2026). |
 | | Hands-on Experience | The Lantr team hosts learning sessions at Scalus Club and participates in mentorship programmes, including Google Summer of Code 2025, attracting new developers and providing practical experience in Cardano tooling and real-world problem-solving. | 
 
 ---
 
 ### Use cases
 
-Scalus is built for three categories of applications on Cardano.
+Scalus serves two kinds of builders on Cardano:
 
-| Use case | Description | Examples |
+| Use case | What Scalus provides | Examples |
 |----------|-------------|----------|
-| **New Cardano applications** | Teams moving from idea to first working application on Cardano with one coherent stack: scaffolding, starter kits, smart contract blueprints, in-memory emulator, configurable devnet, and testnet launch. | Lending protocol, auction, AMM starter kit |
-| **Mission-critical applications and protocols** | Production-grade DeFi protocols, bridges, oracles, and other solutions that need rigorous testing, formal verification, sovereign chain access, and operational resilience. | Hydrozoa/Gummiworm L2, Binocular (decentralised Bitcoin oracle), DeFi Kernel SDK, market-making and arbitrage bots |
-| **Applications with native L2 scaling** | Applications that need higher throughput, lower operational overhead, or custom business logic through Hydrozoa/Gummiworm L2 integration. | Sugar Rush DEX, prediction market, perpetuals platform |
+| **Mission-critical applications and protocols** | Rigorous testing and verification, an in-memory emulator, and a reliable application layer to orchestrate the system around the contracts. | Gummiworm L2, Binocular (decentralised Bitcoin oracle), DeFi protocols, market-making and arbitrage bots |
+| **New Cardano applications** | A fast path from idea to testnet: scaffolding, starter kits, smart-contract blueprints, the emulator, and a configurable devnet. | Lending protocol, auction, AMM starter kit |
 
-These three use cases follow the same product journey with Scalus: build, verify, launch, and scale. 
+For mission-critical systems, Scalus brings enterprise-grade testing and the application runtime to operate them. For new teams, it shortens the path from idea to a testnet.
 
-For new applications, Scalus reduces the setup burden and shortens the path from idea to testnet. For mission-critical systems, it brings chain access, runtime, and verification closer to the application itself. For L2-based applications, it provides a native path to scaling without stepping outside the same platform.
-
-This is the practical value of Scalus as an application platform: one stack that supports the product journey from first prototype to production-grade, scalable systems.
+This is the practical value of Scalus: one stack that supports the product journey from first prototype to production-grade, scalable systems.
 
 ---
 
-### Traction & Current State
+### Long-term sustainability through Open Source
 
-Scalus is already in active use across the Cardano ecosystem. This proposal extends components that exist today; it does not create them from zero.
+Scalus is open-source infrastructure for Cardano (Apache 2 license). The capabilities funded through this proposal are designed to be reused across many teams and products, reducing repeated assembly work and strengthening the ecosystem as a whole.
 
-Scalus has three years of continuous delivery behind it, with ecosystem integrations, active adoption by partner teams, and repeated community funding support.
+This is the kind of work the Treasury is well placed to fund: shared application infrastructure that benefits the ecosystem beyond a single vendor or product team.
 
-**Building on Scalus**
-
-- Hydrozoa/Gummiworm L2: Cardano state-channel L2 scaling solution
-- Bifrost: Bitcoin-Cardano bridge
-- SugarRush: central limit orderbook DEX (with Hydrozoa/Gummiworm)
-- Vela: decentralised synthetic stablecoin
-
-**Integrating Scalus capabilities**
-
-- MeshJS SDK, Cardano Client Lib, and Evolution SDK: integrations of core Scalus capabilities, including the in-memory L1 node emulator.
-
-**Open Source**
-- Scalus: 4466 commits, 29 releases, 102 stars, 15 forks, 12 contributors
-- Scalus JS: 5k weekly downloads
-
-This proposal builds on an existing platform with real integrations, active partner adoption, and delivery history.
-
-**Component maturity**
-
-| Pillar | Today | This proposal extends with |
-|--------|-------|----------------------------|
-| **Smart contract development** | Scala-native smart contract language compiling to Plutus Core, transaction builder, in-memory Cardano emulator, property-based testing, local devnet, blueprints, and design patterns | Formal verification integration, advanced devnet with mainnet forking, enterprise-grade testing, and early Dijkstra support |
-| **L1 node** | Limited data-node capabilities, including chain following, UTxO indexing, and bootstrapping support | Embedded and standalone application-focused L1 node capabilities: broader chain access, mempool visibility, production hardening, and JVM/native deployment |
-| **Application runtime** | Prototype stage | Reactive workers framework, chain event stream, mempool watcher, production runtime, observability, and DeFi connectors |
-| **L2 scaling** | Hydrozoa integration in active development | Native Hydrozoa/Gummiworm integration, embedded L1 node for L2 operators, and custom ledger support |
-
-Prior development of Scalus has been supported through multiple Catalyst projects and the 2025 Treasury Budget (more details in the Administration section).
-
-Today, Scalus helps teams build complex Cardano protocols and solutions. This proposal extends it beyond development by adding the runtime, chain access, and scaling capabilities needed to launch, operate, and scale them in production.
+Over time, we expect maintenance to be supported by a broader mix of sources rather than Treasury alone.
 
 ---
-
 
 ### Lantr Engineering Team
 
-Lantr Engineering is a blockchain R&D and product development company focused on decentralised infrastructure and mission-critical applications. Within Cardano, we work on the infrastructure and application layer for the next generation of digital economies: development platforms, interoperability and scaling solutions, and financial products.
+Lantr Engineering is a blockchain R&D and product development company focused on decentralised infrastructure and mission-critical applications. 
 
-The core team combines deep technical expertise in blockchain infrastructure, smart contracts, compilers, and distributed systems with product and execution leadership.
+The Lantr's core team of 6 senior engineers, combining deep technical expertise in blockchain infrastructure, smart contracts, compilers, formal methods, and distributed systems with product and execution leadership. The two accountable leads are:
 
-* **Alexander Nemish** — Founder & CTO. Senior software engineer specialising in functional programming, type theory, metaprogramming, compilers, and blockchain systems (Scala, Haskell, Rust). Former IOG engineer, contributed to the design and implementation of Marlowe, Cardano’s financial smart contract language. Previously Deutsche Bank and UBS. Leads Scalus technical direction.
-* **Oleksii Khodakivskyi** — Co-Founder & CEO. 10+ years in product development, business agility, and organisational design. Previously scaled product organisations in communications, real estate, and fintech across Europe. At Lantr, leads business execution, operations, and product management.
+* **Alexander Nemish** — Founder & CTO. Functional programming, type theory, metaprogramming, compilers, and blockchain systems (Scala, Haskell, Rust). Former IOG engineer, contributed to the design and implementation of Marlowe. Previously Deutsche Bank and UBS. Leads Scalus's technical direction.
+* **Oleksii Khodakivskyi** — Co-Founder & CEO. 10+ years in product development, business agility, and organisational design. Previously scaled product organisations across fintech and other sectors. At Lantr, leads business execution, operations, and product management.
 
-Beyond the core team, Lantr has access to a broader network of trusted senior Scala engineers and domain specialists who can support delivery where additional capacity or specialist expertise is needed. This allows the proposal to scale delivery capacity where needed while keeping execution ownership and accountability within Lantr.
+**Ecosystem participation**. Technical working groups (Plutus, Ledger, Layer 2). Knowledge sharing through Scalus Club and Cardano Development Hours. Education collaborations, including the UZH Blockchain Summer School at the University of Zurich (2025, 2026). Open-source contributions across the Cardano toolchain.
 
-**Ecosystem participation**. Technical working groups (Plutus, Ledger, Layer 2). Knowledge sharing through Scalus Club and Cardano Development Hours. Education collaborations, including the UZH Blockchain Summer School at the University of Zurich (2025). Open-source contributions across the Cardano toolchain.
-
-**Skin in the game**. We build products ourselves, including (Scalus, Binocular, and Cosmex) and work closely with ecosystem partners building mission-critical systems (Bifrost, Hydrozoa and others). Scalus solves the pain points we and other builders hit in practice, not the ones that only look good on paper.
+**Skin in the game**. We build products ourselves, including (Scalus, Binocular, and Cosmex) and work closely with ecosystem partners building mission-critical systems (Bifrost, Gummiworm and others). Scalus solves the pain points we and other builders hit in practice, not the ones that only look good on paper.
 
 **Execution and public accountability.** Lantr's track record is quality & delivery: products, integrations, community impact. For treasury-funded work, we commit to public reporting, open community sessions showcasing what we've shipped, and on-time milestone delivery.
 
@@ -276,235 +264,141 @@ The 2025 Scalus Treasury cycle facilitated by Intersect provided several practic
 - The administration process provided limited protection against adverse ADA price movement.
 - Third-party assurance and detailed reporting worked well and should be preserved.
 
-As a result, the 2026 Scalus proposal uses direct on-chain submission, quarterly milestones, more outcome-focused delivery, conservative ADA budgeting, refundable contingency, continued third-party assurance, and the same commitment to public reporting.
+As a result, the 2026 Scalus proposal uses direct on-chain submission, quarterly milestones, more outcome-focused delivery, conservative ADA budgeting, continued third-party assurance, and the same commitment to public reporting.
 
 A full retrospective of the 2025 Scalus Treasury cycle is provided in the Reference documents.
 
 ---
 
-### Milestones & Deliverables
+### Scope / What Treasury Funds
+ 
+This proposal funds a focused continuation of Scalus as shared Cardano infrastructure:
+- **Maintenance** of the existing Scalus stack and JVM/JS/TS/Native export targets
+- **Dijkstra hard-fork readiness**
+- **Improved interoperability** with existing Cardano tooling and the broader JVM ecosystem
+- **Application runtime**: a first scoped step, validated with real teams
 
-The proposal delivers four milestones over 12 months (July 2026 to June 2027). 
-
-Each milestone advances various parts of the application platform while moving the three target use cases forward: new Cardano applications, mission-critical applications, and applications with native L2 scaling.
-
-#### M1 (Q3 2026): Applications with sovereign chain access 
-
-**Objective**: Establish the foundation for self-sovereign applications: an embedded application-focused L1 node and a reactive runtime.
-
-**Key deliverables**:
-
-* Reactive application runtime: event streaming and handling, application lifecycle management, persistence, UTxO indexing
-* Embedded L1 node: networking, ledger conformance, Mithril snapshot bootstrap, storage backends
-* Application and node observability
-
-**What builders can do**: 
-
-* Bootstrap a new application from a starter kit
-* Build backend services that own their chain access (batchers)
-* Run indexers that derive custom state from chain history (registers/archives)
-* Build reactive applications (liquidation bots, arbitrage bots, bridge/L2 watchers)
-
-#### M2 (Q4 2026): Applications with native L2 scaling
-
-**Objective**: Unlock L2 application scaling through native Hydrozoa/Gummiworm* integration and embedded L1 access.
-
-**Key deliverables**:
-
-* Native Hydrozoa/Gummiworm* L2 integration with platform & embedded L1 node
-* In-memory node emulator for L2 testing
-* JVM interoperability with Java/Spring Boot and Kotlin/Ktor
-* Early experiments with browser-native applications in JavaScript/TypeScript
-
-**What builders can do**:
-
-* Build scaled DeFi applications anchored to L1 through Scalus’s own node (L2 orderbook, prediction market, perpetuals, auction)
-* Use Java and Kotlin application frameworks to integrate Cardano into production systems
-
-#### M3 (Q1 2027): Formal verification + advanced devnet
-
-**Objective**: Support mission-critical application development with formal verification and a more realistic development environment.
-
-**Key deliverables**:
-
-* Formal verification integration with Blaster*
-* Custom L2 ledgers for Hydrozoa/Gummiworm*
-* Early access to Dijkstra features
-* Advanced devnet with mainnet forking for JVM, JavaScript & TypeScript
-* Ledger conformance testing
-* Native binary compilation
-
-**What builders can do**:
-
-* Develop and verify higher-assurance contracts and protocols with Blaster*
-* Test complex applications against realistic mainnet state
-* Native binary applications and CLI tools 
-* Create custom business applications on top of state-channel L2 (gaming, account-based DEX, oracle)
-
-#### M4 (Q2 2027): Censorship-resistant application operations
-
-**Objective**: Deliver production-grade reliability and complete the censorship-resistance path for application operators.
-
-**Key deliverables**:
-
-- Finalisation** and hardening of the standalone and embedded L1 node for production operation
-- Mempool watcher for pre-confirmation events
-- Event-sourced transaction submission
-- Typed DeFi connectors (in collaboration with 3-4 Cardano protocols)
-- Standalone deployment modes, Docker images
-- Performance tuning & optimisations
-
-**What builders can do**: 
-
-* Operate production-grade DeFi protocols with reliable local ledger state, fork management and transaction submission (bridge, optimistic roll-up)
-* Build MEV-aware systems (market makers, arbitrage bots via mempool watcher)
-* Launch standalone JVM/native chain-access services for production applications and supporting tools
-
-By June 2027, Scalus brings its four pillars together into one integrated platform for the next generation of Cardano applications.
-
-(\*) Hydrozoa/Gummiworm L2 and the Blaster formal verification framework are third-party projects. Milestones M2 and M3 depend on those integrations, and Lantr will work closely with those teams to manage that dependency risk.
-
-(\*\*) Milestones M1-M3 progressively deliver the key node components required for production standalone operation. M4 is intended to finalise and harden those capabilities.
+The proposal **excludes** the production-grade JVM L1 node, full Gummiworm L2 integration, broad formal verification, advanced devnet expansion, and exploratory R&D.
 
 ---
 
-### Adoption targets and ecosystem impact indicators
+### Milestones & Deliverables
 
-To track ecosystem uptake beyond technical delivery, we will monitor the following indicators during the delivery period.
+This proposal delivers a kickoff plus three quarterly milestones over 9 months (July 2026 - March 2027).
 
-#### Platform adoption
+Maintenance runs continuously across all of them; Dijkstra readiness, interoperability, and the runtime are phased below.
 
-Shows whether external teams are actually using Scalus to move serious applications closer to production:
 
-* At least **1 demonstrated application or product** in each of the three use cases
-* At least **5 product teams building with Scalus**, excluding Lantr Engineering
-* At least **2 demonstrated deployments using Scalus-owned chain access** in a production or production-like environment
-* At least **2 ecosystem integrations extended or deepened**
+#### M1 (Q3 2026): Continuity & Dijkstra preview
 
-#### Indicative ecosystem impact
+**Objective**: Keep the stack current and ship the first Dijkstra developer preview.
 
-The value of Scalus is not tied to a single dApp. This proposal funds an application platform: a shared open-source layer intended to reduce the cost, complexity, and time-to-production for multiple serious applications on Cardano.
+**Key deliverables:**
+- Ongoing maintenance: bug fixes, dependency upkeep, security patches, releases
+- Dijkstra developer preview: initial Plutus V4 support in the compiler and standard library
+- Interoperability: improved interfaces and documentation for the JS/TS components embedded in MeshJS, Evolution SDK, and Lucid Evolution
+- Runtime: foundational components, reactive workers.
 
-Representative examples already building on the platform include:
+**What builders can do**: keep building on a maintained, current Scalus; experiment with early Dijkstra features; begin building against the foundational runtime.
 
-- **Bifrost**: Bitcoin-Cardano bridge, introducing external BTC-denominated liquidity to Cardano.
-- **Sugar Rush**: L2 orderbook exchange, creating scaled trading activity, deeper liquidity, and locked value on L1.
-- **Vela**: synthetic stablecoin protocol, allowing collateral to be locked and issued stablecoin liquidity to circulate in the ecosystem.
+#### M2 (Q4 2026): Interoperability & Dijkstra conformance
 
-Using DeFiLlama as a public reference point, Cardano DeFi TVL stood at approximately \$130M on May 5, 2026. At that scale, every new application built on Scalus that reaches production with a conservative \$5M TVL would represent roughly 4% of Cardano’s current DeFi baseline.
+**Objective**: Deepen reuse across the JVM and JS/TS stacks; advance Dijkstra toward conformance.
 
-In the same logic, if 3 serious applications reach production, each contributing \$3M-\$5M in first-year TVL, that would imply an approximate 8%-11% increase in Cardano’s current DeFi TVL.
+**Key deliverables:**
+- Dijkstra: ledger rules and transaction-builder updates (new builtins, cost models, nested transactions, accounts, guard scripts); conformance testing
+- Interoperability: Java/Kotlin integration (Spring Boot, Ktor examples); cleaner integration paths with the Cardano Java stack (CCL, Yaci)
+- Runtime: chain follower, task scheduler
 
-We will monitor and report indicative ecosystem impact through the applications built on Scalus, including their contribution to TVL, liquidity, and transaction-generating activity where publicly measurable.
+**What builders can do**: use Scalus from Java/Kotlin and alongside CCL/Yaci; test contracts against Dijkstra changes with conformance coverage; move more application logic onto the runtime.
+
+#### M3 (Q1 2027): Dijkstra readiness & consolidation
+
+**Objective**: Reach Dijkstra readiness and consolidate the runtime release
+
+**Key deliverables**:
+
+- Dijkstra: final readiness aligned to the hard-fork timeline, conformance tests finalised
+- Interoperability: published reuse guides 
+- Runtime: foundational runtime release, persistance, reliability
+- Documentation, examples, and blueprints across all workstreams
+
+**What builders can do**: ship Dijkstra-ready contracts and transactions safely through the hard fork or dev preview; reuse Scalus components across JVM and JS/TS; run applications on the foundational runtime.
+
+---
+
+### Measurable Adoption Indicators
+
+To give visibility into both delivery and ecosystem uptake, we commit to tracking and reporting the following metrics quarterly. 
+
+**Delivery metrics are within our control and tied to disbursement; uptake metrics are tracked and reported**, since adoption depends on the wider ecosystem as well as on delivery.
+
+| Metric | 9-Month Target | Measurement Method |
+|---|---|---|
+| Dijkstra readiness | Developer-preview ahead of the hard fork; final readiness tracked to the timeline | Plutus Core, ledger conformance tests |
+| Existing integrations maintained | 5 SDKs kept Dijkstra-compatible | Integration tests; compatibility status |
+| Interoperability | ≥1 working example each for Spring Boot and Ktor + reuse guide | Published examples and guide |
+| Documentation & blueprints | 100% coverage of new features; ≥3 new dApp blueprints | Published docs and blueprint catalogue |
+| Application runtime | Foundational runtime meeting its readiness criteria | Integration tests |
+| Developer reach | Tracked (baseline: 20k+/mo Scalus JS downloads) | maven/npm downloads, GitHub activity, contributors |
+| Ecosystem reuse | Tracked (baseline: 5 SDK integrations, >5 projects) | Public repos, SDK dependency, self-reporting |
 
 ---
 
 ### Budget
 
-**Total Treasury ask**: ₳8,503,000 (approximately \$2,125,750 at \$0.25/ADA reference rate), including a 10% refundable contingency reserved to protect delivery.
-
-This proposal funds 12 months of milestone-based delivery across the four pillars of the Scalus application platform: smart contract development, embedded and standalone L1 node infrastructure, reactive application runtime, and native L2 integration. 
-
-It is structured as an investment in an open-source, reusable application platform for Cardano.
-
-Lantr commits to delivering the announced objectives within the current budget ask.
+**Total Treasury ask**: ₳2,991,667 ($448,750 at a conservative $0.15/ADA reference rate) for 9 months of milestone-based delivery, with no contingency.
 
 **Pricing principles** 
 
 * Funding is requested in ADA; USD figures are provided as a reference.
-* The base budget is intentionally structured on a financially lean basis, with the aim of delivering the planned platform scope within a disciplined ask.
-* The \$0.25/ADA reference rate reflects conservative market conditions. 
-* A limited 10% refundable contingency is included to protect delivery continuity from technical uncertainty, integration risk, audit findings, and delivery risk across a 12-month roadmap. Unspent contingency returns to the Cardano Treasury.
-* A portion of the funding is tied to demonstrating measurable impact on Cardano 2030 KPIs and pillars.
+* The base budget is intentionally structured on a financially lean basis.
+* The \$0.15/ADA reference rate reflects conservative market conditions. 
+* A portion of the funding is tied to demonstrating measurable impact.
 
 **Methodology**
 
-Funding allocations are derived from effort estimates across the core workstreams, valued at a market rate of \$210,000 per FTE-year (approx. \$100/hour average rate) for senior software engineers and senior product leadership with deep DLT (Distributed Ledger Technology) expertise. 
-
-The budgeted engineering capacity extends beyond the current permanent team and assumes selective hiring, contracting, and specialist contributors where needed during execution.
+Funding allocations are derived from effort estimates across the workstreams, valued at a market rate of $210,000 per FTE-year (approx. $100/hour) for senior software engineers and senior product leadership with deep DLT expertise. 
 
 **Funding Distribution**
 
 | Category | USD | ADA | % |
 |----------|-----|------------|------|
-| Development & Engineering | \$1,470,000 | ₳5,880,000 | 76.1%  |
-| Product Management & Delivery | \$210,000 | ₳840,000 | 10.9%  |
-| Security & Audits | \$150,000  | ₳600,000  | 7.8% |
-| Documentation, Training & Developer Enablement | \$52,500 | ₳210,000 | 2.7% |
-| Ecosystem Outreach & Adoption | \$50,000 | ₳200,000 | 2.6%  |
-| **Subtotal** | **\$1,932,500** | **₳7,730,000** | **100%** |
-| Contingency (10%, refundable)| \$193,250 | ₳773,000 | - |
-| **Total** | **\$2,125,750** | **₳8,503,000** | - | 
+| Development & Engineering | \$354,375 | ₳2,362,500 | 79.0%  |
+| Product Management & Delivery | \$39,375 | ₳262,500 | 8.8%  |
+| Documentation & Developer Enablement | \$20,000 | ₳133,333 | 4.4% |
+| Ecosystem Outreach & Adoption | \$10,000 | ₳66,667 | 2.2%  |
+| Audits & Assurance | \$25,000  | ₳166,667  | 5.6% |
+| **Total** | **\$448,750** | **₳2,991,667** | **100%** |
 
 **Development & Engineering Breakdown**
 
 | Workstream | FTE | USD | ADA |
 |------------|-----|-----|-----|
-| Smart contract development | 1.0 | \$210,000 | ₳840,000 |
-| Cardano L1 node infrastructure | 3.0 | \$630,000 | ₳2,520,000 |
-| Application runtime | 1.5 | \$315,000 | ₳1,260,000 |
-| L2 integrations | 1.0 | \$210,000 | ₳840,000 |
-| Maintenance | 0.5 | \$105,000 | ₳420,000 |
-| **Total** | **7.0** | **\$1,470,000** | **₳5,880,000** |
+| Maintenance | 0.5 | \$78,750 | ₳525,000 |
+| Smart-contract platform & Dijkstra readiness | 0.75 | \$118,125 | ₳787,500 |
+| Interoperability | 0.5 | \$78,750 | ₳525,000 |
+| Application runtime (bounded scope) | 0.5 | \$78,750 | ₳525,000 |
+| **Total** | **2.25** | **\$354,375** | **₳2,362,500** |
+
+With Product Management & Delivery (0.25 FTE), total staffing is 2.5 FTE over 9 months.
 
 **Category Detail**
 
-**Development & Engineering (76.1%)** 
+**Development & Engineering (79.0%)**: The four workstreams detailed in Annex 1: Detailed Scope and Workstreams.
 
-Core platform engineering across five workstreams: 
-* Smart contracts development (including formal verification integration, enterprise testing, advanced devnet, and Dijkstra readiness, R&D)
-* Cardano L1 node and infrastructure (embedded and standalone deployment, broader chain access, mempool and client APIs, production hardening, and JVM/native targets)
-* Application runtime (reactive workers, indexing, event handling, transaction submission service, observability, and DeFi connectors)
-* L2 integrations (integration with Hydrozoa/Gummiworm L2, custom business-applications)
-* Ongoing maintenance across the platform during delivery
+**Product Management & Delivery (8.8%)**: Product lifecycle management, milestone execution, partner and user coordination, and delivery oversight.
 
-**Product Management & Delivery (10.9%)** 
+**Documentation & Developer Enablement (4.4%, fixed)**: Developer documentation, smart-contract and dApp blueprints, learning materials, and work that improves AI-assisted development readiness around the Scalus platform.
 
-Product lifecycle management, milestone execution, user and partner coordination, and delivery oversight across the proposal.
+**Ecosystem Outreach & Adoption (2.2%, fixed)**: Ecosystem communication, demos, and light-touch support for teams evaluating Scalus for integration or adoption.
 
-**Security & Audits (7.8%, Fixed)**
-
-* External security audits of smart contracts platform and critical node components (\$100,000)
-* Independent financial audit, technical review and assurance (\$25,000)
-* Security bounty program (\$25,000).
-
-**Documentation, Training & Developer Enablement (2.7%)** 
-
-Developer documentation, learning materials, migration guides, smart contract and dApp blueprints, pilot use-case materials, training programs (developers & auditors), and work that improves AI-assisted development readiness around the Scalus platform.
-
-**Ecosystem Outreach & Adoption (2.6%, Fixed)**
-
-Ecosystem communication, conference participation across Cardano and JVM events, demos, and light-touch support for teams evaluating Scalus for integration or adoption, across both Cardano-native and JVM-facing audiences.
-
-**Contingency (10%, refundable)**
-
-A limited delivery buffer for technical uncertainty, integration risk, audit findings, and delivery continuity across a 12-month platform roadmap. The proposal already uses a conservative ADA reference rate and a financially lean base estimate. The contingency is therefore not intended as a separate expansion of scope. Unspent contingency is returned to the Cardano Treasury.
-
----
-
-### Future Maintenance Costs (Projection)
-
-In the 2025 Treasury Budget proposal, Scalus 2026 maintenance was projected at roughly 0.5-1 FTE for the Smart contract development platform.
-
-For the 2027 cycle, we expect maintenance needs to increase to roughly 2-2.5 FTE, reflecting the broader scope of the full application platform: smart contracts, L1 node, application runtime, L2 integration, and a broader ecosystem integration surface.
-
-That 2027 estimate should not be read as a permanent steady-state maintenance level. It includes the first full year of post-delivery hardening across the expanded platform. We expect maintenance requirements in 2028 to normalize below that level.
-
-What maintenance would cover next year:
-- supporting early production usage
-- compatibility with Cardano protocol upgrades (inter-era hard forks)
-- security patches and audit follow-up
-- bug fixes, issue triage, and community support
-- dependency management across Scala, JVM, and key libraries
-- integration and conformance testing across supported targets
-- performance monitoring and optimisation
-- documentation upkeep
-
-Over time, we also expect maintenance to be supported by a broader mix of sources rather than Treasury alone. That can include direct contributions from teams building on Scalus, commercial implementation or support work around products that depend on the platform.
+**Audits & Assurance (5.6%, fixed)**: Independent financial audit, technical review and assurance.
 
 ---
 
 ### Administration
+
 **Smart Contract Escrow**
 
 Funds are held and released through the SundaeSwap treasury-contracts framework (https://github.com/SundaeSwap-finance/treasury-contracts), a proven escrow system with two validators:
@@ -516,9 +410,7 @@ Both contracts have been independently audited (TxPipe, MLabs) and are in produc
 
 **Lantr Engineering as Sole Vendor**
 
-Lantr Engineering is the sole vendor. All delivery comes from Lantr. Single point of accountability across the 12-month execution.
-
-Integration partners, specifically Hydrozoa / Gummiworm / Blaster teams, don't receive funding through this proposal.
+Lantr Engineering is the sole vendor. All delivery comes from Lantr. Single point of accountability across the 9-month execution.
 
 **Independent Oversight Board**
 
@@ -536,7 +428,7 @@ Periodic third-party audits are performed by No.Witness Labs. Quarterly technica
 
 **Independent Financial Audit**
 
-An external financial auditor will scrutinize Scalus's finances and treasury management, with the goal to publish a resulting report in Q3 2027. It will be remunerated with funds explicitly allocated in this proposal for that purpose.
+An external financial auditor will scrutinize Scalus's finances and treasury management, with the goal to publish a resulting report in Q2 2027. It will be remunerated with funds explicitly allocated in this proposal for that purpose.
 
 **Permission Scheme**
 
@@ -562,18 +454,18 @@ Funds remaining in the contract after expiration sweep back to the Cardano Treas
 
 **Prior Treasury Funding Disclosure**
 
-In accordance with Article II — Section 7.2 of the Constitution, Lantr Engineering discloses prior work funded by the Cardano community. Prior support for Scalus has come through three Project Catalyst rounds and the 2025 Treasury Budget process.
-
-Total prior allocation (over 3 years period): ₳1,085,692. To date, withdrawn: ₳888,384 (approximately 82%).
+In accordance with Article II — Section 7.2 of the Constitution, Lantr Engineering discloses prior Treasury withdrawals. We also disclose earlier Project Catalyst support for Scalus to provide a complete picture of prior Cardano community funding.
 
 | Workstream | Allocation | Received | Reference |
 |------------|------------|----------|-----------|
 | Catalyst F11 — Scalus: Multiplatform Scala implementation of Cardano Plutus    | ₳200,000   | 100% | Project ID: 1100252 |
 | Catalyst F11 — Multiplatform Plutus Script Cost & Evaluation Library (JS/JVM/LLVM) | ₳128,000   | 100%  | Project ID: 1100198 |
 | Catalyst F13 — Scalus: Multiplatform Tx Builder — same code for front & backend    | ₳100,000   | 100% |  Project ID: 1300009 |
-| 2025 Treasury Budget — Lantr: Scalus DApps Development Platform               | ₳657,692   | 70% (in execution) | Governance Action ID: 8ad3d454f3496a35cb0d07b0fd32f687f66338b7d60e787fc0a22939e5d8833e#17 |
+| 2025 Treasury Budget — Lantr: Scalus DApps Development Platform               | ₳657,692   | 100% (final report) | Governance Action ID: 8ad3d454f3496a35cb0d07b0fd32f687f66338b7d60e787fc0a22939e5d8833e#17 |
 
-All completed milestones were delivered and publicly reported. The 2025 Treasury Budget allocation is currently in finalisation, reporting is under preparation for the review of the third-party assurer; with remaining disbursements follow the report delivery.
+All completed milestones were delivered and publicly reported. The 2025 Treasury Budget allocation is completed, reporting is in review of the third-party assurer; with remaining disbursement follow the report delivery.
+
+In USD terms, this request it is comparable to the single 2025 Treasury grant at its reference rate — a proportionate continuation.
 
 ---
 
@@ -591,32 +483,26 @@ All completed milestones were delivered and publicly reported. The 2025 Treasury
 
 ### Risks & Mitigations
 
-No serious proposal is risk-free. The risks below are the ones most likely to affect delivery, with likelihood and impact assessed and concrete mitigations already in place.
+This proposal’s narrower scope removes the largest risks from the previous version: there is no production L1 node to deliver, and no critical-path dependency on third-party L2 or formal-verification projects. The remaining risks are more bounded and openly stated.
 
 | Type | Description  | Likelihood | Severity / Impact | Mitigation | 
 |------|--------------|------------|-------------------|--------|
-| Delivery   | Four milestones across 12 months is an aggressive delivery plan for platform-scale work. | Medium | Medium: milestone delays would postpone disbursements and slow dependent use cases. | This proposal extends components that already exist; it is not greenfield. The roadmap is structured around quarterly milestones with clearly defined objectives and more flexible internal sequencing, reducing planning rigidity while preserving accountability. Milestone-based disbursement and quarterly third-party assurance provide early warning if slippage occurs.  |
-| Technical  | Delivering a production-grade application-focused Cardano L1 node is non-trivial. | Medium | High: failure to deliver M4 would leave the self-sovereignty thesis structurally incomplete and weaken the node-resilience thesis. | Core building blocks already exist, including ledger rules, mini-protocol communication, and node bootstrapping. Critical capabilities are delivered progressively across the earlier milestones, so the final production hardening is an extension of shipped components rather than a last-minute integration effort. Security audits are budgeted for the most critical components. |
-| Market | The budget is referenced in USD but paid in ADA. | Medium | Medium: a further ADA price decline below the reference rate would compress the real delivery budget.| The proposal uses a conservative \$0.25/ADA reference rate and a financially lean base estimate. Lantr will manage receipts conservatively, including partial conversion into stable assets where appropriate. The refundable contingency is intended to preserve delivery continuity under uncertainty, rather than to function as a hedge against ADA price movement.| 
-| Dependency | Parts of the roadmap depend on third-party projects (Hydrozoa/Gummiworm, Blaster, Amaru conformance). | Medium | Medium: partner slippage could delay specific capabilities, especially L2 scaling and formal verification, without blocking the full platform. | The core Scalus platform remains independently valuable: smart contracts, L1 node, application runtime, and development environment do not depend on any single partner project. Lantr will work closely with partner teams to manage integration risk and adjust sequencing where needed.|
-| Adoption | JVM developer and enterprise uptake may be slower than projected. | Medium | Medium: slower adoption would reduce near-term ecosystem impact, even if technical delivery succeeds. | Adoption is supported through documentation, training, ecosystem integrations, community sessions, and targeted outreach to JVM and enterprise audiences. Further collaboration with Cardano Foundation and other ecosystem partners to increase the demonstation/implementation of the solution with the enterprises interested in Scalus platform. |
-| Team | The team is relatively small for the breadth of the roadmap. | Low | Medium: loss of key personnel during execution would disrupt delivery. | The engineering team is senior, distributed across workstreams, and shares knowledge across the platform. Lantr also has access to a broader network of experienced Scala engineers in Cardano and beyond, enabling hiring or contracting if needed. |
-
-Risks will be monitored throughout execution and reported quarterly alongside delivery progress. Material changes will trigger immediate board review.
+| Market | The budget is referenced in USD but paid in ADA | Medium | Medium: a further ADA price decline below the reference rate would compress the real delivery budget. | Conservative \$0.15/ADA reference rate; partial or full conversion to stable assets on receipt; no contingency keeps the ask lean. | 
+| Adoption | Adoption may not grow much in 9 months | Medium | Medium: slower adoption would reduce near-term ecosystem impact | The funded floor (maintenance, Dijkstra readiness, interoperability) is valuable regardless of new adoption. The runtime step is validated against real use, so expansion remains tied to real demand. |
+| Technical | Dijkstra specifications land late or change during delivery | Medium | Medium: final compatibility work could shift later in the delivery window. | Where final specs are unavailable, deliver developer-preview support, test coverage, conformance and documented upgrade paths rather than claiming production support ahead of the protocol timeline. |
+| Team | Lean team for the scope | Low | Medium: loss of key personnel during execution would disrupt delivery. | The engineering team is senior and shares knowledge across the platform. Lantr has access to a broader network of experienced Scala engineers in Cardano and beyond, enabling hiring or contracting if needed. | 
 
 ---
 
-### Conclusion / From us
+### Conclusion
 
-The Scalus application platform provides a faster path from prototype to production for mission-critical and scalable Cardano applications. It is designed for the kinds of systems Cardano needs more of next: DeFi protocols, bridges, oracles, and other non-trivial applications.
+This proposal funds the next disciplined step for Scalus: keep it maintained, prepare it for Dijkstra, deepen reuse across JVM and JavaScript ecosystems, and validate a scoped application-runtime layer with teams already building on it.
 
-It also strengthens Cardano’s JVM ecosystem, opening a native path for finance, fintech, and enterprise software teams. Scalus contributes to Cardano 2030 both to application-layer growth and to broader resilience through node diversity initiative.
+Scalus is already part of Cardano’s developer infrastructure. It supports complex protocols directly, and its components reach many more teams through the tools they already use. This proposal keeps that infrastructure current and makes it more reusable across the ecosystem.
 
-Builders do not need another tool. They need an integrated application platform that has it all and just works. This proposal expands Scalus in exactly that direction, adding the runtime, chain access, and scaling capabilities required to launch, operate, and scale serious applications on Cardano.
+The ask is intentionally bounded: no production JVM L1 node, no full L2 integration, no broad formal-verification track, and no platform-scale expansion. It is a continuation of proven work, sized to the current moment, with milestone-based accountability, public reporting, and independent oversight.
 
-Lantr commits to delivering the announced objectives within the current budget ask, with milestone-based accountability, public reporting, and independent oversight. 
-
-The goal is straightforward: help more teams build, launch, and operate serious applications on Cardano and as a result drive Cardano's transactions, users, and TVL.
+Lantr Engineering commits to delivering the announced objectives within the requested budget.
 
 ---
 
@@ -638,9 +524,9 @@ The goal is straightforward: help more teams build, launch, and operate serious 
 
 This proposal includes:
 
-- [x] **a clear withdrawal purpose**: funding the development of Scalus application platform for the 12 months period;
-- [x] **a period for delivery of proposed activities which the withdrawal shall be used for**: July 2026 - June 2027, with a milestone breakdown and detailed scope provided;
-- [x] **relevant costs and expenses of the proposed activities**: clear separation between fixed costs and variable costs, modelled as FTE (Full-Time Equivalent) in addition to a contingency to protect delivery. 
+- [x] **a clear withdrawal purpose**: funding the maintenance & development of Scalus platform for the 9 months period;
+- [x] **a period for delivery of proposed activities which the withdrawal shall be used for**: July 2026 - March 2027, with a milestone breakdown and detailed scope provided;
+- [x] **relevant costs and expenses of the proposed activities**: clear separation between fixed costs and variable costs, modelled as FTE (Full-Time Equivalent).
 - [x] **circumstances under which the withdrawal might be refunded to the Cardano Treasury**
 
 **Article II - Section 7.2: past withdrawal(s) disclosure**
@@ -678,151 +564,78 @@ This proposal makes provisions for:
 
 ### Annex 1: Detailed Scope and Workstreams
 
-The tables below detail every component this proposal funds, grouped by workstream. By June 2027, "production-ready" across the platform means meeting measurable criteria per workstream. These criteria are tracked quarterly and reported alongside milestone deliveries.
+The tables below detail every component this proposal funds, grouped by workstream. By March 2027, "readiness criteria" across the platform means meeting measurable criteria per workstream. These criteria are tracked quarterly and reported alongside milestone deliveries.
 
-#### ARS — Application Runtime (1.5 FTE)
-
-| Code  | Component  | Description |
-|-------|------------|-------------|
-| ARS1  | Application runtime  | Event driven dApp runtime with embedded node APIs. Lets applications run their own end-to-end lifecycle without external dependencies. |
-| ARS2  | Reactive workers  | Typed, durable event handling. Lets applications react to events with composable, type-safe logic that survives restarts and recovers cleanly from failure.|
-| ARS3  | Chain event stream  | Typed, ordered, replayable stream of L1 and L2 events. Gives applications a unified, replayable view of everything happening on L1 and L2, observed through their own node. |
-| ARS4  | UTxO indexing | Chain follower with pub/sub typed selective UTxO indexing. Lets applications derive and query their own state from chain history, fully reproducible from the event log.  |
-| ARS5  | Mempool watcher | Event source over the local node's mempool. Lets applications see and act on transactions before confirmation — arbitrage, MEV-aware submission, counterparty awareness. |
- | ARS6  | Transaction submission service | Event-sourced submission with retry, fee bumping, and conflict resolution. Lets applications submit transactions to L1 and L2 reliably under partial failure, with crash recovery built in.| 
- | ARS7  | Persistence layer | Pluggable, crash-consistent storage for event log, projections, snapshots, and checkpoints. Lets applications store state durably across crashes, on whichever backend fits the deployment target. |
-| ARS8  | Job / task scheduler | Durable time-driven event source for slots, epochs, cron, and deadlines. Lets applications drive logic from time as well as from chain events, through the same reactive model. |
-| ARS9  | Cardano DeFi connectors | Typed integrations for 3-4 selected Cardano DeFi protocols, reducing the need for custom low-level integration work such as manual CBOR or datum decoding. |
-| ARS10 | JVM interoperability | Java/Spring Boot and Kotlin/Ktor |
-| ARS11 | Monitoring, observability & logging | Prometheus metrics; OpenTelemetry distributed tracing; structured logging; worker health and metrics dashboards. Lets operators run applications themselves at production quality, with real visibility into what's happening. |
-
-**Production-readiness criteria**
-
-1. Replay determinism: any projection state is reproducible from the event log; full replay and replay-from-snapshot produce byte-identical results to live state.
-2. Submission resilience: retry, fee bumping, and conflict resolution hold under partial failure; verified end-to-end against devnet and mainnet with adversarial scenarios (peer drops, fork rollbacks, mempool eviction).
-3. Self-operability: full observability stack (Prometheus, OpenTelemetry, structured logs) usable without external SaaS; reference Grafana dashboards published.
-4. Comprehensive set of integration tests validating reproducibility, rollbacks handling, retries, durability, connectors and other functionality.
-
-#### L2H — L2 Scaling Integrations (1.0 FTE)
-
-| Code | Component | Description  |
-|------|-----------|--------------|
-| L2H1 | Hydrozoa L2 integration | Integration with Hydrozoa (Gummiworm) L2 state channels. Lets applications scale through Hydrozoa/Gummiworm state channels, anchored to L1 through Scalus. |
-| L2H2 | Censorship-resistant infrastructure | Embedded / standalone Hydrozoa setup with Scalus L1 node. Lets L2 operators run L1 node embedded in the application or in a stand-alone way, simplifying operations. |
-| L2H3 | Ledger rules framework | Custom ledger rule sets for L2 solutions. Enables custom business applications on top of state channels. |
-
-**Production-readiness criteria**
-
-1. End-to-end deployment: at least one demonstration of a Hydrozoa/Gummiworm state channel running end-to-end on Scalus's L1 node layer in a representative environment.
-2. Custom ledger rules: at least one demonstration of L2 ledger rule sets implemented and functional.
-3. L1 integrity: L2 state anchoring and dispute resolution verified under adversarial conditions.
-4. Documentation: full operator runbook including bring-up, monitoring, and recovery procedures.
-5. Demonstration of a custom application running on multiple  Hydrozoa and Scalus L1 nodes with adversarial/availability scenarios (wrong transactions, non-participation)
-
-#### NOD — Application-Focused L1 Cardano Node (3.0 FTE)
-
-| Code  | Component | Description|
-|-------|-----------|------------|
-| NOD1  | Networking / mini-protocols | N2N and N2C mini-protocols with peer discovery and management. Lets the node follow the Cardano P2P network correctly and serve client applications over the standard interfaces. |
-| NOD2  | Ledger & conformance | Conway+ ledger rules with an era transition framework. Lets the node validate blocks and maintain ledger state across protocol upgrades. Includes Dijkstra hard fork readiness (Plutus V4, new builtins, updated cost models) and conformance testing aligned with the Node Diversity initiative.  |
-| NOD3  | Plutus VM | Scalus CEK machine evaluating UPLC scripts for V1–V4. Lets the node execute and cost smart contracts during validation.|
-| NOD4  | Bootstrap | Mithril-based snapshot import for rapid initial synchronisation. Lets operators bring a node online in hours instead of days without full chain replay. |
-| NOD5  | Storage | Pluggable on-disk backends for chain history, ledger snapshots, and indices (RocksDB, in-memory, IndexedDB). Lets the node persist state durably across crashes and target multiple deployment environments. |
-| NOD6  | Consensus | Ouroboros chain selection and fork resolution. Lets the node maintain the same chain as the rest of the network under Byzantine conditions. |
-| NOD7  | Mempool | In-memory store of pending transactions with validation, eviction, and ordering. Lets the node accept, validate, and propagate user transactions while exposing pre-confirmation events to applications. |
-| NOD8  | Client API / common interfaces | In-process and socket-based interfaces for chain-sync, transaction submission, and ledger queries. Includes UTxO RPC (gRPC), Blockfrost-compatible REST API, and local socket support for cardano-cli / cardano-db-sync compatibility. Lets applications consume the node directly while remaining interoperable with existing Cardano tooling. |
-| NOD9  | Standalone & embedded setups | Node-as-library (embed in your application); standalone binary mode with external APIs and Docker images. Lets teams choose between in-process embedding and containerised standalone deployment. |
-| NOD10 | Multiplatform optimisations | JVM (server-side) and native |
-| NOD11 | Node telemetry, monitoring & logging | Node-level Prometheus metrics and structured tracing; health checks and operational dashboards. |
-
-**Production-readiness criteria**
-
-Protocol conformance & interoperability
-- Consensus and Networking: node is able to sync with Haskell node and successfully validate the chain starting from Conway.
-- Plutus VM conformance: Scalus CEK machine passes 100% of official Plutus Core conformance test suites for V1–V4.
-- Ledger conformance: 100% pass rate on available conformance test suites (Amaru, Haskell node).
-
-Performance & scalability
-- Sync speed: initial block download and synchronisation speed on par with the Haskell node on equivalent hardware.
-- Memory footprint: JVM heap usage optimised to run on standard cloud instances (8–16 GB RAM) without excessive GC pauses.
-- Transaction throughput: mempool validation and propagation handle peak mainnet load (80 KB blocks every 20 seconds).
-- Benchmarks showing sync speed, memory usage, throughput and latency numbers in comparison to Haskell node.
-
-Operational resilience & security
-
-- Security audit: external security audit of the networking stack (DoS prevention) and ledger validation logic.
-- Telemetry: integration with Prometheus/Grafana for real-time monitoring of block height, peer count, and resource usage.
-
-Deployment flexibility
-- Node-as-library: embedding the node directly into JVM applications without a standalone process.
-- GraalVM compatibility: native image compilation for reduced startup time and memory overhead.
-
-#### SCP — Smart Contracts Development (1.0 FTE)
+#### SCP — Smart Contracts & Dijkstra readiness (0.75 FTE)
 
 | Code | Component | Description |
 |------|-----------|-------------|
 | SCP1 | Enterprise testing capabilities | Boundary and scenario invariant scanning for smart contracts.|
-| SCP2 | Formal verification | Integration with Blaster verification framework; contract invariant checking. |
-| SCP3 | In-memory emulator & local devnet | Full in-memory Cardano node with ledger validation; UTxO state tracking and block processing; transaction simulation. |
-| SCP4 | Dijkstra hard fork & early access | Plutus V4 support; nested transactions; accounts; early integration ahead of hard fork. |
-| SCP5 | Exploratory R&D | Exploratory research into potential platform improvements, including VM performance, optimisation techniques, zk tooling, and on-chain data structures. |
+| SCP2 | In-memory emulator | Full in-memory Cardano node with ledger validation; UTxO state tracking and block processing; transaction simulation. |
+| SCP3 | Dijkstra hard fork & early access | Plutus V4 support; nested transactions; accounts; early integration ahead of hard fork. |
 
-**Production-readiness criteria**
+**Hard-fork readiness criteria**
 
 - Smart contract language conformance: generated UPLC code passes 100% of official Plutus Core conformance test suites for V1–V4.
-- External security audit: completion of a professional technical audit of the Scala Compiler Plugin and the core Standard Library primitives, with audit results published.
 - Benchmarking & optimisation: generated UPLC code size and execution costs (CPU and memory) on par with Aiken or hand-written UPLC, measured through the UPLC-CAPE benchmarking framework.
-- Formal verification: stable integration with the Lean4 and Blaster verification frameworks for contract invariant checking. Demonstration of at least two non-trivial theorems about smart contracts.
-- Documentation & blueprints: at least three production-grade application blueprints with 100% documentation coverage.
+- Documentation & blueprints: 100% documentation coverage of all functionality.
 
-#### USE — Documentation, Training & Developer Enablement (0.25 FTE)
+#### IOP - Interoperability (0.5 FTE)
+
+| Code | Component | Description |
+|------|-----------|-------------|
+| IOP1 | Cardano JS/TS ecosystem reuse | Improved interfaces and documentation for the components embedded in MeshJS, Evolution SDK, and Lucid Evolution |
+| IOP2 | Cardano Java stack interoperability | Cleaner integration paths with the Cardano Java stack (Cardano Client Lib, Yaci) |
+| IOP3 | JVM interoperability | Java/Spring Boot and Kotlin/Ktor templates |
+
+**Adoption readiness criteria**
+
+- At least one working integration example each for Spring Boot and Ktor
+- Documentation covers the interoperability specifics
+
+#### ARS — Application Runtime (0.5 FTE)
+
+| Code  | Component  | Description |
+|-------|------------|-------------|
+| ARS1  | Application runtime  | Event driven dApp runtime. Lets applications run their own end-to-end lifecycle without external dependencies. |
+| ARS2  | Reactive workers  | Typed, durable event handling. Lets applications react to events with composable, type-safe logic that survives restarts and recovers cleanly from failure.|
+| ARS3  | UTxO indexing | Chain follower with pub/sub typed selective UTxO indexing. Lets applications derive and query their own state from chain history, reproducible from the event log.  |
+| ARS4  | Persistence layer | Crash-consistent storage for event log, snapshots, and checkpoints. Lets applications store state durably across crashes. |
+| ARS5  | Job / task scheduler | Durable time-driven event source for slots, epochs, cron, and deadlines. Lets applications drive logic from time as well as from chain events, through the same reactive model. |
+
+**Adoption-readiness criteria**
+
+1. Replay determinism: any projection state is reproducible from the event log; full replay and replay-from-snapshot produce byte-identical results to live state.
+2. Comprehensive set of integration tests validating reproducibility, rollbacks handling, retries, durability, and other functionality.
+
+#### USE — Documentation, Training & Developer Enablement (Fixed)
 
 | Code | Component | Description  |
 |------|-----------|--------------|
 | USE1 | Documentation & learning materials | Continuous documentation of platform capabilities.|
 | USE2 | Smart contract & dApp blueprint catalogue | Evolution of the blueprint catalogue with advanced cases and examples. |
-| USE3 | Use case development | Development of pilot use cases, partner identification, iteration. |
-| USE4 | Training program | Training programs for developers and auditors. |
-| USE5 | LLM/AI readiness | MCP integration; agents; LLM/AI-friendly APIs and documentation. |
+| USE3 | LLM/AI readiness | MCP integration; agents; LLM/AI-friendly APIs and documentation. |
 
 #### Operations, Support & Assurance
 
 | Code | Workstream | FTE | Description |
 |------|------------|-----|-------------|
 | MAN  | Maintenance | 0.5 | Cross-cutting maintenance, bug fixing, and support across all workstreams. |
-| PM   | Product management | 1.0 | Product lifecycle management, partner and user coordination. |
-| MAR  | Ecosystem Outreach & Adoption | Fixed | Ecosystem communication and outreach, events, adoption support. |
-| AUD  | Technical audits & third-party assurance | Fixed | External security and financial audits, independent technical review and assurance, security bounty program. |
+| PM   | Product management | 0.25 | Product lifecycle management, partner and user coordination. |
+| MAR  | Ecosystem Outreach & Adoption | Fixed | Ecosystem communication and outreach, adoption support. |
+| AUD  | Financial audits & third-party assurance | Fixed | External financial audits, independent technical review and assurance. |
 
 ---
 
-### Annex 2: Product Development Methodology
-
-Scalus is a product, not a project. 
-
-The distinction matters: a product evolves continuously, shaped by the people using it, through repeated cycles of ship, learn, adjust. The milestones are the initial high-level plan, what the platform delivers and when. Within those milestones, specific feature priorities, implementation choices, and component sequencing adapt based on what we learn from real users. 
-
-That said, larger course corrections at the milestone level remain possible, particularly within Milestones 3 and 4, where the longer horizon makes adaptation more likely. We will reprioritise when user feedback, new opportunities and use-cases, or R&D findings warrant it.
-
-**Working from user feedback.** Lantr's product decisions are shaped by direct conversations with the teams building on Scalus today and the wider Cardano builder community (facilitated by Scalus Club). Pain points reported by users can override speculative roadmap choices.
-
-**Early testable versions**. Each capability ships first as a working preview: usable, but not yet polished. Users build with it, report what works and what doesn't, and the team folds the learning back into subsequent iterations.
-
-**Monthly iterations.** We practice trunk-based development (on average 45-50 commits/week), so new code reaches the main line daily. New features are activated for users every month, not at quarter-end, this compresses feedback loops and prevents large-batch failures.
-
-Three years of continuous Scalus delivery have run on this methodology. Quarterly reports make the reprioritisations visible to the oversight board and the public.
-
----
-
-### Annex 3: Competitive Landscape
-
+### Annex 2: Competitive Landscape
+<!--
 #### Smart contract development
 
 Scalus is already one of the most complete and actively developed smart contract platforms on Cardano. It combines a Scala-native contract language, integrated transaction building, advanced optimisation paths, rich documentation, design patterns, a blueprint catalogue, and an enterprise-grade development experience in one stack.
 
 That matters because teams are not only choosing a language. They are choosing how quickly they can write, understand, optimise, test, and maintain non-trivial protocols over time. In that regard, Scalus is positioned as a full smart contract development platform rather than only a contract DSL.
 
-The next iteration extends that further with formal verification integration and early access to features from the next Cardano hard fork.
+The next iteration extends that further with early access to features from the next Cardano hard fork.
 
 | Capability | Scalus | Aiken | Plutarch |
 |---|---|---|---|
@@ -848,18 +661,13 @@ Scalus's development environment is optimised to accelerate development/testing 
 
 This gives Cardano something much closer to what Hardhat and Foundry provide in Ethereum: a local environment where testing, debugging, scenario execution, and application logic can run against the same integrated stack. Rather than stitching together contract code, off-chain code, emulators, and external devnets, builders can work inside one coherent toolchain.
 
-This proposal extends that foundation further in M2-M3 with advanced devnet capabilities, mainnet forking, and stronger production-parity testing.
-
 | Capability | Scalus | Yaci Dev Kit | Hardhat (Ethereum ref) | Foundry (Ethereum ref) |
 |---|---|---|---|---|
 | In-memory blockchain | Yes (in-process Cardano node) | No (Yaci Devnet via Docker) | Yes (Hardhat Network) | Yes (Anvil) |
-| Mainnet forking | Yes (M3) | Limited | Yes (signature feature) | Yes (fast) |
-| Local devnet | Yes (fully configurable, custom genesis) | Yes (configurable) | Yes | Yes |
+| Local devnet | Yes (via Yaci Dev Kit) | Yes (configurable) | Yes | Yes |
 | Block production control | Yes (slot/epoch manipulation) | Yes | Yes | Yes |
 | Test language | Scala (native types) | Java | JavaScript / TypeScript | Solidity (native) |
-| Same code: test = production | Yes (M4) | No (devnet) | Yes | Yes |
 | Property-based testing | Yes | Limited | Yes (Solidity fuzz) | Yes (Forge fuzz) |
-| Snapshot / replay determinism | Yes (M3) | Yes | Yes | Yes |
 | Multi-party / wallet testing | Native | Yes | Yes | Yes |
 | Smart contract debugging | Source-position stack traces | tx-level logs | Console.log, stack traces | Stack traces |
 | Test execution speed | Fast (in-process) | Medium (node communication overhead) | Fast | Very fast (Rust-based) |
@@ -868,102 +676,38 @@ This proposal extends that foundation further in M2-M3 with advanced devnet capa
 * Hardhat: https://hardhat.org/ 
 * Foundry: https://www.getfoundry.sh/ 
 
+-->
+
 #### Application framework
 
 The next layer is the application framework itself. In the Cardano landscape, the closest comparison is Balius in the Rust ecosystem. Most other widely used tools, including MeshJS and Evolution SDK, are primarily SDKs for transaction building and protocol interaction rather than full application runtimes.
 
-Scalus goes further by combining smart contracts, transaction building, reactive workers, event streaming, persistence, scheduling, observability, and typed protocol integrations into one application platform. The goal is not just to help teams assemble transactions, but to help them build complete dApps and protocol backends on one stack.
+Scalus goes further by combining smart contracts, transaction building, reactive workers, persistence, scheduling into one application platform. The goal is not just to help teams assemble transactions, but to help them build complete dApps and protocol backends on one stack.
 
-This is where Scalus moves from tooling into an application platform: it complements contract development and chain access with the runtime layer needed to launch, operate, and evolve real applications.
+This is where Scalus moves from tooling into an application platform: it complements contract development with the runtime layer needed to launch, operate, and evolve real applications.
 
 | Capability | Scalus | Balius |
 |---|---|---|
 | Primary focus | Application runtime + embedded node | Headless dApps / workers (WASM) |
-| Reactive workers | Yes (typed, durable) (M1-M2) | Yes (WASM-based) |
-| Typed event streaming (L1 + L2) | Yes (M1-M2) | Yes (UTxORPC) |
-| Persistence layer | Pluggable, crash-consistent | Yes |
+| Reactive workers | Yes (typed, durable) | Yes (WASM-based) |
+| Persistence layer | Crash-consistent | Yes |
 | Job / time scheduling | Yes | Yes |
-| Transaction submission | Event-sourced  | Yes |
-| Mempool watcher | Yes | Limited |
-| DeFi connectors | Yes (typed clients) | Limited |
-| Observability | Yes (M3) | Yes |
 | Crash recovery | Yes (event log replay) | Yes |
-| L1 node access | Yes (in-process or standalone Scalus node) | No (uses external node, Dolos) |
-| Source language / runtime | Scala (JVM), Native | Rust, WASM |
+| L1 node access | No (uses external node) | No (uses external node, Dolos) |
+| Source language / runtime | Scala/Kotlin/Java (JVM), Native | Rust, WASM |
 | Production maturity | In development | In development |
 
 * Balius: https://docs.txpipe.io/balius 
 
-#### L1 node and chain access
-
-In the node landscape, Scalus is differentiated by its application focus. Existing node implementations primarily optimise for block production, relay operation, or data access as standalone infrastructure roles. Scalus targets a different need: application-owned chain access embedded directly into the application lifecycle.
-
-That means the same node model can accompany a builder from local development, to testnet, to production, in embedded or standalone mode, with selective data access, typed indexing, mempool visibility, and production-ready standalone operation. 
-
-The emphasis is operational simplicity and composability: applications configure the chain-access profile they need, in the same language and on the same stack as the rest of the system.
-
-By June 2027, the target is a platform that offers chain following, ledger validation, local data access, mempool visibility, and reliable transaction submission for application operators, while remaining optimised for application use rather than generic network infrastructure.
-
-| Capability | Scalus | Haskell node | Amaru | Dolos | Yaci Store | Dingo |
-|---|---|---|---|---|---|---|
-| Primary focus | Application use (embedded) | Block production / relay | Block production / relay | Data access | Data access | Block production / relay |
-| Block production | Path to (post-2027) | Yes (production) | In development | No | No | In development |
-| Data access | Yes (M1) | Yes | In development | Yes | Yes | In development |
-| Ledger validation | Yes (M3-M4) | Yes | Yes | Limited | Limited | Yes |
-| Chain following / sync | Yes (M1) | Yes | Yes | Yes | Yes | Yes |
-| UTxO indexing | Yes (typed, selective) | Via db-sync | Yes | Yes | Yes | Yes |
-| Mempool access for apps | Yes (watcher) | Yes (socket) | In development | Limited | Via Yaci library | In development |
-| Transaction submission | June 2027 (M4) | Yes | Yes | Limited | Via external tooling | In development |
-| Plutus VM (V1-V3) | Yes (Scalus CEK) | Yes | Yes (Rust) | Limited | Limited | In development |
-| Source language / runtime | Scala (JVM) | Haskell (GHC) | Rust | Rust | Java (JVM) | Go |
-| Embedded mode (node-as-library) | Yes | No (separate process) | No | Partial (Rust crate) | Yes (Java library) | No |
-| Multi-platform compilation | JVM, Native, JS/TS, (experimental) WASM | Native | Native, WASM | Native | JVM, Native | Native |
-| Node Diversity conformance | Yes (M3) | Reference implementation | In progress | - | - | In progress |
-| Standard APIs | UTxO RPC, REST, sockets, in-process | Socket, cardano-db-sync | Sockets | UTxO RPC, REST | REST | Standard |
-| Storage backends | RocksDB, in-memory, IndexedDB (M1) | LSM-tree | Multiple | Multiple | Multiple | Multiple |
-| Production maturity | In development (data node prototype; relay June 2027) | Production (mainnet, years) | In development | Production (data role) | Production (data role) | In development |
-
-* Haskell node: https://github.com/IntersectMBO/cardano-node 
-* Amaru: https://amaru.global/ 
-* Dolos: https://docs.txpipe.io/dolos 
-* Yaci Store: https://store.yaci.xyz/ 
-* Dingo: https://github.com/blinklabs-io/dingo 
-
-#### Native L2 scaling
-
-Scalus also stands out by making L2 scaling part of the same platform rather than a separate integration burden. Hydrozoa/Gummiworm is already being developed on Scalus today, and this proposal extends that path into native operator support and custom ledger support.
-
-The result is that launching an L2-scaled application becomes much simpler. Instead of assembling a separate scaling environment, node layer, and application framework, builders can use the same platform and configuration model to move from L1 development into L2-enabled operation.
-
-That reduces the barrier to shipping more scalable Cardano applications and makes L2 support feel like an extension of the platform, not a parallel system.
-
-| Capability | Hydrozoa/Gummiworm (integrated with Scalus) | Hydra | Midgard |
-|---|---|---|---|
-| Type | Application platform with native L2 integration | L2 state channel protocol | L2 optimistic rollup |
-| L2 architecture | State channels + custody settlement protocol | State channels (isomorphic ledger) | Optimistic rollup |
-| Custom L2 ledger rules | Yes (via Gummiworm) | No (isomorphic = same as L1) | Rollup semantics (fixed) |
-| Multi-party participants | Yes | Yes (limited per head) | Open participation |
-| Configurable setup | Yes (Scalus framework provides operator scaffolding) | Moderate | In development |
-| Source language / runtime | Scala (JVM) | Haskell | Aiken/Plutarch (onchain) + Haskell/TypeScript (offchain) |
-| L1 node dependency | Embedded (own Scalus node) or external node | External Cardano node | External Cardano node |
-| Production maturity | In development, Hydrozoa runs on Scalus today; full operator framework Q4 2026 (M2) | Production (Hydra Head) | In development |
-
-* Hydrozoa: https://github.com/cardano-hydrozoa/hydrozoa 
-* Hydra: https://hydra.family/head-protocol/ 
-* Midgard: https://github.com/Anastasia-Labs/midgard 
-
 #### Conclusion
 
-Taken together, these layers make Scalus unusual in the Cardano landscape. It is not only a smart contract language, not only a testing environment, not only an application runtime, not only a node, and not only an L2 integration. It is a coherent application platform that brings those pieces together into one stack.
+Taken together, these layers make Scalus unusual in the Cardano landscape. It is not only a smart contract language, not only a testing environment, not only an application runtime. It is a coherent application platform that brings those pieces together into one stack.
 
-That is the core difference. Scalus is designed to reduce assembly work, compress time-to-production, and give builders one integrated platform to build, test, launch, operate, and scale serious Cardano applications.
-
-This is also why Scalus maps directly to Cardano’s next growth bottleneck. As protocol, liquidity, and capital continue to advance, the ecosystem needs an application layer that helps more teams ship faster,
-operate more sovereignly, and scale more easily. Scalus is designed to be that layer.
+That is the core difference. Scalus is designed to reduce assembly work, compress time-to-production, and give builders one integrated platform to build, test, launch serious Cardano applications.
 
 ---
 
-### Annex 4: 2025 Retrospective
+### Annex 3: 2025 Retrospective
 
 #### Overview
 
@@ -1063,10 +807,9 @@ The Intersect 2025 Treasury process did not provide an effective mechanism for h
 
 For 2026, we decided to:
 - Hedge at least part of the requested ADA into USD-denominated stablecoins to protect delivery against adverse price movement;
-- Use concervative ADA/USD rate;
-- Return any unused contingency to the Treasury at the end of the delivery period.
+- Use conservative ADA/USD rate;
 
-This is the direct origin of the conservative ADA pricing and refundable contingency model used in the 2026 Scalus proposal.
+This is the direct origin of the conservative ADA pricing used in the 2026 Scalus proposal.
 
 #### Administration, Reporting, and Support During Delivery
 
@@ -1102,8 +845,8 @@ All funded milestones were delivered on time. The planned milestone structure in
 - (Closed) Milestone 2 – Adoption and Onboarding
 - (Closed) Milestone 3 – Off-chain Libraries
 - (Closed) Milestone 4 – Testing Capabilities
-- (Done, Reporting) Milestone 5 – Advanced UPLC Optimisations
-- (Done, Reporting) Milestone 6 – Accelerated E2E Development Cycle
+- (Closed) Milestone 5 – Advanced UPLC Optimisations
+- (Closed) Milestone 6 – Accelerated E2E Development Cycle
 
 At the same time, one of the strongest lessons from delivery was that the roadmap was split too finely. The combination of:
 - narrow milestone segmentation;
@@ -1163,7 +906,6 @@ We concluded that the next proposal should:
 - target faster disbursement timing after accepted delivery;
 - retain third-party assurer and public reporting;
 - hedge (at least part of) the requested ADA into stable assets;
-- include a refundable contingency to protect delivery under uncertainty;
 - focus milestones on outcomes and product utility, not only technical line items;
 - preserve flexibility for R&D, adoption support, and reprioritisation within milestone scope.
 
@@ -1173,19 +915,40 @@ The 2026 Scalus proposal is built directly on these observations and decisions.
 
 ## Supporting links
 
-* Full proposal (PDF): https://ipfs.io/ipfs/QmcCjBYA8zrx5Khqbh6xraXQ23zrgaZxuzNewr1Ni6fck7
-* Annex 1: Detailed Scope and Workstreams (PDF): https://ipfs.io/ipfs/QmQ6RiAPBZfuRqSh2bCS1HBBxSUoVoGob55bM43vimHxfJ
-* Annex 2: Product Development Methodology (PDF): https://ipfs.io/ipfs/QmUzumqPk8YGNiwWMjnLrhsaLva6ya2Hsyr9YiRoEqAzQp
-* Annex 3: Competitive Landscape (PDF): https://ipfs.io/ipfs/QmSEhgYGnfVHmc432P7cZmWq2ocNrS1FhTsz3GqY2zJv84
-* Annex 4: 2025 Retrospective (PDF): https://ipfs.io/ipfs/QmaVmFXvbFnS5vjVtb9uuQugDU8tbqiWCe2QrZijbMCP6r
+* Full proposal: https://ipfs.io/ipfs/QmcCjBYA8zrx5Khqbh6xraXQ23zrgaZxuzNewr1Ni6fck7
+* Annex 1: Detailed Scope and Workstreams: https://ipfs.io/ipfs/QmQ6RiAPBZfuRqSh2bCS1HBBxSUoVoGob55bM43vimHxfJ
+* Annex 2: Competitive Landscape: https://ipfs.io/ipfs/QmSEhgYGnfVHmc432P7cZmWq2ocNrS1FhTsz3GqY2zJv84
+* Annex 3: 2025 Retrospective: https://ipfs.io/ipfs/QmaVmFXvbFnS5vjVtb9uuQugDU8tbqiWCe2QrZijbMCP6r
 * Scalus website: https://scalus.org/ 
 * Scalus repository: https://github.com/scalus3 
 * Scalus js repository: https://www.npmjs.com/package/scalus 
 * Scalus Club: https://luma.com/scalus 
 * Lantr website: https://lantr.io/ 
-* Hydrozoa repository: https://github.com/cardano-hydrozoa/hydrozoa 
-* Hydrozoa technical specification: https://cardano-hydrozoa.github.io/hydrozoa/hydrozoa.pdf 
-* Lean Blaster: https://input-output-hk.github.io/Lean-blaster/ 
-* Lean Blaster repository: https://github.com/input-output-hk/Lean-blaster
 * Proposal repository: https://github.com/lantr-io/scalus-treasury-proposal-2026
 * Treasury-contracts framework - Sundae Swap: https://github.com/SundaeSwap-finance/treasury-contracts
+
+<!--
+#### DRep feedback
+
+The DRep feedback was clear and useful: many voters recognised the importance of improving Cardano’s application layer, the vision and technical quality of Scalus, and Lantr Engineering’s delivery record. At the same time, the requested scope and budget were considered too large relative to demonstrated demand and Treasury capacity in the current cycle.
+
+The main concerns raised were:
+
+- the request was too large relative to previous Scalus funding rounds;
+- the previous proposal attempted to fund too much at once: application runtime, L1 node, L2 integration, formal verification, maintenance and adoption;
+- the standalone JVM L1 node scope overlapped with other Cardano node initiatives already funded or in progress;
+- third-party dependencies (Blaster and L2 integration) were too close to the critical path;
+- the full JVM application-platform thesis needs stronger adoption validation before platform-scale Treasury funding.
+
+#### The Incremental Step Funded Here
+
+This proposal is structured as a direct response to the DRep feedback. The scope has been reduced from a full application-platform expansion to the next incremental public-good step for Scalus:
+
+1. maintain the existing Scalus infrastructure;
+2. prepare it for the Dijkstra hard fork;
+3. improve interoperability with existing Cardano tooling and the broader JVM ecosystem, with a focus on adoption;
+4. validate a first application runtime MVP with real users.
+
+Treasury and Catalyst have already funded parts of Scalus. Those outputs are open-source, used by ecosystem projects, and integrated into other Cardano tooling. Keeping them maintained and compatible through the next protocol cycle protects prior public investment and avoids letting already-funded infrastructure fall behind.
+
+-->
