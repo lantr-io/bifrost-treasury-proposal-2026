@@ -119,7 +119,6 @@ function buildAnchor(md: string, network: Network): unknown {
 
   const motivationHeadings = [
     "The Application Layer Decides the Next Chapter",
-    "The Gap: The Assembly Problem",
   ];
   const motivation = motivationHeadings
     .map((h) => sectionWithDescendants(sections, h))
@@ -180,7 +179,6 @@ function buildAnchor(md: string, network: Network): unknown {
   requirePin("annex1");
   requirePin("annex2");
   requirePin("annex3");
-  requirePin("annex4");
   const body: Record<string, unknown> = {
     title: titleSection.heading,
     abstract,
