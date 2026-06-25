@@ -2,33 +2,34 @@
 //> using dep org.scalus::scalus-cardano-ledger:0.18.2
 //> using mainClass RecoverDeposits
 
-// Recovers the governance-action deposits from the expired Scalus treasury
-// withdrawal proposals submitted on the Cardano *preview* testnet.
+// Recovers expired governance-action deposits from the Scalus treasury
+// withdrawal proposals into the admin payment address, on any of the three
+// Cardano networks (preview / preprod / mainnet).
 //
-// Three TreasuryWithdrawals proposals were submitted from the admin stake
-// account, each posting a 100,000 tADA gov-action deposit. All three expired
-// and were dropped, so the ledger has already refunded every deposit to the
-// proposal's deposit-return reward account (the admin stake key). The reward
-// account therefore now holds 3 x 100,000 = 300,000 tADA withdrawable.
-//
-// A Cardano reward withdrawal is all-or-nothing: one withdrawal tx drains the
-// entire balance to the admin payment address.
+// When a TreasuryWithdrawals proposal expires/drops, the ledger refunds its
+// gov-action deposit (100,000 ADA) to the proposal's deposit-return reward
+// account — the admin stake key. This tool drains that reward account to the
+// admin payment address. A reward withdrawal is all-or-nothing: one withdrawal
+// tx takes the entire balance.
 //
 // CONWAY PREREQUISITE (post-Plomin): a reward withdrawal is rejected with
 // `ConwayWdrlNotDelegatedToDRep` unless the stake credential is delegated to a
-// DRep. The ledger checks this against the delegation state at the START of the
-// withdrawal tx (Conway Rules/Ledger.hs: the wdrl check runs BEFORE the CERTS
-// sub-rule applies this tx's certificates), so a VoteDelegCert in the SAME tx
-// does NOT satisfy it — the delegation must be in a PRIOR confirmed tx. This
-// tool therefore: if the account isn't DRep-delegated, first submits a
-// delegation tx (to AlwaysAbstain), waits for it to confirm, then submits the
+// DRep, and the ledger checks this against the delegation state at the START of
+// the withdrawal tx (Conway Rules/Ledger.hs runs the wdrl check BEFORE the
+// CERTS sub-rule applies this tx's certs), so a VoteDelegCert in the SAME tx
+// does NOT satisfy it. So: if the account isn't DRep-delegated, this first
+// submits a delegation tx (to AlwaysAbstain), waits for confirmation, then the
 // withdrawal.
 //
-// Addresses are DERIVED from the private keys (priv -> pub -> blake2b_224 ->
-// address) and only cross-checked against keys/admin.addr & keys/admin.stake.addr.
+// Network: --network <preview|preprod|mainnet> (or NETWORK env; default
+// preview). BLOCKFROST_PROJECT_ID must be the matching network-scoped key (its
+// prefix is checked). Keys are the network-agnostic raw-hex ed25519 keys in
+// keys/admin.{skey,vkey} + keys/admin.stake.{skey,vkey}; addresses are DERIVED
+// from them (priv -> pub -> blake2b_224 -> address) and cross-checked against
+// keys/admin.addr & keys/admin.stake.addr by KEY HASH (network-independent).
 //
 // Default is dry-run: build + sign + print (Pretty showDetailed) the withdrawal
-// tx and DO NOT submit. Pass --submit to broadcast (delegation first if needed).
+// tx, no submit. Pass --submit to broadcast (delegation first if needed).
 
 import scalus.cardano.ledger.*
 import scalus.cardano.address.{
@@ -55,16 +56,25 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 
 object RecoverDeposits {
 
-    val DepositPerProposal = 100_000_000_000L // 100,000 tADA
-    val ExpectedProposals  = 3
+    val DepositPerProposal = 100_000_000_000L // 100,000 ADA — same on all 3 networks
     val OutPath            = Path.of("recover-deposits.signed.tx")
 
     private val http = HttpClient.newHttpClient()
     private given ExecutionContext = ExecutionContext.global
+    private var bfBase: String = "" // set once network is known
 
     def main(args: Array[String]): Unit = {
-        val submit = args.contains("--submit")
+        val submit  = args.contains("--submit")
+        val network = resolveNetwork(args)
+        val net     = if network == "mainnet" then Network.Mainnet else Network.Testnet
+        bfBase = s"https://cardano-$network.blockfrost.io/api/v0"
         val apiKey = loadBlockfrostKey()
+        require(
+          apiKey.startsWith(network),
+          s"BLOCKFROST_PROJECT_ID prefix does not match --network $network " +
+              "(keys are network-scoped: preview*/preprod*/mainnet*)"
+        )
+        println(s"[info] network=$network")
 
         // --- Derive payment + stake key hashes from the private keys ----------
         val (payHashBs, payVk, paySk)       = deriveKey("../keys/admin.skey", "../keys/admin.vkey")
@@ -75,55 +85,53 @@ object RecoverDeposits {
         println(s"[ok] derived payment key hash : ${payKeyHash.toHex}")
         println(s"[ok] derived stake   key hash : ${stakeKeyHash.toHex}")
 
-        // --- Build addresses from the derived hashes, verify vs .addr files ---
+        // --- Build addresses for this network; cross-check files by key hash --
         val paymentAddr = ShelleyAddress(
-          Network.Testnet,
+          net,
           ShelleyPaymentPart.Key(payKeyHash),
           ShelleyDelegationPart.Key(stakeKeyHash)
         )
-        val stakeAddr = StakeAddress(Network.Testnet, StakePayload.Stake(stakeKeyHash))
-        val paymentBech32 = paymentAddr.toBech32.get
-        val stakeBech32   = stakeAddr.toBech32.get
-        verifyAgainstFile("../keys/admin.addr", paymentBech32, "payment address")
-        verifyAgainstFile("../keys/admin.stake.addr", stakeBech32, "stake address")
-        println(s"[ok] payment address verified : $paymentBech32")
-        println(s"[ok] stake   address verified : $stakeBech32")
+        val stakeAddr = StakeAddress(net, StakePayload.Stake(stakeKeyHash))
+        verifyPaymentFile("../keys/admin.addr", payKeyHash, stakeKeyHash)
+        verifyStakeFile("../keys/admin.stake.addr", stakeKeyHash)
+        println(s"[ok] payment address (${network}) : ${paymentAddr.toBech32.get}")
+        println(s"[ok] stake   address (${network}) : ${stakeAddr.toBech32.get}")
 
         // --- Query the live account state -------------------------------------
+        val stakeBech32 = stakeAddr.toBech32.get
         var acct = fetchAccount(apiKey, stakeBech32)
         require(acct.registered, s"stake account $stakeBech32 is not registered — nothing to withdraw")
         require(acct.withdrawable > 0L, s"reward account is empty (withdrawable=${acct.withdrawable})")
-        require(
-          acct.withdrawable >= DepositPerProposal,
-          s"withdrawable ${acct.withdrawable} < one deposit ($DepositPerProposal) — unexpected"
-        )
-        val expected = DepositPerProposal * ExpectedProposals
-        if acct.withdrawable != expected then
-            println(s"[warn] withdrawable (${acct.withdrawable}) != ${ExpectedProposals}x deposit ($expected)")
-        println(f"[info] reward balance to recover: ${acct.withdrawable}%d lovelace (${acct.withdrawable / 1e6}%.6f tADA)")
+        val deposits = acct.withdrawable.toDouble / DepositPerProposal
+        println(f"[info] reward balance to recover: ${acct.withdrawable}%d lovelace " +
+          f"(${acct.withdrawable / 1e6}%.6f ADA ≈ $deposits%.2f deposits)")
         println(s"[info] DRep-delegated: ${acct.drepDelegated} (drep_id=${acct.drepId.getOrElse("none")})")
 
         // --- Provider ---------------------------------------------------------
         given sttp.client4.Backend[Future] = BlockfrostProviderPlatform.defaultBackend
-        val provider = Await.result(BlockfrostProvider.preview(apiKey), 60.seconds)
+        val provider = Await.result(network match {
+            case "mainnet" => BlockfrostProvider.mainnet(apiKey)
+            case "preprod" => BlockfrostProvider.preprod(apiKey)
+            case _         => BlockfrostProvider.preview(apiKey)
+        }, 60.seconds)
         val env = provider.cardanoInfo
-        require(env.network == Network.Testnet, s"provider network ${env.network} is not Testnet")
-        println(s"[info] network=${env.network}; protocol params loaded")
+        require(env.network == net, s"provider network ${env.network} != selected $net")
+        println(s"[info] protocol params loaded for ${env.network}")
 
         val signer = TransactionSigner(
           Set((paySk, payVk: ByteString), (stakeSk, stakeVk: ByteString))
         )
 
-        // --- Phase 1: ensure DRep delegation (separate prior tx) --------------
+        // --- Phase 1: ensure DRep delegation (a separate, PRIOR tx) -----------
         if !acct.drepDelegated then {
             println(
               "\n[delegation] account is not delegated to a DRep — a reward withdrawal would be\n" +
-                  "             rejected (ConwayWdrlNotDelegatedToDRep). A delegation tx to\n" +
-                  "             AlwaysAbstain must be submitted and confirmed FIRST."
+                  "             rejected (ConwayWdrlNotDelegatedToDRep). Delegating to AlwaysAbstain\n" +
+                  "             in a separate tx FIRST."
             )
             val delegTx = signer.sign(
               TxBuilder(env)
-                  .spend(pickFeeUtxo(provider, paymentAddr, Set.empty))
+                  .spend(pickFeeUtxo(provider, paymentAddr))
                   .delegateVoteToDRep(stakeAddr, DRep.AlwaysAbstain)
                   .build(paymentAddr)
                   .transaction
@@ -132,9 +140,8 @@ object RecoverDeposits {
             println("\n=== DELEGATION TX (showDetailed) ===")
             println(delegTx.showDetailed)
 
-            if !submit then {
-                println("\n--dry-run: not submitting the delegation tx.")
-            } else {
+            if !submit then println("\n--dry-run: not submitting the delegation tx.")
+            else {
                 println(s"\n[submit] broadcasting delegation tx ${delegTx.id.toHex}…")
                 submitTx(provider, delegTx)
                 println("[submit] delegation submitted; waiting for on-chain confirmation…")
@@ -148,7 +155,7 @@ object RecoverDeposits {
         // --- Phase 2: the withdrawal tx ---------------------------------------
         val withdrawTx = signer.sign(
           TxBuilder(env)
-              .spend(pickFeeUtxo(provider, paymentAddr, Set.empty))
+              .spend(pickFeeUtxo(provider, paymentAddr))
               .withdrawRewards(stakeAddr, Coin(acct.withdrawable))
               .build(paymentAddr)
               .transaction
@@ -185,18 +192,23 @@ object RecoverDeposits {
         sys.exit(0)
     }
 
+    private def resolveNetwork(args: Array[String]): String = {
+        val n = args.sliding(2).collectFirst { case Array("--network", v) => v }
+            .orElse(args.collectFirst { case a if a.startsWith("--network=") => a.drop("--network=".length) })
+            .orElse(sys.env.get("NETWORK").filter(_.nonEmpty))
+            .getOrElse("preview")
+        require(Set("preview", "preprod", "mainnet")(n), s"unsupported --network $n")
+        n
+    }
+
     // ---- chain helpers -------------------------------------------------------
 
-    private def pickFeeUtxo(
-        provider: BlockfrostProvider,
-        paymentAddr: ShelleyAddress,
-        exclude: Set[TransactionInput]
-    ): Utxo = {
+    private def pickFeeUtxo(provider: BlockfrostProvider, paymentAddr: ShelleyAddress): Utxo = {
         val utxos: Utxos = Await.result(provider.findUtxos(paymentAddr), 60.seconds) match
             case Right(u) => u
             case Left(e)  => sys.error(s"payment-address UTxO query failed: $e")
-        val candidates = utxos.filter { case (i, o) =>
-            !exclude.contains(i) && o.value.coin.value >= 2_000_000L && o.value.assets.isEmpty
+        val candidates = utxos.filter { case (_, o) =>
+            o.value.coin.value >= 2_000_000L && o.value.assets.isEmpty
         }
         require(candidates.nonEmpty, "no ada-only UTxO (>= 2 ADA) at the payment address to pay the fee")
         val (in, out) = candidates.minBy { case (_, o) => o.value.coin.value }
@@ -213,8 +225,9 @@ object RecoverDeposits {
     private def waitForConfirmation(apiKey: String, txHash: String, timeoutSec: Int = 300): Unit = {
         val deadline = System.currentTimeMillis() + timeoutSec * 1000L
         while System.currentTimeMillis() < deadline do {
-            val resp = bf(apiKey, s"/txs/$txHash")
-            if resp.statusCode() == 200 then { println(s"[ok] tx $txHash confirmed on-chain"); return }
+            if bf(apiKey, s"/txs/$txHash").statusCode() == 200 then {
+                println(s"[ok] tx $txHash confirmed on-chain"); return
+            }
             Thread.sleep(10_000)
         }
         sys.error(s"timed out waiting for tx $txHash to confirm")
@@ -251,12 +264,12 @@ object RecoverDeposits {
 
     private def bf(apiKey: String, path: String): HttpResponse[String] = {
         val req = HttpRequest.newBuilder()
-            .uri(URI.create(s"https://cardano-preview.blockfrost.io/api/v0$path"))
+            .uri(URI.create(s"$bfBase$path"))
             .header("project_id", apiKey).GET().build()
         http.send(req, HttpResponse.BodyHandlers.ofString())
     }
 
-    // ---- keys ----------------------------------------------------------------
+    // ---- keys + address cross-check -----------------------------------------
 
     /** Read a raw-hex ed25519 keypair; derive the pubkey from the private key,
       * assert it matches the .vkey file, return (keyHash28, pubBytes, privBytes). */
@@ -269,10 +282,23 @@ object RecoverDeposits {
         (blake2b_224(pub), pub, ByteString.fromHex(skHex))
     }
 
-    private def verifyAgainstFile(path: String, derived: String, label: String): Unit = {
-        val onFile = Files.readString(Path.of(path)).trim
-        require(onFile == derived, s"$label mismatch: derived=$derived but $path=$onFile")
-    }
+    /** Cross-check the .addr file by KEY HASH (ignores the network byte, so it
+      * works whether the file is a testnet or mainnet address form). */
+    private def verifyPaymentFile(path: String, payKeyHash: AddrKeyHash, stakeKeyHash: StakeKeyHash): Unit =
+        Address.fromBech32(Files.readString(Path.of(path)).trim) match
+            case sh: ShelleyAddress =>
+                val p = sh.payment match { case ShelleyPaymentPart.Key(h) => h.toHex; case _ => "<script>" }
+                val d = sh.delegation match { case ShelleyDelegationPart.Key(h) => h.toHex; case _ => "<none>" }
+                require(p == payKeyHash.toHex, s"$path payment hash $p != ${payKeyHash.toHex}")
+                require(d == stakeKeyHash.toHex, s"$path stake hash $d != ${stakeKeyHash.toHex}")
+            case other => sys.error(s"$path is not a Shelley base address: $other")
+
+    private def verifyStakeFile(path: String, stakeKeyHash: StakeKeyHash): Unit =
+        Address.fromBech32(Files.readString(Path.of(path)).trim) match
+            case st: StakeAddress =>
+                val h = st.payload match { case StakePayload.Stake(x) => x.toHex; case _ => "<script>" }
+                require(h == stakeKeyHash.toHex, s"$path stake hash $h != ${stakeKeyHash.toHex}")
+            case other => sys.error(s"$path is not a stake address: $other")
 
     private def requireWitnesses(tx: Transaction, expected: Set[String]): Unit = {
         val got = tx.witnessSet.vkeyWitnesses.toSeq.map(_.vkeyHash.toHex).toSet
