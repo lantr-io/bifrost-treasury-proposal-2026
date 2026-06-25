@@ -31,6 +31,33 @@ const rawConfig =
 const DEPLOYMENT_PATH = `deployment/${rawConfig.network}.json`;
 const DRY_RUN = !process.argv.includes("--submit");
 
+// Blockfrost project IDs are network-scoped; the URL prefix must match.
+const BLOCKFROST_BASE = `https://cardano-${rawConfig.network}.blockfrost.io/api/v0`;
+
+/**
+ * Whether a stake credential is already registered on-chain. The admin
+ * stake key is registered once and persists across proposal cycles (a
+ * reward withdrawal does NOT deregister it), so a fresh deployment must
+ * NOT re-register it — `StakeKeyRegisteredDELEG` would reject the tx.
+ * Uses Blockfrost's `registered` flag (not `active`, which only reflects
+ * pool delegation this epoch — the admin stake is registered WITHOUT
+ * pool delegation, so `active` is false even when registered). 404 =
+ * never seen = not registered.
+ */
+async function isStakeRegistered(stakeBech32: string): Promise<boolean> {
+  const projectId = process.env.BLOCKFROST_PROJECT_ID;
+  if (!projectId) throw new Error("BLOCKFROST_PROJECT_ID not set");
+  const resp = await fetch(`${BLOCKFROST_BASE}/accounts/${stakeBech32}`, {
+    headers: { project_id: projectId },
+  });
+  if (resp.status === 404) return false;
+  if (!resp.ok) {
+    throw new Error(`Blockfrost account ${resp.status}: ${await resp.text()}`);
+  }
+  const j = (await resp.json()) as { registered?: boolean; active?: boolean };
+  return j.registered === true || j.active === true;
+}
+
 async function main(): Promise<void> {
   await sodium.ready;
 
@@ -88,12 +115,25 @@ async function main(): Promise<void> {
   // influence governance. Admin stake (gov-action deposit refund) is
   // registered without delegation; the operator can delegate to a real
   // DRep later if they want voting rights.
+  const adminStakeReward = RewardAccount.fromCredential(
+    { type: CredentialType.KeyHash, hash: Hash28ByteBase16(adminStakePkhHex) },
+    network,
+  );
+  const adminAlreadyRegistered = await isStakeRegistered(
+    adminStakeReward.toString(),
+  );
+  if (adminAlreadyRegistered) {
+    console.log(
+      `  Admin stake ${adminStakeReward} already registered — skipping its registration cert.`,
+    );
+  }
+
   const tx = blaze.newTransaction();
   tx.addRegisterStake(treasuryCred);
   tx.addVoteDelegation(treasuryCred, "alwaysAbstain", Void());
   tx.addRegisterStake(vendorCred);
   tx.addVoteDelegation(vendorCred, "alwaysAbstain", Void());
-  tx.addRegisterStake(adminStakeCred);
+  if (!adminAlreadyRegistered) tx.addRegisterStake(adminStakeCred);
   tx.provideScript(scripts.treasuryScript.script.Script);
   tx.provideScript(scripts.vendorScript.script.Script);
   tx.addRequiredSigner(adminPkh);
@@ -113,10 +153,6 @@ async function main(): Promise<void> {
   );
   const vendorReward = RewardAccount.fromCredential(
     { type: CredentialType.ScriptHash, hash: Hash28ByteBase16(vendorHash) },
-    network,
-  );
-  const adminStakeReward = RewardAccount.fromCredential(
-    { type: CredentialType.KeyHash, hash: Hash28ByteBase16(adminStakePkhHex) },
     network,
   );
 
