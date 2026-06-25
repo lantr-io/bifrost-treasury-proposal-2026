@@ -12,17 +12,23 @@
 // account therefore now holds 3 x 100,000 = 300,000 tADA withdrawable.
 //
 // A Cardano reward withdrawal is all-or-nothing: one withdrawal tx drains the
-// entire balance. So this builds a single reward-withdrawal tx that moves the
-// whole reward balance to the admin payment address, signs it with the admin
-// payment + stake keys, and (with --submit) broadcasts it via Blockfrost.
+// entire balance to the admin payment address.
+//
+// CONWAY PREREQUISITE (post-Plomin): a reward withdrawal is rejected with
+// `ConwayWdrlNotDelegatedToDRep` unless the stake credential is delegated to a
+// DRep. The ledger checks this against the delegation state at the START of the
+// withdrawal tx (Conway Rules/Ledger.hs: the wdrl check runs BEFORE the CERTS
+// sub-rule applies this tx's certificates), so a VoteDelegCert in the SAME tx
+// does NOT satisfy it — the delegation must be in a PRIOR confirmed tx. This
+// tool therefore: if the account isn't DRep-delegated, first submits a
+// delegation tx (to AlwaysAbstain), waits for it to confirm, then submits the
+// withdrawal.
 //
 // Addresses are DERIVED from the private keys (priv -> pub -> blake2b_224 ->
-// address) and only cross-checked against keys/admin.addr & keys/admin.stake.addr;
-// the .addr files are never the source of truth.
+// address) and only cross-checked against keys/admin.addr & keys/admin.stake.addr.
 //
-// Default is dry-run: build + sign, print the tx (Pretty showDetailed), write
-// the signed CBOR to recover-deposits.signed.tx, but DO NOT submit.
-// Pass --submit to broadcast.
+// Default is dry-run: build + sign + print (Pretty showDetailed) the withdrawal
+// tx and DO NOT submit. Pass --submit to broadcast (delegation first if needed).
 
 import scalus.cardano.ledger.*
 import scalus.cardano.address.{
@@ -49,23 +55,22 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 
 object RecoverDeposits {
 
-    // Expected gov-action deposit per proposal and how many we submitted, used
-    // only as a sanity bound on the live reward balance (see assertion below).
     val DepositPerProposal = 100_000_000_000L // 100,000 tADA
     val ExpectedProposals  = 3
+    val OutPath            = Path.of("recover-deposits.signed.tx")
 
-    val OutPath = Path.of("recover-deposits.signed.tx")
+    private val http = HttpClient.newHttpClient()
+    private given ExecutionContext = ExecutionContext.global
 
     def main(args: Array[String]): Unit = {
         val submit = args.contains("--submit")
         val apiKey = loadBlockfrostKey()
 
         // --- Derive payment + stake key hashes from the private keys ----------
-        val (payHash, payVk, paySk)     = deriveKey("../keys/admin.skey", "../keys/admin.vkey")
+        val (payHashBs, payVk, paySk)       = deriveKey("../keys/admin.skey", "../keys/admin.vkey")
         val (stakeHashBs, stakeVk, stakeSk) =
             deriveKey("../keys/admin.stake.skey", "../keys/admin.stake.vkey")
-
-        val payKeyHash   = AddrKeyHash(payHash)
+        val payKeyHash   = AddrKeyHash(payHashBs)
         val stakeKeyHash = Hash.stakeKeyHash(stakeHashBs)
         println(s"[ok] derived payment key hash : ${payKeyHash.toHex}")
         println(s"[ok] derived stake   key hash : ${stakeKeyHash.toHex}")
@@ -77,7 +82,6 @@ object RecoverDeposits {
           ShelleyDelegationPart.Key(stakeKeyHash)
         )
         val stakeAddr = StakeAddress(Network.Testnet, StakePayload.Stake(stakeKeyHash))
-
         val paymentBech32 = paymentAddr.toBech32.get
         val stakeBech32   = stakeAddr.toBech32.get
         verifyAgainstFile("../keys/admin.addr", paymentBech32, "payment address")
@@ -85,161 +89,200 @@ object RecoverDeposits {
         println(s"[ok] payment address verified : $paymentBech32")
         println(s"[ok] stake   address verified : $stakeBech32")
 
-        // --- Query the live reward balance ------------------------------------
-        // Withdrawals only require the account be *registered*. Blockfrost's
-        // `active` flag instead means "delegated to a pool this epoch" — it is
-        // false for an undelegated account, which is irrelevant here.
-        val (withdrawable, registered) = fetchAccount(apiKey, stakeBech32)
-        require(registered, s"stake account $stakeBech32 is not registered — nothing to withdraw")
-        require(withdrawable > 0L, s"reward account is empty (withdrawable=$withdrawable)")
-        val expected = DepositPerProposal.toLong * ExpectedProposals
+        // --- Query the live account state -------------------------------------
+        var acct = fetchAccount(apiKey, stakeBech32)
+        require(acct.registered, s"stake account $stakeBech32 is not registered — nothing to withdraw")
+        require(acct.withdrawable > 0L, s"reward account is empty (withdrawable=${acct.withdrawable})")
         require(
-          withdrawable >= DepositPerProposal,
-          s"withdrawable $withdrawable < one deposit ($DepositPerProposal) — unexpected"
+          acct.withdrawable >= DepositPerProposal,
+          s"withdrawable ${acct.withdrawable} < one deposit ($DepositPerProposal) — unexpected"
         )
-        if withdrawable != expected then
-            println(
-              s"[warn] withdrawable ($withdrawable) != ${ExpectedProposals}x deposit ($expected); " +
-                  "proceeding with the live balance"
-            )
-        println(
-          f"[info] reward balance to recover: $withdrawable%d lovelace (${withdrawable / 1e6}%.6f tADA)"
-        )
+        val expected = DepositPerProposal * ExpectedProposals
+        if acct.withdrawable != expected then
+            println(s"[warn] withdrawable (${acct.withdrawable}) != ${ExpectedProposals}x deposit ($expected)")
+        println(f"[info] reward balance to recover: ${acct.withdrawable}%d lovelace (${acct.withdrawable / 1e6}%.6f tADA)")
+        println(s"[info] DRep-delegated: ${acct.drepDelegated} (drep_id=${acct.drepId.getOrElse("none")})")
 
-        // --- Provider (live preview protocol params + admin UTxO lookup) ------
-        given ExecutionContext = ExecutionContext.global
+        // --- Provider ---------------------------------------------------------
         given sttp.client4.Backend[Future] = BlockfrostProviderPlatform.defaultBackend
         val provider = Await.result(BlockfrostProvider.preview(apiKey), 60.seconds)
         val env = provider.cardanoInfo
-        require(
-          env.network == Network.Testnet,
-          s"provider network ${env.network} is not Testnet — refusing to mix networks"
-        )
+        require(env.network == Network.Testnet, s"provider network ${env.network} is not Testnet")
         println(s"[info] network=${env.network}; protocol params loaded")
 
-        // --- Pick one ada-only fee/change input at the payment address --------
-        val utxos: Utxos = Await.result(provider.findUtxos(paymentAddr), 60.seconds) match
-            case Right(u) => u
-            case Left(e)  => sys.error(s"payment-address UTxO query failed: $e")
-        val candidates = utxos.filter { case (_, o) =>
-            o.value.coin.value >= 2_000_000L && o.value.assets.isEmpty
-        }
-        require(
-          candidates.nonEmpty,
-          "no ada-only UTxO (>= 2 ADA) at the payment address to pay the fee"
-        )
-        // Smallest input that clears the threshold; the 300k withdrawal funds the rest.
-        val (feeIn, feeOut) = candidates.minBy { case (_, o) => o.value.coin.value }
-        val feeUtxo = Utxo(feeIn, feeOut)
-        println(
-          f"[info] fee/change input: ${feeIn.transactionId.toHex}#${feeIn.index} " +
-              f"(${feeOut.value.coin.value / 1e6}%.6f ADA)"
-        )
-
-        // --- Build + sign -----------------------------------------------------
-        val built = TxBuilder(env)
-            .spend(feeUtxo)
-            .withdrawRewards(stakeAddr, Coin(withdrawable))
-            .build(paymentAddr)
         val signer = TransactionSigner(
           Set((paySk, payVk: ByteString), (stakeSk, stakeVk: ByteString))
         )
-        val tx = built.sign(signer).transaction
 
-        // --- Verify the built/signed tx ---------------------------------------
-        val body = tx.body.value
+        // --- Phase 1: ensure DRep delegation (separate prior tx) --------------
+        if !acct.drepDelegated then {
+            println(
+              "\n[delegation] account is not delegated to a DRep — a reward withdrawal would be\n" +
+                  "             rejected (ConwayWdrlNotDelegatedToDRep). A delegation tx to\n" +
+                  "             AlwaysAbstain must be submitted and confirmed FIRST."
+            )
+            val delegTx = signer.sign(
+              TxBuilder(env)
+                  .spend(pickFeeUtxo(provider, paymentAddr, Set.empty))
+                  .delegateVoteToDRep(stakeAddr, DRep.AlwaysAbstain)
+                  .build(paymentAddr)
+                  .transaction
+            )
+            requireWitnesses(delegTx, Set(payKeyHash.toHex, stakeKeyHash.toHex))
+            println("\n=== DELEGATION TX (showDetailed) ===")
+            println(delegTx.showDetailed)
+
+            if !submit then {
+                println("\n--dry-run: not submitting the delegation tx.")
+            } else {
+                println(s"\n[submit] broadcasting delegation tx ${delegTx.id.toHex}…")
+                submitTx(provider, delegTx)
+                println("[submit] delegation submitted; waiting for on-chain confirmation…")
+                waitForConfirmation(apiKey, delegTx.id.toHex)
+                waitForDRepDelegation(apiKey, stakeBech32)
+                acct = fetchAccount(apiKey, stakeBech32)
+                println(s"[ok] account now DRep-delegated (drep_id=${acct.drepId.getOrElse("?")})")
+            }
+        }
+
+        // --- Phase 2: the withdrawal tx ---------------------------------------
+        val withdrawTx = signer.sign(
+          TxBuilder(env)
+              .spend(pickFeeUtxo(provider, paymentAddr, Set.empty))
+              .withdrawRewards(stakeAddr, Coin(acct.withdrawable))
+              .build(paymentAddr)
+              .transaction
+        )
+        requireWitnesses(withdrawTx, Set(payKeyHash.toHex, stakeKeyHash.toHex))
+        val body = withdrawTx.body.value
         val wd = body.withdrawals.getOrElse(sys.error("no withdrawals in tx")).withdrawals
-        require(wd.size == 1, s"expected exactly 1 withdrawal, got ${wd.size}")
-        require(
-          wd.values.head.value == withdrawable,
-          s"withdrawal amount ${wd.values.head.value} != $withdrawable"
-        )
-        val witHashes = tx.witnessSet.vkeyWitnesses.toSeq.map(_.vkeyHash.toHex).toSet
-        require(
-          witHashes == Set(payKeyHash.toHex, stakeKeyHash.toHex),
-          s"unexpected vkey witnesses: $witHashes"
-        )
-        val changeToAdmin =
-            body.outputs.map(_.value).filter(_.address == (paymentAddr: Address))
-                .map(_.value.coin.value).sum
+        require(wd.size == 1 && wd.values.head.value == acct.withdrawable, "withdrawal amount mismatch")
+        val changeToAdmin = body.outputs.map(_.value)
+            .filter(_.address == (paymentAddr: Address)).map(_.value.coin.value).sum
         println(
-          f"[ok] withdrawal=$withdrawable%d, fee=${body.fee.value}%d, " +
-              f"change->admin=$changeToAdmin%d (${changeToAdmin / 1e6}%.6f ADA), " +
-              s"witnesses=${witHashes.size}"
+          f"\n[ok] withdrawal=${acct.withdrawable}%d, fee=${body.fee.value}%d, " +
+              f"change->admin=$changeToAdmin%d (${changeToAdmin / 1e6}%.6f ADA)"
         )
 
-        // --- Pretty-print the resulting transaction ---------------------------
-        println("\n=== TRANSACTION (showDetailed) ===")
-        println(tx.showDetailed)
+        println("\n=== WITHDRAWAL TX (showDetailed) ===")
+        println(withdrawTx.showDetailed)
 
-        // --- Write signed CBOR hex --------------------------------------------
-        val hex = tx.toCbor.map(b => f"${b & 0xff}%02x").mkString
+        val hex = withdrawTx.toCbor.map(b => f"${b & 0xff}%02x").mkString
         Files.writeString(OutPath, hex)
-        println(s"\n[done] wrote signed tx CBOR hex -> ${OutPath.toAbsolutePath}")
-        println(s"       tx id = ${tx.id.toHex}; size = ${tx.toCbor.length} bytes")
+        println(s"\n[done] wrote signed withdrawal tx CBOR hex -> ${OutPath.toAbsolutePath}")
+        println(s"       tx id = ${withdrawTx.id.toHex}; size = ${withdrawTx.toCbor.length} bytes")
 
         if !submit then {
             println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
+            if !acct.drepDelegated then
+                println("       NOTE: --submit will FIRST delegate to a DRep, wait, then withdraw.")
             sys.exit(0)
         }
 
-        println("\n[submit] broadcasting via Blockfrost…")
-        Await.result(provider.submit(tx), 60.seconds) match
-            case Right(h) => println(s"[submitted] tx hash: ${h.toHex}")
-            case Left(e)  => sys.error(s"submit failed: $e")
+        println(s"\n[submit] broadcasting withdrawal tx ${withdrawTx.id.toHex}…")
+        submitTx(provider, withdrawTx)
+        println(s"[submitted] withdrawal tx hash: ${withdrawTx.id.toHex}")
         sys.exit(0)
     }
 
+    // ---- chain helpers -------------------------------------------------------
+
+    private def pickFeeUtxo(
+        provider: BlockfrostProvider,
+        paymentAddr: ShelleyAddress,
+        exclude: Set[TransactionInput]
+    ): Utxo = {
+        val utxos: Utxos = Await.result(provider.findUtxos(paymentAddr), 60.seconds) match
+            case Right(u) => u
+            case Left(e)  => sys.error(s"payment-address UTxO query failed: $e")
+        val candidates = utxos.filter { case (i, o) =>
+            !exclude.contains(i) && o.value.coin.value >= 2_000_000L && o.value.assets.isEmpty
+        }
+        require(candidates.nonEmpty, "no ada-only UTxO (>= 2 ADA) at the payment address to pay the fee")
+        val (in, out) = candidates.minBy { case (_, o) => o.value.coin.value }
+        println(f"[info] fee/change input: ${in.transactionId.toHex}#${in.index} (${out.value.coin.value / 1e6}%.6f ADA)")
+        Utxo(in, out)
+    }
+
+    private def submitTx(provider: BlockfrostProvider, tx: Transaction): Unit =
+        Await.result(provider.submit(tx), 60.seconds) match
+            case Right(_) => ()
+            case Left(e)  => sys.error(s"submit failed: $e")
+
+    /** Poll Blockfrost until the tx is included in a block (HTTP 200). */
+    private def waitForConfirmation(apiKey: String, txHash: String, timeoutSec: Int = 300): Unit = {
+        val deadline = System.currentTimeMillis() + timeoutSec * 1000L
+        while System.currentTimeMillis() < deadline do {
+            val resp = bf(apiKey, s"/txs/$txHash")
+            if resp.statusCode() == 200 then { println(s"[ok] tx $txHash confirmed on-chain"); return }
+            Thread.sleep(10_000)
+        }
+        sys.error(s"timed out waiting for tx $txHash to confirm")
+    }
+
+    /** Poll until the account reflects a DRep delegation. */
+    private def waitForDRepDelegation(apiKey: String, stakeBech32: String, timeoutSec: Int = 180): Unit = {
+        val deadline = System.currentTimeMillis() + timeoutSec * 1000L
+        while System.currentTimeMillis() < deadline do {
+            if fetchAccount(apiKey, stakeBech32).drepDelegated then return
+            Thread.sleep(10_000)
+        }
+        sys.error("timed out waiting for DRep delegation to take effect")
+    }
+
+    // ---- account state -------------------------------------------------------
+
+    case class Account(withdrawable: Long, registered: Boolean, drepId: Option[String]) {
+        def drepDelegated: Boolean = drepId.isDefined
+    }
+
+    /** Blockfrost /accounts/{stake}. `registered` (not `active`) gates withdrawal;
+      * `active` only means "delegated to a pool this epoch". `drep_id` present =>
+      * vote-delegated to a DRep. */
+    private def fetchAccount(apiKey: String, stakeBech32: String): Account = {
+        val resp = bf(apiKey, s"/accounts/$stakeBech32")
+        require(resp.statusCode() == 200, s"blockfrost account fetch ${resp.statusCode()}: ${resp.body()}")
+        val j = ujson.read(resp.body())
+        val drep = j("drep_id") match
+            case ujson.Str(s) => Some(s)
+            case _            => None
+        Account(j("withdrawable_amount").str.toLong, j("registered").bool, drep)
+    }
+
+    private def bf(apiKey: String, path: String): HttpResponse[String] = {
+        val req = HttpRequest.newBuilder()
+            .uri(URI.create(s"https://cardano-preview.blockfrost.io/api/v0$path"))
+            .header("project_id", apiKey).GET().build()
+        http.send(req, HttpResponse.BodyHandlers.ofString())
+    }
+
+    // ---- keys ----------------------------------------------------------------
+
     /** Read a raw-hex ed25519 keypair; derive the pubkey from the private key,
-      * assert it matches the .vkey file, and return (keyHash28, pubBytes, privBytes).
-      */
-    private def deriveKey(
-        skPath: String,
-        vkPath: String
-    ): (ByteString, VerificationKey, ByteString) = {
+      * assert it matches the .vkey file, return (keyHash28, pubBytes, privBytes). */
+    private def deriveKey(skPath: String, vkPath: String): (ByteString, VerificationKey, ByteString) = {
         val skHex = Files.readString(Path.of(skPath)).trim
         val vkHex = Files.readString(Path.of(vkPath)).trim
         val sk    = SigningKey.unsafeFromByteString(ByteString.fromHex(skHex))
         val pub   = JvmEd25519Signer.derivePublicKey(sk)
-        require(
-          pub.toHex == vkHex,
-          s"$skPath: derived pubkey ${pub.toHex} != $vkPath ($vkHex)"
-        )
-        val keyHash = blake2b_224(pub)
-        (keyHash, pub, ByteString.fromHex(skHex))
+        require(pub.toHex == vkHex, s"$skPath: derived pubkey ${pub.toHex} != $vkPath ($vkHex)")
+        (blake2b_224(pub), pub, ByteString.fromHex(skHex))
     }
 
     private def verifyAgainstFile(path: String, derived: String, label: String): Unit = {
         val onFile = Files.readString(Path.of(path)).trim
-        require(
-          onFile == derived,
-          s"$label mismatch: derived=$derived but $path=$onFile"
-        )
+        require(onFile == derived, s"$label mismatch: derived=$derived but $path=$onFile")
     }
 
-    /** Blockfrost /accounts/{stake} -> (withdrawable_amount, registered). */
-    private def fetchAccount(apiKey: String, stakeBech32: String): (Long, Boolean) = {
-        val client = HttpClient.newHttpClient()
-        val req = HttpRequest.newBuilder()
-            .uri(URI.create(
-              s"https://cardano-preview.blockfrost.io/api/v0/accounts/$stakeBech32"))
-            .header("project_id", apiKey)
-            .GET().build()
-        val resp = client.send(req, HttpResponse.BodyHandlers.ofString())
-        require(
-          resp.statusCode() == 200,
-          s"blockfrost account fetch ${resp.statusCode()}: ${resp.body()}"
-        )
-        val j = ujson.read(resp.body())
-        (j("withdrawable_amount").str.toLong, j("registered").bool)
+    private def requireWitnesses(tx: Transaction, expected: Set[String]): Unit = {
+        val got = tx.witnessSet.vkeyWitnesses.toSeq.map(_.vkeyHash.toHex).toSet
+        require(got == expected, s"unexpected vkey witnesses: got=$got expected=$expected")
     }
 
     private def loadBlockfrostKey(): String = {
         sys.env.get("BLOCKFROST_PROJECT_ID").filter(_.nonEmpty).getOrElse {
-            val candidates = Seq(Path.of("../.env"), Path.of(".env"))
-            candidates.collectFirst { case p if Files.exists(p) =>
-                Files.readString(p).linesIterator
-                    .map(_.trim)
+            Seq(Path.of("../.env"), Path.of(".env")).collectFirst { case p if Files.exists(p) =>
+                Files.readString(p).linesIterator.map(_.trim)
                     .find(_.startsWith("BLOCKFROST_PROJECT_ID"))
                     .map(_.dropWhile(_ != '=').drop(1).trim.replaceAll("^\"|\"$", ""))
             }.flatten.getOrElse(sys.error("BLOCKFROST_PROJECT_ID not set (env or ../.env)"))
