@@ -28,3 +28,7 @@ gov/mainnet-*.json
 # generated unsigned txs (regenerable, time-limited TTL)
 m5-withdraw/*.unsigned.tx
 m5-withdraw/*.unsigned.tx.json
+
+# generated signed txs (regenerable; submittable — keep out of git)
+recover-deposits/*.signed.tx
+recover-deposits/*.signed.tx.json
