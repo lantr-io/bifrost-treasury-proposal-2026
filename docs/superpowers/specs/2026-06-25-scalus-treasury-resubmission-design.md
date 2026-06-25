@@ -78,11 +78,8 @@ fact already stale against the committed `docs/proposal.md`). Required edits:
 
 ### 5.2 `scripts/build-anchor.ts`
 - Motivation headings: `"The Gap: The Assembly Problem"` no longer exists.
-  Remap `motivationHeadings` to new Motivation subsections — proposed:
-  - `"The Application Layer Decides the Next Chapter"`
-  - `"What Scalus is today"`
-  - `"The next step: protect, deepen, expand"`
-  (final selection is a curation choice — confirm in review.)
+  Set `motivationHeadings` to the single section
+  `"The Application Layer Decides the Next Chapter"` (confirmed).
 - Drop `requirePin("annex4")` (only 3 annexes now). Keep requirePin for
   `proposal`, `annex1`, `annex2`, `annex3`.
 - `## Rationale` / `## Abstract` / `## Supporting links` matchers unchanged.
@@ -151,10 +148,11 @@ testnet rehearsal (requires `PINATA_JWT` and/or `BLOCKFROST_IPFS_PROJECT_ID`).
 
 ## 9. Runbook (NOT executed in this effort)
 
-### 9.1 Testnet rehearsal (preview) — optional, allowed
+### 9.1 Testnet rehearsal (preview) — IN SCOPE
 - Fund: recover preview deposits via `recover-deposits --network preview --submit`.
-- `bun run init` → `bun run register` → pin anchor → `bun run gov --submit`.
+- `bun run init` → `bun run register` → pin anchor (preview) → `bun run gov --submit`.
 - Verify the action lands and parses (Koios `/proposal_list` `meta_json`).
+- This is a real end-to-end preview run (testnet only) and is part of this effort.
 
 ### 9.2 Mainnet — DEFERRED, do not run yet
 1. Replace placeholder PDFs with real exports; re-pin; update URLs + pinned.json.
@@ -186,4 +184,6 @@ testnet rehearsal (requires `PINATA_JWT` and/or `BLOCKFROST_IPFS_PROJECT_ID`).
 - `gov/anchor.mainnet.json` builds, schema-validates, and signs.
 - `gov/mainnet-withdrawal.json` dry-run shows amount 2,991,667,000,000,
   anchor hash, and the fresh treasury reward account.
+- Preview rehearsal executed end-to-end (init → register → gov `--submit` on
+  preview) and verified via Koios.
 - Mainnet runbook documented; **no mainnet tx executed.**
