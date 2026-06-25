@@ -99,13 +99,13 @@ function main(): void {
 
   const attachedIdx = findRequiredHeading(
     lines,
-    /^## Attached documents/,
-    '"## Attached documents (IPFS)"',
+    /^## Reference documents \(IPFS\)/,
+    '"## Reference documents (IPFS)"',
   );
   const supportingIdx = findRequiredHeading(
     lines,
-    /^### Supporting links/,
-    '"### Supporting links"',
+    /^## Supporting links/,
+    '"## Supporting links"',
   );
 
   const annexes = findAnnexHeadings(lines);
