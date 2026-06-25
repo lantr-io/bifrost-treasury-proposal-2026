@@ -20,12 +20,12 @@ describe("mainnet raw config", () => {
     );
   });
 
-  test("withdrawal amount matches the proposal total (₳8,503,000)", () => {
-    expect(raw.amountLovelace).toBe(8_503_000_000_000n);
+  test("withdrawal amount matches the proposal total (₳2,991,667)", () => {
+    expect(raw.amountLovelace).toBe(2_991_667_000_000n);
   });
 
-  test("T_max = 2027-10-01 (delivery July 2026 - June 2027 + 3-month contingency)", () => {
-    expect(raw.treasuryExpirationISO).toBe("2027-10-01T00:00:00Z");
+  test("T_max = 2027-07-01 (9-month delivery July 2026 - Q1 2027, lean buffer, no contingency)", () => {
+    expect(raw.treasuryExpirationISO).toBe("2027-07-01T00:00:00Z");
   });
 
   test("vendor grace is 30 days", () => {
