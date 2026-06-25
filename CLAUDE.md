@@ -7,6 +7,24 @@ Application Platform and Node Diversity initiative. Parameterizes and drives
 the audited SundaeSwap `treasury-funds` contracts via their published TS
 package. **Does not port or reimplement contracts.**
 
+## Active proposal (as of 2026-06-25)
+
+The live effort is the **reduced resubmission** "Scalus 2026: Maintenance,
+Dijkstra Readiness & Application Runtime" (HackMD `@lantr/scalus2026-2`):
+**₳2,991,667**, 9 months, no contingency, T_max **2027-07-01** (vendor
++30d). It supersedes the expired ₳8,503,000 / 12-month proposal. Design +
+plan: `docs/superpowers/specs/2026-06-25-*.md` and
+`docs/superpowers/plans/2026-06-25-*.md`.
+
+- **Fresh deployment** (reuses existing admin + board keys; new T_max forces
+  new treasury/vendor script hashes). Rehearsed end-to-end on **preview**
+  (gov action `c7f69982…`, anchor parsed on Koios) — see
+  `journal/2026-06-25-preview-rehearsal-scalus2026-2.md`.
+- **Mainnet is deferred** — not executed. Runbook in the spec §9.2.
+- **Annex/proposal IPFS references are placeholders** (reuse the prior
+  cycle's PDFs, content-matched). Replace with real scalus2026-2 PDF exports
+  (and converge HackMD Supporting-links) before any mainnet submission.
+
 ## Cross-repo context
 
 - Source contracts: `/Users/nau/projects/lantr/treasury-contracts/` (Aiken,
