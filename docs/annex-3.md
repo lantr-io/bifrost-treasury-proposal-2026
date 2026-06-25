@@ -10,11 +10,11 @@ The project was funded at ₳657,692, based on a reference rate of \$0.65/ADA, f
 
 This retrospective captures the main lessons from that cycle, what worked, what created friction, and which decisions directly shaped the design of the 2026 Scalus proposal.
 
-#### 1. Budgeting Process
+#### Budgeting Process
 
 **Observations**
 
-The 2025 budgeting cycle took much longer than the what was assumed in the original proposal.
+The 2025 budgeting cycle took much longer than was assumed in the original proposal.
 
 The Scalus proposal entered the process in March 2025 through gov.tools. Updates followed in April 2025, community voting through Eklesia took place in April-May 2025, debates about the process continued through June-July 2025, and final on-chain voting only happened in August 2025. In practice, the path from submission to final result took close to 6 months.
 
@@ -25,6 +25,7 @@ A second limitation was that the proposal became effectively fixed very early in
 A third issue is structural: the bundled budget action remains a source of governance risk. Despite strong pushback from DReps during the 2025 cycle, bundling remains part of the suggested framework in 2026. The risk of rejection of a bundled action therefore remains medium to high.
 
 **Decisions**
+
 We acknowledge the crucial role Intersect played in organising and facilitating the 2025 cycle, as well as the improvements introduced for 2026.
 
 At the same time, we concluded that:
@@ -33,17 +34,17 @@ At the same time, we concluded that:
 
 For 2026, we therefore decided to submit independently, building on the practical experience of proposals such as Amaru and Dingo in the 2025/2026 Treasury cycles.
 
-#### 2. Contracting Framework
+#### Contracting Framework
 
 **Observations**
 
 The contracting and legal support provided during the 2025 cycle was excellent. We would like to explicitly acknowledge the quality of assistance from the Intersect team in helping structure the contractual framework.
 
 At the same time, the milestone-based contract model had several limitations for product-oriented work:
-1. Upfront scope drafting forced a project-style execution model that is only partially compatible with product development.
-2. Fixed delivery dates had to be defined at start.
-3. Fixed disbursement windows: the funds could only be released on pre-defined schedules, typically no sooner than 30 days after the due date, and only after third-party assurance sign-off and additional administrative review.
-4. While a change process existed, it was perceived by us as bureaucratically heavy and slow.
+- Upfront scope drafting forced a project-style execution model that is only partially compatible with product development.
+- Fixed delivery dates had to be defined at start.
+- Fixed disbursement windows: the funds could only be released on pre-defined schedules, typically no sooner than 30 days after the due date, and only after third-party assurance sign-off and additional administrative review.
+- While a change process existed, it was perceived by us as bureaucratically heavy and slow.
 
 One useful feature of the 2025 structure was the kick-off milestone, which allowed initial withdrawal at the start of execution. This effectively funded the first month of operations for the team and enabled a stable start, while still remained refundable if the next milestone was not delivered on time.
 
@@ -56,16 +57,16 @@ For the 2026 proposal, we decided to preserve what worked and improve what did n
 - Improve: disbursement timing, targeting a faster release of funds after accepted delivery.
 - Keep: future fund unlocks conditioned on delivery evidence, delivery report, and third-party assurer review.
 
-#### 3. Duration and Delivery Window
+#### Duration and Delivery Window
 
 **Observation**
 
-The original development plan assumed 6 months of execution (end of June-December 2026). Due to the budgeting process drifted significantly, and because the legal framework attached strict consequences to delivery delays, we introduced additional time buffer to cover the vacation periods + additional delivery risk protection.
+The original development plan assumed 6 months of execution (end of June-December 2026). Because the budgeting process drifted significantly, and because the legal framework attached strict consequences to delivery delays, we introduced additional time buffer to cover the vacation periods + additional delivery risk protection.
 This extended the contractual delivery window from 6 months to 7.5 months.
 
 In practice, however, the team excelled at execution and completed all planned development work within the original 6-month engineering window.
 
-The limitation was that milestone-based contracting made impossible to close milestones and receive disbursement earlier than the fixed contractual schedule. This created an artificial gap between:
+The limitation was that milestone-based contracting made it impossible to close milestones and receive disbursement earlier than the fixed contractual schedule. This created an artificial gap between:
 - the point when work was actually completed;
 - the formal milestone due date;
 - and the further delay required for disbursement.
@@ -77,7 +78,7 @@ For 2026, we decided to:
 - Keep: clearly defined objectives, technical deliverables, and explicit user-facing outcomes;
 - Reduce: unnecessary granularity in milestone splitting, so the team can adapt more actively within a quarter without losing accountability.
 
-#### 4. Financial Overview and ADA Volatility
+#### Financial Overview and ADA Volatility
 
 **Observations**
 
@@ -93,15 +94,15 @@ M5 and M6, the total effective purchasing power of ₳657,692 falls from an expe
 
 The Intersect 2025 Treasury process did not provide an effective mechanism for hedging against adverse ADA price movement at the process level. Learning from the Amaru experience, where conversion into stablecoins was used effectively, made clear that proactive treasury management is necessary if delivery is to remain protected over long funding windows.
 
-**Decision**
+**Decisions**
+
 For 2026, we decided to:
 - Hedge at least part of the requested ADA into USD-denominated stablecoins to protect delivery against adverse price movement;
-- Use concervative ADA/USD rate;
-- Return any unused contingency to the Treasury at the end of the delivery period.
+- Use conservative ADA/USD rate;
 
-This is the direct origin of the conservative ADA pricing and refundable contingency model used in the 2026 Scalus proposal.
+This is the direct origin of the conservative ADA pricing used in the 2026 Scalus proposal.
 
-#### 5. Administration, Reporting, and Support During Delivery
+#### Administration, Reporting, and Support During Delivery
 
 **Observations**
 
@@ -116,7 +117,7 @@ For 2026, we decided to:
 - Keep: detailed public reporting;
 - Keep: active communication of delivery progress and outcomes to the community.
   
-#### 6. Third-Party Assurance
+#### Third-Party Assurance
 
 **Observations**
 
@@ -126,7 +127,7 @@ The third-party assurance process worked well. No.Witness Labs demonstrated stro
 
 For 2026, we decided to continue with No.Witness Labs as our third-party assurance partner.
 
-#### 7. Delivery Milestones vs Actual Delivery
+#### Delivery Milestones vs Actual Delivery
 
 **Observations**
 
@@ -135,8 +136,8 @@ All funded milestones were delivered on time. The planned milestone structure in
 - (Closed) Milestone 2 – Adoption and Onboarding
 - (Closed) Milestone 3 – Off-chain Libraries
 - (Closed) Milestone 4 – Testing Capabilities
-- (Done, Reporting) Milestone 5 – Advanced UPLC Optimisations
-- (Done, Reporting) Milestone 6 – Accelerated E2E Development Cycle
+- (Closed) Milestone 5 – Advanced UPLC Optimisations
+- (Closed) Milestone 6 – Accelerated E2E Development Cycle
 
 At the same time, one of the strongest lessons from delivery was that the roadmap was split too finely. The combination of:
 - narrow milestone segmentation;
@@ -147,11 +148,9 @@ reduced our ability to adapt from user feedback and re-prioritise around what de
 Despite that constraint, we were still able to deliver additional capabilities and R&D outputs beyond the strictly committed scope, including:
 
 - full van Rossem intra-era hard fork support ahead of time;
-- JS/TS toolset integration with MeshJS SDK and Evolution SDK;
 - experimental boundary testing and scenario exploration testing;
 - advanced data structure performance benchmarking;
 - experimental Scalus JIT Plutus VM;
-- ledger rules and conformance testing;
 - in-memory Cardano node emulator for JVM/JS/TS;
 - broader performance optimisations.
 
@@ -166,7 +165,7 @@ For 2026, we decided to:
 - Keep: Preserve room for R&D and adoption assistance inside the delivery window.
 
 
-#### 8. Product Development Method
+#### Product Development Method
 
 **Observations**
 
@@ -185,7 +184,6 @@ For 2026, we decided to design the proposal around:
 - quarterly planning windows;
 - and enough internal flexibility to learn, adapt, and re-prioritise without undermining accountability.
 
-
 #### Conclusion / Register of Decisions
 
 The 2025 Scalus Treasury cycle produced a clear set of operational lessons.
@@ -199,7 +197,6 @@ We concluded that the next proposal should:
 - target faster disbursement timing after accepted delivery;
 - retain third-party assurer and public reporting;
 - hedge (at least part of) the requested ADA into stable assets;
-- include a refundable contingency to protect delivery under uncertainty;
 - focus milestones on outcomes and product utility, not only technical line items;
 - preserve flexibility for R&D, adoption support, and reprioritisation within milestone scope.
 
