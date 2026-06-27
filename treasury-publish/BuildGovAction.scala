@@ -2,7 +2,7 @@ package treasurypublish
 
 import scalus.cardano.ledger.*
 import scalus.cardano.address.{StakeAddress, StakePayload}
-import scalus.cardano.txbuilder.{TxBuilder, TransactionBuilderStep, TwoArgumentPlutusScriptWitness}
+import scalus.cardano.txbuilder.{TransactionBuilderStep, TwoArgumentPlutusScriptWitness, TxBuilder}
 import scalus.uplc.builtin.{ByteString, Data}
 import scalus.uplc.builtin.Builtins.blake2b_256
 import scalus.utils.showDetailed
@@ -17,11 +17,11 @@ import java.nio.file.{Files, Path}
 // is provided as a TwoArgumentPlutusScriptWitness; Scalus auto-wires the
 // Proposing redeemer + script witness. The anchor JSON + CID come from the bun
 // anchor pipeline (gov/anchor.<net>.json + gov/pinned.json).
-object BuildGovActionTool:
+object BuildGovActionTool {
     // Constitution guardrails script hash — genesis default on preprod/preview/mainnet.
     private val GuardrailsScriptHash = "fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64"
 
-    @main def gov(args: String*): Unit =
+    @main def gov(args: String*): Unit = {
         val net = Cli.net(args)
         val submit = Cli.isSubmit(args)
         val r = Config.resolve(Config.forNetwork(net))
@@ -40,8 +40,9 @@ object BuildGovActionTool:
         // Withdrawal target = treasury contract reward account; deposit return =
         // admin personal stake key (rebuilt for this network; never read from a
         // testnet .addr file into a mainnet tx).
-        val treasuryReward =
-            RewardAccount(StakeAddress(ln, StakePayload.Script(ScriptHash.fromHex(state.treasuryScriptHashHex))))
+        val treasuryReward = RewardAccount(
+          StakeAddress(ln, StakePayload.Script(ScriptHash.fromHex(state.treasuryScriptHashHex)))
+        )
         val depositReturn = RewardAccount(Chain.stakeAddress(net, keys))
 
         // Anchor: bytes -> blake2b-256 = dataHash; URL = ipfs://<pinned anchor CID>.
@@ -51,7 +52,8 @@ object BuildGovActionTool:
           s"$anchorPath not found — run the bun anchor pipeline (build-anchor/sign-anchor/pin) first"
         )
         val anchorBytes = Files.readAllBytes(anchorPath)
-        val anchorHash = DataHash.fromByteString(blake2b_256(ByteString.unsafeFromArray(anchorBytes)))
+        val anchorHash =
+            DataHash.fromByteString(blake2b_256(ByteString.unsafeFromArray(anchorBytes)))
         val pinned = ujson.read(Files.readString(Path.of("gov/pinned.json")))
         val cid = pinned.obj
             .get("anchor")
@@ -87,7 +89,9 @@ object BuildGovActionTool:
         println(s"[info] gov_action_deposit (live): $deposit lovelace")
 
         val guardrailsScript =
-            Script.PlutusV3(ByteString.fromHex(Chain.fetchScriptCborHex(apiKey, base, GuardrailsScriptHash)))
+            Script.PlutusV3(
+              ByteString.fromHex(Chain.fetchScriptCborHex(apiKey, base, GuardrailsScriptHash))
+            )
         require(
           guardrailsScript.scriptHash.toHex == GuardrailsScriptHash,
           s"fetched guardrails hash ${guardrailsScript.scriptHash.toHex} != $GuardrailsScriptHash"
@@ -113,11 +117,14 @@ object BuildGovActionTool:
         println(s"\n[ok] built gov-action tx ${tx.id.toHex} (${tx.toCbor.length} bytes)")
         println(tx.showDetailed)
 
-        if !submit then
+        if !submit then {
             println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
             return
+        }
 
         println(s"\n[submit] broadcasting ${tx.id.toHex} …")
         Chain.submit(provider, tx)
         Deployment.save(net, state.copy(txs = state.txs + ("govAction" -> tx.id.toHex)))
         println(s"[done] submitted; updated ${Deployment.path(net)}")
+    }
+}

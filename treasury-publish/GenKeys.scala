@@ -1,14 +1,7 @@
 package treasurypublish
 
 import scalus.cardano.ledger.*
-import scalus.cardano.address.{
-    Network,
-    ShelleyAddress,
-    ShelleyPaymentPart,
-    ShelleyDelegationPart,
-    StakeAddress,
-    StakePayload
-}
+import scalus.cardano.address.{Network, ShelleyAddress, ShelleyDelegationPart, ShelleyPaymentPart, StakeAddress, StakePayload}
 import scalus.uplc.builtin.ByteString
 import scalus.uplc.builtin.Builtins.blake2b_224
 import scalus.crypto.ed25519.{JvmEd25519Signer, SigningKey}
@@ -28,28 +21,31 @@ import java.security.SecureRandom
 // Addresses are written in testnet form (addr_test1.../stake_test1...); they are
 // re-derived per network at use time and cross-checked by key hash, so the
 // network byte in the file is irrelevant.
-object GenKeysTool:
+object GenKeysTool {
     private val rng = new SecureRandom()
 
-    private def randomSeed(): ByteString =
+    private def randomSeed(): ByteString = {
         val b = new Array[Byte](32)
         rng.nextBytes(b)
         ByteString.unsafeFromArray(b)
+    }
 
-    private def writeKey(path: Path, hex: String, secret: Boolean): Unit =
+    private def writeKey(path: Path, hex: String, secret: Boolean): Unit = {
         Files.writeString(path, hex + "\n")
         if secret then
             try Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"))
             catch case _: UnsupportedOperationException => ()
+    }
 
-    @main def genKeys(args: String*): Unit =
+    @main def genKeys(args: String*): Unit = {
         val keysDir = Path.of("keys")
         Files.createDirectories(keysDir)
 
         val skPath = keysDir.resolve("admin.skey")
-        if Files.exists(skPath) then
+        if Files.exists(skPath) then {
             println(s"$skPath exists — keeping existing operator keys")
             return
+        }
 
         val paySeed = randomSeed()
         val paySk = SigningKey.unsafeFromByteString(paySeed)
@@ -84,3 +80,5 @@ object GenKeysTool:
         println("")
         println("Fund the base address on the testnet faucet before running init:")
         println("  https://docs.cardano.org/cardano-testnets/tools/faucet")
+    }
+}

@@ -1,7 +1,7 @@
 package treasurypublish
 
 import scalus.cardano.ledger.*
-import scalus.cardano.address.{ShelleyAddress, ShelleyPaymentPart, ShelleyDelegationPart}
+import scalus.cardano.address.{ShelleyAddress, ShelleyDelegationPart, ShelleyPaymentPart}
 import scalus.cardano.txbuilder.TxBuilder
 import scalus.uplc.builtin.{ByteString, Data}
 import scalus.utils.showDetailed
@@ -9,20 +9,21 @@ import scalus.utils.showDetailed
 import scala.collection.immutable.SortedMap
 import scala.concurrent.Await
 import scala.concurrent.duration.*
-import java.nio.file.{Files, Path}
+import java.nio.file.Path
 
 // 01-init-registry: mint the one-shot REGISTRY NFT (oneshot policy parameterized
 // by a seed UTxO) and lock it at the policy's enterprise-script address with the
 // ScriptHashRegistry datum carrying the treasury + vendor script hashes.
-object InitRegistryTool:
-    @main def init(args: String*): Unit =
+object InitRegistryTool {
+    @main def init(args: String*): Unit = {
         val net = Cli.net(args)
         val submit = Cli.isSubmit(args)
         val r = Config.resolve(Config.forNetwork(net))
 
-        if Deployment.load(net).isDefined then
+        if Deployment.load(net).isDefined then {
             println(s"${Deployment.path(net)} already exists — init already ran. Skipping.")
             return
+        }
 
         val apiKey = Chain.loadBlockfrostKey(net)
         val keys = Chain.loadAdminKeys("keys")
@@ -79,9 +80,10 @@ object InitRegistryTool:
         println(s"\n[ok] built registry-init tx ${tx.id.toHex} (${tx.toCbor.length} bytes)")
         println(tx.showDetailed)
 
-        if !submit then
+        if !submit then {
             println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
             return
+        }
 
         println(s"\n[submit] broadcasting ${tx.id.toHex} …")
         Chain.submit(provider, tx)
@@ -100,3 +102,5 @@ object InitRegistryTool:
           )
         )
         println(s"[done] submitted; wrote ${Deployment.path(net)}")
+    }
+}

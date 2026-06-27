@@ -2,7 +2,7 @@ package treasurypublish
 
 import scalus.cardano.ledger.*
 import scalus.cardano.address.{StakeAddress, StakePayload}
-import scalus.cardano.txbuilder.{TxBuilder, TwoArgumentPlutusScriptWitness}
+import scalus.cardano.txbuilder.{TwoArgumentPlutusScriptWitness, TxBuilder}
 import scalus.uplc.builtin.Data
 import scalus.utils.showDetailed
 
@@ -14,8 +14,8 @@ import scala.concurrent.duration.*
 // personal stake key (registered without delegation, so the gov-action deposit
 // refund lands in a usable reward account). Admin-stake registration is skipped
 // if already on-chain (StakeKeyRegisteredDELEG would otherwise reject the tx).
-object RegisterScriptsTool:
-    @main def register(args: String*): Unit =
+object RegisterScriptsTool {
+    @main def register(args: String*): Unit = {
         val net = Cli.net(args)
         val submit = Cli.isSubmit(args)
         val r = Config.resolve(Config.forNetwork(net))
@@ -47,10 +47,11 @@ object RegisterScriptsTool:
         val vendorStake = StakeAddress(ln, StakePayload.Script(vendorScript.scriptHash))
         val adminStake = Chain.stakeAddress(net, keys)
 
-        val adminAlreadyRegistered =
-            Chain.isStakeRegistered(apiKey, base, adminStake.toBech32.get)
+        val adminAlreadyRegistered = Chain.isStakeRegistered(apiKey, base, adminStake.toBech32.get)
         if adminAlreadyRegistered then
-            println(s"[info] admin stake ${adminStake.toBech32.get} already registered — skipping its cert")
+            println(
+              s"[info] admin stake ${adminStake.toBech32.get} already registered — skipping its cert"
+            )
 
         val treasuryWitness = TwoArgumentPlutusScriptWitness.attached(treasuryScript, Data.unit)
         val vendorWitness = TwoArgumentPlutusScriptWitness.attached(vendorScript, Data.unit)
@@ -75,11 +76,14 @@ object RegisterScriptsTool:
         println(s"\n[ok] built register+delegate tx ${tx.id.toHex} (${tx.toCbor.length} bytes)")
         println(tx.showDetailed)
 
-        if !submit then
+        if !submit then {
             println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
             return
+        }
 
         println(s"\n[submit] broadcasting ${tx.id.toHex} …")
         Chain.submit(provider, tx)
         Deployment.save(net, state.copy(txs = state.txs + ("registerScripts" -> tx.id.toHex)))
         println(s"[done] submitted; updated ${Deployment.path(net)}")
+    }
+}

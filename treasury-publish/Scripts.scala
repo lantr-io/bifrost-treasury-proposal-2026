@@ -11,7 +11,7 @@ import java.nio.file.{Files, Path}
 //   registry policy = oneshot.oneshot.mint  applied with OutputReference(seed)
 //   treasury script = treasury.treasury.spend applied with TreasuryConfiguration
 //   vendor   script = vendor.vendor.spend     applied with VendorConfiguration
-object Scripts:
+object Scripts {
     val RegistryAssetNameHex: String = "5245474953545259" // "REGISTRY"
 
     private def findPlutusJson(): String =
@@ -47,3 +47,4 @@ object Scripts:
 
     def vendorScript(r: ResolvedConfig, registryPolicyHex: String): Script.PlutusV3 =
         applied(vendorProgram, ContractData.vendorConfig(r, registryPolicyHex))
+}

@@ -7,7 +7,7 @@ import java.time.Instant
 // functions of static input — every call returns identical bytes, so script
 // hashes are stable across init and every subsequent invocation.
 
-enum Net:
+enum Net {
     case Preview, Preprod, Mainnet
 
     /** Blockfrost URL prefix / project-id prefix (network-scoped). */
@@ -15,6 +15,7 @@ enum Net:
         case Preview => "preview"
         case Preprod => "preprod"
         case Mainnet => "mainnet"
+}
 
 final case class RawConfig(
     network: Net,
@@ -36,19 +37,18 @@ final case class ResolvedConfig(
     vendorPayoutUpperboundMs: BigInt
 )
 
-object Config:
+object Config {
     private val MsPerDay: Long = 24L * 60 * 60 * 1000
 
     /** Payment key hash (hex, 56 chars) from a Shelley base/enterprise address. */
-    def addressPaymentKeyHash(addr: String): String =
-        Address.fromBech32(addr) match
-            case sh: ShelleyAddress =>
-                sh.payment match
-                    case ShelleyPaymentPart.Key(h) => h.toHex
-                    case _ => sys.error(s"$addr payment part is a script hash, not a key hash")
-            case other => sys.error(s"$addr is not a Shelley payment address: $other")
+    def addressPaymentKeyHash(addr: String): String = Address.fromBech32(addr) match
+        case sh: ShelleyAddress =>
+            sh.payment match
+                case ShelleyPaymentPart.Key(h) => h.toHex
+                case _ => sys.error(s"$addr payment part is a script hash, not a key hash")
+        case other => sys.error(s"$addr is not a Shelley payment address: $other")
 
-    def resolve(raw: RawConfig): ResolvedConfig =
+    def resolve(raw: RawConfig): ResolvedConfig = {
         require(raw.boardPkhs.size == 3, s"expected 3 board pkhs, got ${raw.boardPkhs.size}")
         raw.boardPkhs.zipWithIndex.foreach { (p, i) =>
             require(p.matches("[0-9a-f]{56}"), s"boardPkhs[$i] is not a 56-char hex pkh: \"$p\"")
@@ -65,11 +65,13 @@ object Config:
           vendorExpirationMs = vMs,
           vendorPayoutUpperboundMs = tMs
         )
+    }
 
     // ---- Concrete network configs (mirror params/preprod.ts) -----------------
 
-    /** Reduced resubmission "Scalus 2026" — ₳2,991,667, T_max 2027-07-01,
-      * vendor grace +30d. Board = production K_1..K_3. Preview re-uses these. */
+    /** Reduced resubmission "Scalus 2026" — ₳2,991,667, T_max 2027-07-01, vendor grace +30d. Board =
+      * production K_1..K_3. Preview re-uses these.
+      */
     val preprod: RawConfig = RawConfig(
       network = Net.Preprod,
       adminAddress =
@@ -77,7 +79,7 @@ object Config:
       boardPkhs = Seq(
         "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (CF)
         "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
-        "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef"  // K_3 — Riley Kilgore (IOG)
+        "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef" // K_3 — Riley Kilgore (IOG)
       ),
       amountLovelace = BigInt("2991667000000"),
       treasuryExpirationISO = "2027-07-01T00:00:00Z",
@@ -94,3 +96,4 @@ object Config:
         case Net.Preview => preview
         case Net.Preprod => preprod
         case Net.Mainnet => mainnet
+}

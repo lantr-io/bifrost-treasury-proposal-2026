@@ -13,7 +13,7 @@ import scalus.cardano.onchain.plutus.prelude.List as PList
 //   TreasuryConfiguration: Constr 0 [registry_token, permissions, expiration, payout_upperbound]
 //   VendorPermissions  : Constr 0 [pause, resume, modify]
 //   VendorConfiguration: Constr 0 [registry_token, permissions, expiration]
-object ContractData:
+object ContractData {
     private def bs(hex: String): ByteString = ByteString.fromHex(hex)
 
     def outputRef(txIdHex: String, outputIndex: Long): Data =
@@ -34,14 +34,14 @@ object ContractData:
 
     /** The reusable permission building blocks (mirror preprod.ts permissionGroup). */
     final case class PermissionGroup(
-        opSig: Data,    // K_op alone
-        board1: Data,   // AtLeast(1, board)
-        board2: Data,   // AtLeast(2, board)
-        opPlus1: Data,  // AllOf[K_op, AtLeast(1, board)]
-        opPlus2: Data   // AllOf[K_op, AtLeast(2, board)]
+        opSig: Data, // K_op alone
+        board1: Data, // AtLeast(1, board)
+        board2: Data, // AtLeast(2, board)
+        opPlus1: Data, // AllOf[K_op, AtLeast(1, board)]
+        opPlus2: Data // AllOf[K_op, AtLeast(2, board)]
     )
 
-    def permissionGroup(r: ResolvedConfig): PermissionGroup =
+    def permissionGroup(r: ResolvedConfig): PermissionGroup = {
         val opSig = sig(r.adminPkhHex)
         val boardSigs = r.boardPkhs.map(sig)
         val board1 = atLeast(1, boardSigs)
@@ -53,10 +53,11 @@ object ContractData:
           opPlus1 = allOf(Seq(opSig, board1)),
           opPlus2 = allOf(Seq(opSig, board2))
         )
+    }
 
     // ---- Treasury / Vendor configuration -------------------------------------
 
-    def treasuryConfig(r: ResolvedConfig, registryPolicyHex: String): Data =
+    def treasuryConfig(r: ResolvedConfig, registryPolicyHex: String): Data = {
         val g = permissionGroup(r)
         // schema order: reorganize, sweep, fund, disburse
         val perms = Data.Constr(0, PList(g.opSig, g.opPlus1, g.opPlus2, g.opPlus2))
@@ -69,14 +70,17 @@ object ContractData:
             Data.I(r.vendorPayoutUpperboundMs)
           )
         )
+    }
 
-    /** ScriptHashRegistry { treasury: {Script:[t]}, vendor: {Script:[v]} } — the
-      * inline datum on the registry NFT output. Aiken `Credential.Script` = Constr 1. */
-    def registryDatum(treasuryHashHex: String, vendorHashHex: String): Data =
+    /** ScriptHashRegistry { treasury: {Script:[t]}, vendor: {Script:[v]} } — the inline datum on
+      * the registry NFT output. Aiken `Credential.Script` = Constr 1.
+      */
+    def registryDatum(treasuryHashHex: String, vendorHashHex: String): Data = {
         def scriptCred(h: String): Data = Data.Constr(1, PList(Data.B(bs(h))))
         Data.Constr(0, PList(scriptCred(treasuryHashHex), scriptCred(vendorHashHex)))
+    }
 
-    def vendorConfig(r: ResolvedConfig, registryPolicyHex: String): Data =
+    def vendorConfig(r: ResolvedConfig, registryPolicyHex: String): Data = {
         val g = permissionGroup(r)
         // schema order: pause, resume, modify
         val perms = Data.Constr(0, PList(g.board1, g.board2, g.opPlus2))
@@ -88,3 +92,5 @@ object ContractData:
             Data.I(r.vendorExpirationMs)
           )
         )
+    }
+}

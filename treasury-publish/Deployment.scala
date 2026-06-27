@@ -17,13 +17,13 @@ final case class DeploymentState(
     txs: Map[String, String]
 )
 
-object Deployment:
+object Deployment {
     def path(net: Net): Path = Path.of(s"deployment/${net.slug}.json")
 
-    def load(net: Net): Option[DeploymentState] =
+    def load(net: Net): Option[DeploymentState] = {
         val p = path(net)
         if !Files.exists(p) then None
-        else
+        else {
             val j = ujson.read(Files.readString(p))
             Some(
               DeploymentState(
@@ -38,8 +38,10 @@ object Deployment:
                 txs = j("txs").obj.map((k, v) => k -> v.str).toMap
               )
             )
+        }
+    }
 
-    def save(net: Net, state: DeploymentState): Unit =
+    def save(net: Net, state: DeploymentState): Unit = {
         val obj = ujson.Obj(
           "network" -> state.network,
           "seedUtxo" -> ujson.Obj(
@@ -56,3 +58,5 @@ object Deployment:
         val p = path(net)
         Files.createDirectories(p.getParent)
         Files.writeString(p, ujson.write(obj, indent = 2) + "\n")
+    }
+}
