@@ -3,7 +3,13 @@
 // Compiles the registry/treasury/vendor scripts exactly as 01-init does, for a
 // FIXED seed UTxO + preprodRawConfig, and prints the three script hashes.
 // The Scala reimplementation must reproduce these byte-for-byte.
-import { OneshotOneshotMint, Utils } from "@sundaeswap/treasury-funds";
+import {
+  OneshotOneshotMint,
+  Utils,
+  ScriptHashRegistry as ScriptHashRegistrySchema,
+  type ScriptHashRegistry,
+} from "@sundaeswap/treasury-funds";
+import { serialize } from "@blaze-cardano/data";
 import { Core } from "@blaze-cardano/sdk";
 import { toHex } from "@blaze-cardano/core";
 import { preprodRawConfig, buildTreasuryConfig, buildVendorConfig } from "../params/preprod";
@@ -25,12 +31,23 @@ const treasuryCfg = buildTreasuryConfig(resolved, registryPolicyHex);
 const vendorCfg = buildVendorConfig(resolved, registryPolicyHex);
 const compiled = Utils.loadScripts(network, treasuryCfg, vendorCfg, true);
 
+const treasuryScriptHash = compiled.treasuryScript.script.Script.hash();
+const vendorScriptHash = compiled.vendorScript.script.Script.hash();
+
+// Registry datum (ScriptHashRegistry { treasury: {Script:[t]}, vendor: {Script:[v]} }).
+const registryDatum: ScriptHashRegistry = {
+  treasury: { Script: [treasuryScriptHash] },
+  vendor: { Script: [vendorScriptHash] },
+};
+const registryDatumHex = serialize(ScriptHashRegistrySchema, registryDatum).toCbor();
+
 const out = {
   seed: { txId: SEED_TX, outputIndex: Number(SEED_IX) },
   registryPolicy: registryPolicyHex,
   registryAssetNameHex,
-  treasuryScriptHash: compiled.treasuryScript.script.Script.hash(),
-  vendorScriptHash: compiled.vendorScript.script.Script.hash(),
+  treasuryScriptHash,
+  vendorScriptHash,
+  registryDatumHex,
   // also dump the applied CBOR so Scala can diff bytes, not just hashes
   treasuryScriptCbor: compiled.treasuryScript.script.Script.toCbor(),
   vendorScriptCbor: compiled.vendorScript.script.Script.toCbor(),

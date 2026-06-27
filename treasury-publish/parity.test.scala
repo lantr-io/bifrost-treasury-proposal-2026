@@ -39,6 +39,19 @@ class ParitySuite extends munit.FunSuite:
           "vendor script (applied with VendorConfiguration) mismatch"
         )
 
+    test("registry datum (ScriptHashRegistry) encodes byte-for-byte vs the TS oracle"):
+        import scalus.uplc.builtin.Builtins.serialiseData
+        val seedTx = fixture("seed")("txId").str
+        val seedIx = fixture("seed")("outputIndex").num.toLong
+        val r = Config.resolve(Config.preprod)
+        val registryPolicyHex = Scripts.registryPolicy(seedTx, seedIx).toHex
+        val treasuryHex = Scripts.treasuryScript(r, registryPolicyHex).scriptHash.toHex
+        val vendorHex = Scripts.vendorScript(r, registryPolicyHex).scriptHash.toHex
+        assertEquals(
+          serialiseData(ContractData.registryDatum(treasuryHex, vendorHex)).toHex,
+          fixture("registryDatumHex").str
+        )
+
     test("admin payment key hash derives from the configured address"):
         val r = Config.resolve(Config.preprod)
         assertEquals(r.adminPkhHex, "2ecb28d3eea1e723e033cb63fbf5d90bc07aa8e986e04e2400d42104")

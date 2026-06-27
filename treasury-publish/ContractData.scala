@@ -70,6 +70,12 @@ object ContractData:
           )
         )
 
+    /** ScriptHashRegistry { treasury: {Script:[t]}, vendor: {Script:[v]} } — the
+      * inline datum on the registry NFT output. Aiken `Credential.Script` = Constr 1. */
+    def registryDatum(treasuryHashHex: String, vendorHashHex: String): Data =
+        def scriptCred(h: String): Data = Data.Constr(1, PList(Data.B(bs(h))))
+        Data.Constr(0, PList(scriptCred(treasuryHashHex), scriptCred(vendorHashHex)))
+
     def vendorConfig(r: ResolvedConfig, registryPolicyHex: String): Data =
         val g = permissionGroup(r)
         // schema order: pause, resume, modify
