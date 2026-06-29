@@ -1,41 +1,32 @@
-# Scalus 2026: Maintenance, Dijkstra Readiness & Application Runtime
+# Scalus 2026: Maintenance, Dijkstra Readiness, Interoperability & Application Runtime
 
 ## Abstract
 
-Scalus is an established, open-source Cardano development platform, built by **Lantr Engineering** over three years of continuous delivery. 
+**Scalus** is an established, open-source Cardano development platform, built by **Lantr Engineering** over three years of continuous delivery. 
 
-It is the integrated, JVM-native toolset for the complex protocols and mission-critical applications, such as **Gummiworm L2, Bifrost bridge, SugarRush DEX, Vela stablecoin, DID / DIDComm decentralised identity**, that already build on it.
+It is the integrated, JVM-native toolset for complex protocols and mission-critical applications, such as **Gummiworm L2, Bifrost bridge, SugarRush DEX, Vela stablecoin, DID / DIDComm decentralised identity**, that build on it.
 
 Its components are already reused inside Cardano's most widely used developer tooling: **MeshJS, Evolution SDK, Lucid Evolution, Cardano Client Lib, and YaciDevKit**. Many teams depend on Scalus without ever integrating it directly.
 
 This proposal funds a focused, 9-month continuation across three lines of work: 
-- **protect** the existing infrastructure through the upcoming **Dijkstra hard fork** (maintenance and readiness)
-- **deepen** its reuse across the JVM and JavaScript ecosystems (interoperability)
-- and take a first **scoped step** into the application runtime that operates the protocols already built with Scalus.
+- **protect** the existing infrastructure and prepare it for the upcoming **Dijkstra hard fork (maintenance and readiness)**
+- **deepen** its reuse across the **JVM and JavaScript ecosystems (interoperability)**
+- **expand** Scalus beyond protocol development toward **operating applications (first scoped application runtime)**.
 
-It is a deliberately reduced resubmission. DReps recognised the previous Scalus proposal's vision, technical quality, and delivery record, but found its scope and budget too large. This version answers that directly: the ask is cut to **₳2,991,667** over 9 months, at a conservative **\$0.15/ADA** reference rate and **no contingency**.
+It is a deliberately reduced resubmission. DReps recognised the previous Scalus proposal's vision, technical quality, and delivery record, but found its scope and budget too large. This version answers that directly: the ask is cut to **₳2,464,844** over 9 months, at a conservative **\$0.16/ADA** reference rate and **no contingency**.
 
 Delivery is milestone-based, administered through audited SundaeSwap treasury contracts with an independent oversight board and third-party assurance.
 
-The goal is bounded and concrete: protect prior public investment, keep Scalus and everything built on it working through the next protocol cycle, and make it more reusable across the ecosystem. It's a proportionate continuation of proven work.
+The goal is bounded and concrete: protect prior public investment, keep Scalus and everything built on it working through the next protocol cycle, make it more reusable across the ecosystem, and extend it from building applications to running them. It's a proportionate continuation of proven work.
 
 **At a glance**
-  - **Ask:** ₳2,991,667 (~\$448,750 at \$0.15/ADA) · 9 months · no contingency
-  - **Funds:** maintenance · Dijkstra hard-fork readiness · interoperability (JVM + JS/TS) · a scoped application runtime
+  - **Ask:** ₳2,464,844 (~\$394,375 at \$0.16/ADA) · 9 months · no contingency
+  - **Scope:** maintenance · Dijkstra hard fork readiness · interoperability (JVM + JS/TS) · a scoped application runtime
   - **Excludes:** standalone L1 node · full L2 integration · broad formal verification
-  - **Vs. previous proposal:** reduced from ₳8.5M / 12 months; node and 3d party dependencies removed
+  - **Vs. previous proposal:** reduced from ₳8.5M / 12 months; L1 node and third-party dependencies removed
   - **Team:** Lantr Engineering, three years building Scalus, every prior milestone delivered on time
   - **Governance:** SundaeSwap escrow · independent oversight board · third-party assurance
 
-<!-- Scalus is an established open-source Cardano smart contract and dApp development platform built by Lantr Engineering, with 3 years of continuous delivery, adoption (Gummiworm L2, Bifrost bridge, SugarRush DEX, and others), and ecosystem integrations (MeshJS SDK, Evolution SDK, Cardano Client Lib, Lucid Evolution, YaciDevKit).
-
-This is a reduced resubmission following the previous Scalus Treasury proposal. The earlier proposal was not approved, and DRep feedback was clear: the Scalus vision and team were recognised, but the requested scope and budget were too large relative to demonstrated demand and current Treasury capacity. 
-
-This proposal responds by reducing the ask, removing production L1 node hardening, removing L2 and formal verification dependencies from the critical path, and focusing on immediate maintenance needs and adoption support.
-
-Lantr Engineering requests ₳X,XXX for a 9-month delivery period to fund the next incremental public-good step for Scalus: maintenance of existing infrastructure, Dijkstra hard fork readiness, interoperability with existing Cardano and JVM tooling, and a scoped application runtime MVP.
-
-The goal is to protect prior ecosystem investment, prepare Scalus users and integrations for the next Cardano hard fork, improve reuse across existing Cardano tooling, and validate the first application runtime step before any larger platform expansion is considered. -->
 
 ## Motivation
 
@@ -47,17 +38,19 @@ Cardano 2030 outcomes (TVL, monthly transactions, and active users) are downstre
 
 That is why developer infrastructure still matters. Not as an abstract tooling category, but as the path from protocol capability to real applications.
 
-The application layer is not built from nothing. It rests on infrastructure that has to exist, keep working, and reach the teams who need it, and that is exactly where Scalus sits. This proposal strengthens that foundation and takes the first step beyond it.
+The application layer is not built from nothing. It relies on infrastructure that has to exist, keep working, and reach the teams who need it. Scalus already sits in that layer. This proposal strengthens that foundation and takes the first step beyond it: from protocol development toward running applications.
 
 ---
 
 ### What Scalus is today
 
-Scalus is an established development platform, purpose-built for the protocols and mission-critical applications Cardano can't afford to get wrong: Layer 2 solutions, cross-chain bridges, DEXs, and other DeFi products where correctness, performance, and control are non-negotiable.
+Scalus is an established development platform, purpose-built for Cardano protocols and mission-critical applications: L2 solutions, cross-chain bridges, DEXs, and other DeFi products where correctness, performance, and control are non-negotiable.
 
-For these systems, the smart contract is rarely the hardest part. The hardest part is everything around it: modelling state, building and testing transactions, simulating edge cases, optimising for cost and getting all of it right before it ever reaches production.
+For these systems, the smart contract is rarely the hardest part. The hardest part is everything around it: modelling state, building and testing transactions, simulating edge cases, optimising execution costs, and getting the full system right before it reaches production.
 
-Scalus brings that entire journey into one coherent JVM stack: a type-safe smart contract language, transaction building, enterprise-grade testing, advanced optimisations, an in-memory Cardano node emulator and local devnet, a library of advanced data structures, design patterns and blueprints. Scalus covers the protocol development layer: write, evaluate, optimise, test, and deploy in one integrated workflow.
+Scalus brings that development journey into one coherent JVM stack: a type-safe smart contract language, transaction building, enterprise-grade testing, advanced optimisations, an in-memory Cardano node emulator and local devnet, a library of advanced data structures, design patterns, and blueprints. 
+
+It covers the protocol development layer in one integrated workflow: write, evaluate, optimise, test, and deploy.
 
 ---
 
@@ -65,9 +58,9 @@ Scalus brings that entire journey into one coherent JVM stack: a type-safe smart
 
 Scalus has three years of continuous delivery behind it and is in active use across the Cardano ecosystem — both in the systems built directly on it and in the tooling that reuses its components.
 
-**Protocols & applications built on Scalus:**
+#### Protocols & applications built on Scalus
 
-- **Gummiworm L2**: state-channel & custody settlement L2
+- **Gummiworm L2**: state-channel and custody settlement L2
 - **Bifrost**: Bitcoin-Cardano bridge
 - **SugarRush**: central limit orderbook DEX (on Gummiworm L2)
 - **Vela**: decentralised synthetic stablecoin
@@ -75,64 +68,64 @@ Scalus has three years of continuous delivery behind it and is in active use acr
 
 These are exactly the complex, high-stakes systems Scalus is built for.
 
-**Reused across the Cardano ecosystem** 
+#### Reused across the Cardano ecosystem 
 
-Scalus's script evaluation, cost calculation, and in-memory L1 emulator are embedded in tooling other teams already use:
+Scalus's script evaluation, cost calculation, and in-memory Cardano node emulator are embedded in tooling other teams already use:
 
 - JVM: **Cardano Client Lib**, **YaciDevKit**
 - JS/TS: **MeshJS SDK**, **Evolution SDK**, **Lucid Evolution**
 
-Through these, many Cardano projects <!-- (Midgard, DeltaDeFi, Vespr, Strike, Indigo, and others)--> rely on Scalus components without ever integrating Scalus directly, as they come built into the tools these teams use every day.
+Through these, many Cardano projects rely on Scalus components without ever integrating Scalus directly, as they come built into the tools these teams use every day.
 
-**Sustained Open Source delivery and reach**
+#### Sustained Open Source delivery and reach
 
-Three years of continuous development: 4,595 commits across 32 releases, 12 contributors.
+Three years of continuous development: 4,642 commits across 32 releases, 12 contributors.
 
-On JS/TS alone, Scalus components reach 20,000+ downloads a month through the SDKs that embed them.
+On JS/TS alone, Scalus.js reaches 20,000+ downloads a month.
 
 ---
 
-### The next step: protect, deepen, expand
+### The Next Step: Protect, Deepen, Expand
 
-This proposal is that next step: focused and disciplined. It builds on the foundation Scalus already is, in three moves: protecting it through the next hard fork, deepening its reach across the stacks teams already run, and taking the first step beyond it, into the application layer itself.
+This proposal is that next step: focused and disciplined. It builds on the foundation Scalus already is, in three moves: **protect** it through the next hard fork, **deepen** its reach across the stacks teams already run, and **expand** it from protocol development toward running applications.
 
 #### Protect
 
 Scalus is already-funded public infrastructure, used directly by protocols and indirectly through developer tooling. Keeping it maintained, compatible, and safe to build on protects every team and tool that depends on it. 
 
-Dijkstra hard-fork introduces new capabilities and updates that include Plutus V4 support, nested transactions, guard script types, accounts. Those changes affect smart contract development, Plutus evaluation, transaction building, ledger rules, testing, and developer workflows. 
+Dijkstra hard fork introduces new capabilities and updates that include **Plutus V4 support, nested transactions, guard script types, accounts**. Those changes affect smart contract development, Plutus evaluation, transaction building, ledger rules, testing, and developer workflows. 
 
 Maintenance and Dijkstra readiness keep Scalus, and the tools and projects built on it, working through the hard-fork transition.
 
 #### Deepen
 
-Scalus is JVM-native, and its components already reach JavaScript and TypeScript ecosystem. This proposal makes them easier to reuse across the stacks teams already run.
+Scalus is JVM-native, and its components already reach the JavaScript and TypeScript ecosystem. This proposal makes them easier to reuse across the stacks teams already run.
 
-- **JS / TS integrations**: improve the interfaces, capabilities, and documentation of the Scalus components already embedded in MeshJS, Evolution SDK, and Lucid Evolution, so the teams depending on them transitively get more capability and reliably.
-- **JVM interoperability**: advance direct interoperability with Java and Kotlin (Spring Boot, Ktor) and provide cleaner integration paths with the Cardano Java stack.
+- **JS / TS integrations**: improve the interfaces, capabilities, and documentation of the Scalus components already embedded in **MeshJS, Evolution SDK, and Lucid Evolution**, so the teams depending on them transitively get more capability and reliability.
+- **JVM interoperability**: make Scalus directly usable from **Java and Kotlin** (Spring Boot, Ktor) and provide cleaner integration paths with the Cardano Java stack.
 - **Multiplatform**: one codebase compiled to multiple targets (JVM, JavaScript, native, and WebAssembly), so the same components serve more environments without reimplementation.
 
 #### Expand
 
-Today, Scalus covers development flow: writing, testing, and deploying a protocol. The application runtime is the first step into operating it: running the live system around the contract, from one integrated stack.
+Today, Scalus covers the development flow: **write, test, optimise, and deploy** a protocol. The application runtime is the first step into operating it: running the live system around the contract from one integrated stack.
 
-This scoped step gives applications a way to consume chain data streams, schedule time-based actions, react to on-chain events and state changes, and coordinate backend workflows.
+The runtime provides the operating layer applications need after deployment: **following chain data, reacting to on-chain events, scheduling time-based actions, coordinating backend workflows, and recovering from failure**.
 
-It is a minimal but useful increment, built and validated with teams already working on Scalus, so the work stays pulled by real demand rather than built ahead of it.
+This is a bounded first release, scoped to the capabilities needed to move from a working protocol to a running application. It will be validated through reference applications, integration tests, and feedback from early users, including teams already building on Scalus.
 
 ---
 
-### What this secures for Cardano
+### Why This Matters for Cardano
 
-Scalus brings Cardano into the JVM ecosystem with a production-grade development platform for mission-critical applications, while reusing the same core components across JavaScript and TypeScript tooling.
+Scalus gives Cardano a **JVM-native development platform for mission-critical applications**, while reusing the same core components across **JavaScript and TypeScript tooling**.
 
 That matters because many of the systems Cardano wants to attract (financial applications, protocol backends, bridges, L2 infrastructure, identity systems, enterprise integrations) are built by teams that need strong typing, mature backend tooling, rigorous testing, and operational control. The JVM ecosystem is one of the strongest environments for exactly that kind of software. 
 
-These are not hypothetical systems — they are the ones already building on Scalus today: Gummiworm (L2), Bifrost (bridge), SugarRush &  Vela (financial).
+These are not hypothetical systems. They are the kinds of systems already building on Scalus today: **Gummiworm, Bifrost, SugarRush & Vela, and DID/DIDComm**.
 
-This proposal funds the next disciplined step: keeping that foundation maintained, current, and reusable for the team already depending on it, and and taking the first step beyond it, into the application layer.
+This proposal funds the next disciplined step: keeping that foundation maintained, current, and reusable for the teams already depending on it, while extending Scalus from protocol development toward running applications. 
 
----
+The result is not a new platform bet, but a **compounding investment in infrastructure already used by serious Cardano builders**.
 
 ## Rationale
 
@@ -146,22 +139,22 @@ This proposal responds directly to that feedback with a smaller ask, a narrower 
 
 | Area | Previous proposal | This proposal |
 |---|---|---|
-| Budget / duration | ₳8,503,000 / 12 months | ~₳2,991,667 / 9 months |
-| Reference rate | \$0.25/ADA| \$0.15/ADA |
-| FTE | 8  | 2.5  |
-| FTE-months | 99 | 22.5 |
-| Contingency | 10% | 0% | 
-| Focus | Full application platform expansion: L1 node, L2 integration, application runtime, advanced devnet | Maintenance, Dijkstra readiness, interoperability, adoption, and a scoped runtime step | 
-| Application runtime | Production-grade runtime | Scoped runtime step, ready for adoption |
-| Standalone L1 node | Hardened standalone & embedded L1 node for production operation | Removed from scope |
-| L2 solution integration | Gummiworm operator setup and full integration | Removed from scope; runtime designed to support future L2 integration |
-| Integrated local devnet & R&D |  Advanced devnet capabilities + exploratory R&D | Limited to Dijkstra/emulator needs; broader R&D deferred | 
-| Formal verification | Broad formal verification track | Out of scope; future integration may follow as IO’s Lean/Blaster framework matures |
+| **Budget / duration** | ₳8,503,000 / 12 months | ~₳2,464,844 / 9 months |
+| **Reference rate** | \$0.25/ADA| \$0.16/ADA |
+| **FTE** | 8.25  | 2.25  |
+| **FTE-months** | 99 | 20.25 |
+| **Contingency** | 10% | 0% | 
+| **Focus** | Full application platform expansion: L1 node, L2 integration, application runtime, advanced devnet | Maintenance, Dijkstra readiness, interoperability, and a scoped runtime step | 
+| **Application runtime** | Production-grade runtime | Scoped runtime step, validated with real teams |
+| **Standalone L1 node** | Hardened standalone & embedded L1 node for production operation | Removed from scope |
+| **L2 solution integration** | Gummiworm operator setup and full integration | Removed from scope; runtime designed to support future L2 integration |
+| **Integrated local devnet** |  Advanced devnet capabilities | Limited to Dijkstra/emulator needs | 
+| **Formal verification** | Broad formal verification track | Out of scope; future integration may follow as IO’s Lean/Blaster framework matures |
 
 The reductions map directly to the concerns raised by DReps: 
-- Scale: substantially reduced ask (65%), with no contingency and a lower \$0.15/ADA reference rate
-- Breadth: one focused continuation package, not a full platform expansion
-- L1 node: standalone JVM L1 node removed from scope
+- Scale: substantially reduced ask (71%), with no contingency, but a lower \$0.16/ADA reference rate;
+- Breadth: one focused continuation package, not a full platform expansion;
+- L1 node: standalone JVM L1 node removed from scope;
 - Dependency risk: L2 integration and formal verification removed from the critical path.
 
 ---
@@ -172,9 +165,9 @@ The reductions map directly to the concerns raised by DReps:
 
 Scalus is not only a smart contract language. It is an integrated development platform for complex Cardano protocols and applications.
 
-Scalus is built for the systems where the work does not stop at writing a validator, but extends into transaction construction, testing, simulation, protocol emulation, application backends, and production-oriented workflows.
+Scalus is built for the systems where the work does not stop at writing a smart contract, but extends into transaction construction, testing, simulation, protocol emulation, application backends, and production-oriented workflows.
 
-This is why Scalus matters for Layer 2 systems, bridges, DEXs, synthetic assets, identity protocols, and other applications where correctness depends on the whole system around the contract, not only the contract itself.
+This is why Scalus matters for L2 systems, bridges, DEXs, synthetic assets, identity protocols, and other applications where correctness depends on the whole system around the contract, not only the contract itself.
 
 #### JVM-native
 
@@ -199,59 +192,62 @@ A more detailed competitive landscape is provided in the reference documents.
 
 ### Cardano 2030 Alignment
 
-Scalus contributes at the developer and infrastructure layer, under Adoption & Utility. It does not claim direct credit for ecosystem KPIs like TVL, transactions, or MAU, those are downstream outcomes of the protocols & applications built on Scalus, not deliverables of this proposal.
+Scalus contributes at the developer infrastructure layer: helping more teams build, test, integrate, and operate serious Cardano applications. 
+
+Its contribution to headline ecosystem KPIs such as TVL, monthly transactions, and active users is enabling rather than direct. Those outcomes come from the protocols and applications built on Scalus, not from this proposal itself.
 
 **Cardano 2030 Pillars**
 
 | Pillar | Focus Area | Our contribution |
 |--------|------------|------------------|
-| Pillar 2: Adoption & Utility | Developer Experience > Open-source incentives | Open-source infrastructure reused across the ecosystem (MeshJS SDK, Lucid Evolution, Yaci Dev Kit, Cardano Client Lib, and Evolution SDK). |
-| | Education & migration | Documentation, tutorials, and training materials for Web2 developers and JVM developers moving to Cardano and the UTxO model. |
-| |  Compatibility | Interoperates with common Cardano tooling; supports blueprints and on-chain data structures generated by other Cardano languages. |
-| Pillar 4: Community & Ecosystem Growth | Talent Acquisition & Retention | Training materials that can align with blockchain education in schools and university curricula. Lantr contributes to this direction through its collaboration with Cardano Foundation and the UZH Blockchain Summer School at the University of Zurich (2025, 2026). |
-| | Hands-on Experience | The Lantr team hosts learning sessions at Scalus Club and participates in mentorship programmes, including Google Summer of Code 2025, attracting new developers and providing practical experience in Cardano tooling and real-world problem-solving. | 
+| Pillar 2: Adoption & Utility | Developer Experience > Open-source incentives | Maintains and extends open-source infrastructure reused across the ecosystem (MeshJS SDK, Lucid Evolution, Yaci Dev Kit, Cardano Client Lib, and Evolution SDK). |
+| | Education & migration | Provides documentation, tutorials, examples, and other materials for Web2 and JVM developers moving to Cardano and the UTxO model. |
+| |  Compatibility | Improves interoperability with common Cardano tooling, JVM stacks, JS/TS SDKs, blueprints, and on-chain data structures generated by other Cardano languages. |
+| Pillar 4: Community & Ecosystem Growth | Talent Acquisition & Retention | Supports education pathways for new Cardano developers, including Lantr’s collaboration with Cardano Foundation and the UZH Blockchain Summer School at the University of Zurich in 2025 and 2026. |
+| | Hands-on Experience | Supports practical developer learning through Scalus Club, Cardano Development Hours, mentorship programmes including Google Summer of Code 2025, and real-world open-source tooling work. | 
 
 ---
 
-### Use cases
+### Use Case: From Protocol Design to Working Application
 
-Scalus serves two kinds of builders on Cardano:
+Scalus supports Cardano builders across the journey from protocol design to a working application.
 
-| Use case | What Scalus provides | Examples |
-|----------|-------------|----------|
-| **Mission-critical applications and protocols** | Rigorous testing and verification, an in-memory emulator, and a reliable application layer to orchestrate the system around the contracts. | Gummiworm L2, Binocular (decentralised Bitcoin oracle), DeFi protocols, market-making and arbitrage bots |
-| **New Cardano applications** | A fast path from idea to testnet: scaffolding, starter kits, smart-contract blueprints, the emulator, and a configurable devnet. | Lending protocol, auction, AMM starter kit |
+For complex protocols, Scalus compresses the path from design to implementation: teams can model, build, test, optimise, emulate, and begin operating the system from one stack instead of assembling that layer themselves.
 
-For mission-critical systems, Scalus brings enterprise-grade testing and the application runtime to operate them. For new teams, it shortens the path from idea to a testnet.
+For newer teams, the same stack shortens the onboarding path from idea to testnet through blueprints, examples, transaction building, emulator support, and local devnet workflows.
 
-This is the practical value of Scalus: one stack that supports the product journey from first prototype to production-grade, scalable systems.
+| Builder need | What Scalus provides |
+|---|---|
+| **Model and implement the protocol** | Type-safe smart contracts, reusable data structures, design patterns, and blueprints |
+| **Build and evaluate transactions** | JVM/JS/TS transaction building, evaluation, and cost calculation |
+| **Test before production** | Enterprise-grade testing, in-memory Cardano emulator, and local devnet |
+| **Optimise and adopt Dijkstra features** | Advanced optimisations, Plutus V4, nested transactions, accounts. |
+| **Operate the application** | Scoped runtime layer for chain data, events, scheduling, backend workflows |
 
 ---
 
 ### Long-term sustainability through Open Source
 
-Scalus is open-source infrastructure for Cardano (Apache 2 license). The capabilities funded through this proposal are designed to be reused across many teams and products, reducing repeated assembly work and strengthening the ecosystem as a whole.
+Scalus is open-source infrastructure for Cardano (Apache 2.0 license). The capabilities funded through this proposal are designed to be reused across many teams, tools, and products, reducing repeated assembly work and strengthening the ecosystem as a whole.
 
 This is the kind of work the Treasury is well placed to fund: shared application infrastructure that benefits the ecosystem beyond a single vendor or product team.
-
-Over time, we expect maintenance to be supported by a broader mix of sources rather than Treasury alone.
 
 ---
 
 ### Lantr Engineering Team
 
-Lantr Engineering is a blockchain R&D and product development company focused on decentralised infrastructure and mission-critical applications. 
+Lantr Engineering is a blockchain R&D and product development company focused on decentralised infrastructure and mission-critical applications.
 
-The Lantr's core team of 6 senior engineers, combining deep technical expertise in blockchain infrastructure, smart contracts, compilers, formal methods, and distributed systems with product and execution leadership. The two accountable leads are:
+Lantr’s core team includes **6 senior engineers**, combining deep technical expertise in blockchain infrastructure, smart contracts, compilers, formal methods, and distributed systems with product and execution leadership. The two accountable leads are:
 
 * **Alexander Nemish** — Founder & CTO. Functional programming, type theory, metaprogramming, compilers, and blockchain systems (Scala, Haskell, Rust). Former IOG engineer, contributed to the design and implementation of Marlowe. Previously Deutsche Bank and UBS. Leads Scalus's technical direction.
-* **Oleksii Khodakivskyi** — Co-Founder & CEO. 10+ years in product development, business agility, and organisational design. Previously scaled product organisations across fintech and other sectors. At Lantr, leads business execution, operations, and product management.
+* **Oleksii Khodakivskyi** — Co-Founder & CEO. 10+ years in product development, business agility, and organisational design. Previously scaled product organisations across fintech and other sectors. Leads business execution, operations, and product management.
 
-**Ecosystem participation**. Technical working groups (Plutus, Ledger, Layer 2). Knowledge sharing through Scalus Club and Cardano Development Hours. Education collaborations, including the UZH Blockchain Summer School at the University of Zurich (2025, 2026). Open-source contributions across the Cardano toolchain.
+**Ecosystem participation**. Technical working groups across Plutus, Ledger, and Layer 2; knowledge sharing through Scalus Club and Cardano Development Hours; education collaborations including the UZH Blockchain Summer School at the University of Zurich (2025, 2026); and open-source contributions across the Cardano toolchain.
 
-**Skin in the game**. We build products ourselves, including (Scalus, Binocular, and Cosmex) and work closely with ecosystem partners building mission-critical systems (Bifrost, Gummiworm and others). Scalus solves the pain points we and other builders hit in practice, not the ones that only look good on paper.
+**Skin in the game**. We build products ourselves (Scalus, Binocular, and Cosmex) and work closely with ecosystem partners building mission-critical systems (Bifrost, Gummiworm and others). Scalus addresses pain points encountered in real protocol and application delivery.
 
-**Execution and public accountability.** Lantr's track record is quality & delivery: products, integrations, community impact. For treasury-funded work, we commit to public reporting, open community sessions showcasing what we've shipped, and on-time milestone delivery.
+**Execution and accountability.** Lantr's track record is quality & delivery: products, integrations, community impact. For treasury-funded work, we commit to public reporting, open community sessions showcasing what we've shipped, and on-time milestone delivery.
 
 ---
 
@@ -273,23 +269,22 @@ A full retrospective of the 2025 Scalus Treasury cycle is provided in the Refere
 ### Scope / What Treasury Funds
  
 This proposal funds a focused continuation of Scalus as shared Cardano infrastructure:
-- **Maintenance** of the existing Scalus stack and JVM/JS/TS/Native export targets
-- **Dijkstra hard-fork readiness**
-- **Improved interoperability** with existing Cardano tooling and the broader JVM ecosystem
-- **Application runtime**: a first scoped step, validated with real teams
+- **Maintenance** of the existing Scalus stack and supported export targets;
+- **Dijkstra hard-fork readiness** across smart contracts, transaction building, emulation, and testing;
+- **Improved interoperability** with existing Cardano tooling and the broader JVM ecosystem;
+- **Application runtime**: a first scoped step, validated through reference applications, integration tests, and feedback from early users.
 
-The proposal **excludes** the production-grade JVM L1 node, full Gummiworm L2 integration, broad formal verification, advanced devnet expansion, and exploratory R&D.
+The proposal **excludes** the production-grade JVM L1 node, full Gummiworm L2 integration, broad formal verification, advanced devnet expansion.
 
 ---
 
 ### Milestones & Deliverables
 
-This proposal delivers a kickoff plus three quarterly milestones over 9 months (July 2026 - March 2027).
+This proposal delivers three quarterly milestones over 9 months (July 2026 - March 2027).
 
-Maintenance runs continuously across all of them; Dijkstra readiness, interoperability, and the runtime are phased below.
+Maintenance runs continuously across all milestones. Dijkstra readiness, interoperability, and the runtime are phased below.
 
-
-#### M1 (Q3 2026): Continuity & Dijkstra preview
+#### M1 (Q3 2026): Continuity & Dijkstra Preview
 
 **Objective**: Keep the stack current and ship the first Dijkstra developer preview.
 
@@ -301,7 +296,7 @@ Maintenance runs continuously across all of them; Dijkstra readiness, interopera
 
 **What builders can do**: keep building on a maintained, current Scalus; experiment with early Dijkstra features; begin building against the foundational runtime.
 
-#### M2 (Q4 2026): Interoperability & Dijkstra conformance
+#### M2 (Q4 2026): Interoperability & Dijkstra Conformance
 
 **Objective**: Deepen reuse across the JVM and JS/TS stacks; advance Dijkstra toward conformance.
 
@@ -312,18 +307,18 @@ Maintenance runs continuously across all of them; Dijkstra readiness, interopera
 
 **What builders can do**: use Scalus from Java/Kotlin and alongside CCL/Yaci; test contracts against Dijkstra changes with conformance coverage; move more application logic onto the runtime.
 
-#### M3 (Q1 2027): Dijkstra readiness & consolidation
+#### M3 (Q1 2027): Dijkstra Readiness & Runtime Consolidation
 
-**Objective**: Reach Dijkstra readiness and consolidate the runtime release
+**Objective**: Reach Dijkstra readiness and consolidate the runtime release.
 
 **Key deliverables**:
 
 - Dijkstra: final readiness aligned to the hard-fork timeline, conformance tests finalised
 - Interoperability: published reuse guides 
-- Runtime: foundational runtime release, persistance, reliability
+- Runtime: foundational runtime release with persistence and reliability improvements
 - Documentation, examples, and blueprints across all workstreams
 
-**What builders can do**: ship Dijkstra-ready contracts and transactions safely through the hard fork or dev preview; reuse Scalus components across JVM and JS/TS; run applications on the foundational runtime.
+**What builders can do**: prepare Dijkstra-ready contracts and transactions for the hard fork or developer preview; reuse Scalus components across JVM and JS/TS; run applications on the foundational runtime.
 
 ---
 
@@ -331,69 +326,63 @@ Maintenance runs continuously across all of them; Dijkstra readiness, interopera
 
 To give visibility into both delivery and ecosystem uptake, we commit to tracking and reporting the following metrics quarterly. 
 
-**Delivery metrics are within our control and tied to disbursement; uptake metrics are tracked and reported**, since adoption depends on the wider ecosystem as well as on delivery.
-
 | Metric | 9-Month Target | Measurement Method |
 |---|---|---|
-| Dijkstra readiness | Developer-preview ahead of the hard fork; final readiness tracked to the timeline | Plutus Core, ledger conformance tests |
-| Existing integrations maintained | 5 SDKs kept Dijkstra-compatible | Integration tests; compatibility status |
-| Interoperability | ≥1 working example each for Spring Boot and Ktor + reuse guide | Published examples and guide |
-| Documentation & blueprints | 100% coverage of new features; ≥3 new dApp blueprints | Published docs and blueprint catalogue |
-| Application runtime | Foundational runtime meeting its readiness criteria | Integration tests |
-| Developer reach | Tracked (baseline: 20k+/mo Scalus JS downloads) | maven/npm downloads, GitHub activity, contributors |
-| Ecosystem reuse | Tracked (baseline: 5 SDK integrations, >5 projects) | Public repos, SDK dependency, self-reporting |
+| **Dijkstra readiness** | Developer-preview ahead of the hard fork; final readiness tracked to the timeline | Plutus Core, ledger conformance tests |
+| **JVM Interoperability** | ≥2 working example each for Spring Boot/ Ktor | Published examples and guides |
+| **Ecosystem reuse** |  ≥1 extra integration / reuse over baseline (5 third-party integrations) | Public repos, SDK dependency, self-reporting |
+| **Developer reach** | x1.5 the baseline (150+/mo Scalus JVM downloads; 20k+/mo Scalus JS downloads) | Maven/npm downloads, GitHub activity, contributors |
+| **Application runtime** | Foundational runtime meeting its readiness criteria; ≥2 reference applications; ≥2 early users/teams providing feedback | Integration tests, reference applications, demo, public reports |
+| **Documentation & blueprints** | 100% coverage of new features; ≥3 new dApp blueprints | Published docs and blueprint catalogue |
 
 ---
 
 ### Budget
 
-**Total Treasury ask**: ₳2,991,667 ($448,750 at a conservative $0.15/ADA reference rate) for 9 months of milestone-based delivery, with no contingency.
+**Total Treasury ask**: ₳2,464,844 (\$394,375 at a conservative \$0.16/ADA reference rate) for 9 months of milestone-based delivery, with no contingency.
 
 **Pricing principles** 
 
 * Funding is requested in ADA; USD figures are provided as a reference.
 * The base budget is intentionally structured on a financially lean basis.
-* The \$0.15/ADA reference rate reflects conservative market conditions. 
+* The \$0.16/ADA reference rate reflects conservative market conditions. 
 * A portion of the funding is tied to demonstrating measurable impact.
 
 **Methodology**
 
-Funding allocations are derived from effort estimates across the workstreams, valued at a market rate of $210,000 per FTE-year (approx. $100/hour) for senior software engineers and senior product leadership with deep DLT expertise. 
+Funding allocations are derived from effort estimates across the workstreams, valued at a market rate of \$210,000 per FTE-year (approx. \$100/hour) for senior software engineers and senior product leadership with deep DLT expertise. 
 
 **Funding Distribution**
 
 | Category | USD | ADA | % |
 |----------|-----|------------|------|
-| Development & Engineering | \$354,375 | ₳2,362,500 | 79.0%  |
-| Product Management & Delivery | \$39,375 | ₳262,500 | 8.8%  |
-| Documentation & Developer Enablement | \$20,000 | ₳133,333 | 4.4% |
-| Ecosystem Outreach & Adoption | \$10,000 | ₳66,667 | 2.2%  |
-| Audits & Assurance | \$25,000  | ₳166,667  | 5.6% |
-| **Total** | **\$448,750** | **₳2,991,667** | **100%** |
+| Development & Engineering | \$315,000 | ₳1,968,750 | 79.9%  |
+| Product Management & Delivery | \$39,375 | ₳246,094 | 10.0%  |
+| Documentation & Developer Enablement | \$25,000 | ₳156,250 | 6.3% |
+| Audits & Assurance | \$15,000  | ₳93,750  | 3.8% |
+| **Total** | **\$394,375** | **₳2,464,844** | **100%** |
 
 **Development & Engineering Breakdown**
 
 | Workstream | FTE | USD | ADA |
 |------------|-----|-----|-----|
-| Maintenance | 0.5 | \$78,750 | ₳525,000 |
-| Smart-contract platform & Dijkstra readiness | 0.75 | \$118,125 | ₳787,500 |
-| Interoperability | 0.5 | \$78,750 | ₳525,000 |
-| Application runtime (bounded scope) | 0.5 | \$78,750 | ₳525,000 |
-| **Total** | **2.25** | **\$354,375** | **₳2,362,500** |
+| Maintenance | 0.5 | \$78,750 | ₳492,188 |
+| Smart-contract platform & Dijkstra readiness | 0.75 | \$118,125 | ₳738,280 |
+| Interoperability | 0.25 | \$39,375 | ₳246,094 |
+| Application runtime (bounded scope) | 0.5 | \$78,750 | ₳492,188 |
+| **Total** | **2.0** | **\$315,000** | **₳1,968,750** |
 
-With Product Management & Delivery (0.25 FTE), total staffing is 2.5 FTE over 9 months.
+With Product Management & Delivery (0.25 FTE), total staffing is 2.25 FTE over 9 months.
 
 **Category Detail**
 
-**Development & Engineering (79.0%)**: The four workstreams detailed in Annex 1: Detailed Scope and Workstreams.
+**Development & Engineering (79.9%)**: The four workstreams detailed in Annex 1: Detailed Scope and Workstreams.
 
-**Product Management & Delivery (8.8%)**: Product lifecycle management, milestone execution, partner and user coordination, and delivery oversight.
+**Product Management & Delivery (10.0%)**: Product lifecycle management, milestone execution, partner and user coordination, and delivery oversight.
 
-**Documentation & Developer Enablement (4.4%, fixed)**: Developer documentation, smart-contract and dApp blueprints, learning materials, and work that improves AI-assisted development readiness around the Scalus platform.
+**Documentation & Developer Enablement (6.3%, fixed)**: Developer documentation, smart-contract and dApp blueprints, learning materials, and work that improves AI-assisted development readiness around the Scalus platform.
 
-**Ecosystem Outreach & Adoption (2.2%, fixed)**: Ecosystem communication, demos, and light-touch support for teams evaluating Scalus for integration or adoption.
-
-**Audits & Assurance (5.6%, fixed)**: Independent financial audit, technical review and assurance.
+**Audits & Assurance (3.8%, fixed)**: Independent financial audit, technical review and assurance.
 
 ---
 
@@ -461,11 +450,11 @@ In accordance with Article II — Section 7.2 of the Constitution, Lantr Enginee
 | Catalyst F11 — Scalus: Multiplatform Scala implementation of Cardano Plutus    | ₳200,000   | 100% | Project ID: 1100252 |
 | Catalyst F11 — Multiplatform Plutus Script Cost & Evaluation Library (JS/JVM/LLVM) | ₳128,000   | 100%  | Project ID: 1100198 |
 | Catalyst F13 — Scalus: Multiplatform Tx Builder — same code for front & backend    | ₳100,000   | 100% |  Project ID: 1300009 |
-| 2025 Treasury Budget — Lantr: Scalus DApps Development Platform               | ₳657,692   | 100% (final report) | Governance Action ID: 8ad3d454f3496a35cb0d07b0fd32f687f66338b7d60e787fc0a22939e5d8833e#17 |
+| 2025 Treasury Budget — Lantr: Scalus DApps Development Platform               | ₳657,692  | 100% | Governance Action ID: 8ad3d454f3496a35cb0d07b0fd32f687f66338b7d60e787fc0a22939e5d8833e#17 |
 
-All completed milestones were delivered and publicly reported. The 2025 Treasury Budget allocation is completed, reporting is in review of the third-party assurer; with remaining disbursement follow the report delivery.
+All completed milestones were delivered and publicly reported. The 2025 Treasury Budget allocation is completed.
 
-In USD terms, this request it is comparable to the single 2025 Treasury grant at its reference rate — a proportionate continuation.
+**In USD terms, this request is slightly below the single 2025 Treasury grant (~\$427K at \$0.65/ADA), a steady continuation.**
 
 ---
 
@@ -487,8 +476,8 @@ This proposal’s narrower scope removes the largest risks from the previous ver
 
 | Type | Description  | Likelihood | Severity / Impact | Mitigation | 
 |------|--------------|------------|-------------------|--------|
-| Market | The budget is referenced in USD but paid in ADA | Medium | Medium: a further ADA price decline below the reference rate would compress the real delivery budget. | Conservative \$0.15/ADA reference rate; partial or full conversion to stable assets on receipt; no contingency keeps the ask lean. | 
-| Adoption | Adoption may not grow much in 9 months | Medium | Medium: slower adoption would reduce near-term ecosystem impact | The funded floor (maintenance, Dijkstra readiness, interoperability) is valuable regardless of new adoption. The runtime step is validated against real use, so expansion remains tied to real demand. |
+| Market | The budget is referenced in USD but paid in ADA | Medium | Medium: a further ADA price decline below the reference rate would compress the real delivery budget. | Conservative \$0.16/ADA reference rate; partial or full conversion to stable assets on receipt; no contingency keeps the ask lean. | 
+| Adoption | Adoption may not grow much in 9 months | Medium | Medium: slower adoption would reduce near-term ecosystem impact | The funded floor (maintenance, Dijkstra readiness, interoperability) is valuable regardless of new adoption. The runtime step is validated through reference applications, integration tests, and feedback from early users |
 | Technical | Dijkstra specifications land late or change during delivery | Medium | Medium: final compatibility work could shift later in the delivery window. | Where final specs are unavailable, deliver developer-preview support, test coverage, conformance and documented upgrade paths rather than claiming production support ahead of the protocol timeline. |
 | Team | Lean team for the scope | Low | Medium: loss of key personnel during execution would disrupt delivery. | The engineering team is senior and shares knowledge across the platform. Lantr has access to a broader network of experienced Scala engineers in Cardano and beyond, enabling hiring or contracting if needed. | 
 
@@ -572,7 +561,7 @@ The tables below detail every component this proposal funds, grouped by workstre
 |------|-----------|-------------|
 | SCP1 | Enterprise testing capabilities | Boundary and scenario invariant scanning for smart contracts.|
 | SCP2 | In-memory emulator | Full in-memory Cardano node with ledger validation; UTxO state tracking and block processing; transaction simulation. |
-| SCP3 | Dijkstra hard fork & early access | Plutus V4 support; nested transactions; accounts; early integration ahead of hard fork. |
+| SCP3 | Dijkstra hard fork & early access | Plutus V4 support; nested transactions; accounts; early integration ahead of hard fork; full conformance testing. |
 
 **Hard-fork readiness criteria**
 
@@ -580,7 +569,7 @@ The tables below detail every component this proposal funds, grouped by workstre
 - Benchmarking & optimisation: generated UPLC code size and execution costs (CPU and memory) on par with Aiken or hand-written UPLC, measured through the UPLC-CAPE benchmarking framework.
 - Documentation & blueprints: 100% documentation coverage of all functionality.
 
-#### IOP - Interoperability (0.5 FTE)
+#### IOP - Interoperability (0.25 FTE)
 
 | Code | Component | Description |
 |------|-----------|-------------|
@@ -597,7 +586,7 @@ The tables below detail every component this proposal funds, grouped by workstre
 
 | Code  | Component  | Description |
 |-------|------------|-------------|
-| ARS1  | Application runtime  | Event driven dApp runtime. Lets applications run their own end-to-end lifecycle without external dependencies. |
+| ARS1  | Application runtime  | Event driven dApp runtime. Lets applications coordinate application workflows around smart contracts using chain data, events, scheduling, and persistence. |
 | ARS2  | Reactive workers  | Typed, durable event handling. Lets applications react to events with composable, type-safe logic that survives restarts and recovers cleanly from failure.|
 | ARS3  | UTxO indexing | Chain follower with pub/sub typed selective UTxO indexing. Lets applications derive and query their own state from chain history, reproducible from the event log.  |
 | ARS4  | Persistence layer | Crash-consistent storage for event log, snapshots, and checkpoints. Lets applications store state durably across crashes. |
@@ -605,8 +594,7 @@ The tables below detail every component this proposal funds, grouped by workstre
 
 **Adoption-readiness criteria**
 
-1. Replay determinism: any projection state is reproducible from the event log; full replay and replay-from-snapshot produce byte-identical results to live state.
-2. Comprehensive set of integration tests validating reproducibility, rollbacks handling, retries, durability, and other functionality.
+1. Comprehensive set of integration tests validating reproducibility, rollbacks handling, retries, durability, and other functionality.
 
 #### USE — Documentation, Training & Developer Enablement (Fixed)
 
@@ -622,13 +610,12 @@ The tables below detail every component this proposal funds, grouped by workstre
 |------|------------|-----|-------------|
 | MAN  | Maintenance | 0.5 | Cross-cutting maintenance, bug fixing, and support across all workstreams. |
 | PM   | Product management | 0.25 | Product lifecycle management, partner and user coordination. |
-| MAR  | Ecosystem Outreach & Adoption | Fixed | Ecosystem communication and outreach, adoption support. |
 | AUD  | Financial audits & third-party assurance | Fixed | External financial audits, independent technical review and assurance. |
 
 ---
 
 ### Annex 2: Competitive Landscape
-<!--
+
 #### Smart contract development
 
 Scalus is already one of the most complete and actively developed smart contract platforms on Cardano. It combines a Scala-native contract language, integrated transaction building, advanced optimisation paths, rich documentation, design patterns, a blueprint catalogue, and an enterprise-grade development experience in one stack.
@@ -675,8 +662,6 @@ This gives Cardano something much closer to what Hardhat and Foundry provide in 
 * Yaci Dev Kit: https://devkit.yaci.xyz/ 
 * Hardhat: https://hardhat.org/ 
 * Foundry: https://www.getfoundry.sh/ 
-
--->
 
 #### Application framework
 
@@ -797,9 +782,10 @@ The 2025 proposal used a reference rate of \$0.65/ADA. During execution, ADA dep
 - 15 Dec 2025 (Milestone 2): \$0.39
 - 15 Feb 2026 (Milestone 3): \$0.28
 - 29 Mar 2026 (Milestone 4): \$0.24
+- 31 May 2026 (Milestone 5): \$0.24
+- 28 June 2026 (Milestone 5): \$0.145
 
-Using actual disbursement prices for M1–M4 and assuming \$0.30/ADA for
-M5 and M6, the total effective purchasing power of ₳657,692 falls from an expected \$427,499.80 to \$237,950.41, a shortfall of \$189,549.39.
+The total effective purchasing power of ₳657,692 falls from an expected \$427,499.80 to \$214,000, a shortfall of \$213,500.
 
 The Intersect 2025 Treasury process did not provide an effective mechanism for hedging against adverse ADA price movement at the process level. Learning from the Amaru experience, where conversion into stablecoins was used effectively, made clear that proactive treasury management is necessary if delivery is to remain protected over long funding windows.
 
@@ -871,7 +857,7 @@ For 2026, we decided to:
 - Improve: Increase milestone cadence to a quarterly rhythm;
 - Improve: Refocus milestones on outcomes, not only technical sub-deliverables;
 - Improve: Create space for active re-prioritisation within milestone objectives;
-- Keep: Preserve room for R&D and adoption assistance inside the delivery window.
+- Keep: Preserve room adoption assistance inside the delivery window.
 
 
 #### Product Development Method
@@ -915,10 +901,10 @@ The 2026 Scalus proposal is built directly on these observations and decisions.
 
 ## Supporting links
 
-* Full proposal: https://ipfs.io/ipfs/QmcCjBYA8zrx5Khqbh6xraXQ23zrgaZxuzNewr1Ni6fck7
-* Annex 1: Detailed Scope and Workstreams: https://ipfs.io/ipfs/QmQ6RiAPBZfuRqSh2bCS1HBBxSUoVoGob55bM43vimHxfJ
-* Annex 2: Competitive Landscape: https://ipfs.io/ipfs/QmSEhgYGnfVHmc432P7cZmWq2ocNrS1FhTsz3GqY2zJv84
-* Annex 3: 2025 Retrospective: https://ipfs.io/ipfs/QmaVmFXvbFnS5vjVtb9uuQugDU8tbqiWCe2QrZijbMCP6r
+* Full proposal: https://ipfs.io/ipfs/QmcxVb3ZKX4NBNqk1rHJuNf7LevB2iAY39sGUiKMGnPEeB
+* Annex 1: Detailed Scope and Workstreams: https://ipfs.io/ipfs/QmXmA7iGezVzHHNXZZdHRVkEMdNT5qfjX3R6bsjYsn7LUn
+* Annex 2: Competitive Landscape: https://ipfs.io/ipfs/QmZxgZMk9tjLkV39b3ppXWxHhFdyHqShmuLgrfAH6bQiTa
+* Annex 3: 2025 Retrospective: https://ipfs.io/ipfs/QmdxcAZoSy2hAhNmmGsH6A9HyiuJDJM5jeH8BVHkBkeMMk
 * Scalus website: https://scalus.org/ 
 * Scalus repository: https://github.com/scalus3 
 * Scalus js repository: https://www.npmjs.com/package/scalus 
@@ -926,29 +912,3 @@ The 2026 Scalus proposal is built directly on these observations and decisions.
 * Lantr website: https://lantr.io/ 
 * Proposal repository: https://github.com/lantr-io/scalus-treasury-proposal-2026
 * Treasury-contracts framework - Sundae Swap: https://github.com/SundaeSwap-finance/treasury-contracts
-
-<!--
-#### DRep feedback
-
-The DRep feedback was clear and useful: many voters recognised the importance of improving Cardano’s application layer, the vision and technical quality of Scalus, and Lantr Engineering’s delivery record. At the same time, the requested scope and budget were considered too large relative to demonstrated demand and Treasury capacity in the current cycle.
-
-The main concerns raised were:
-
-- the request was too large relative to previous Scalus funding rounds;
-- the previous proposal attempted to fund too much at once: application runtime, L1 node, L2 integration, formal verification, maintenance and adoption;
-- the standalone JVM L1 node scope overlapped with other Cardano node initiatives already funded or in progress;
-- third-party dependencies (Blaster and L2 integration) were too close to the critical path;
-- the full JVM application-platform thesis needs stronger adoption validation before platform-scale Treasury funding.
-
-#### The Incremental Step Funded Here
-
-This proposal is structured as a direct response to the DRep feedback. The scope has been reduced from a full application-platform expansion to the next incremental public-good step for Scalus:
-
-1. maintain the existing Scalus infrastructure;
-2. prepare it for the Dijkstra hard fork;
-3. improve interoperability with existing Cardano tooling and the broader JVM ecosystem, with a focus on adoption;
-4. validate a first application runtime MVP with real users.
-
-Treasury and Catalyst have already funded parts of Scalus. Those outputs are open-source, used by ecosystem projects, and integrated into other Cardano tooling. Keeping them maintained and compatible through the next protocol cycle protects prior public investment and avoids letting already-funded infrastructure fall behind.
-
--->

@@ -1,27 +1,27 @@
 {
   "proposal": {
-    "cid": "QmcCjBYA8zrx5Khqbh6xraXQ23zrgaZxuzNewr1Ni6fck7",
-    "name": "scalus2026-2-full-proposal-placeholder",
-    "pinnedAt": "2026-05-14T08:58:31.520Z"
+    "cid": "QmcxVb3ZKX4NBNqk1rHJuNf7LevB2iAY39sGUiKMGnPEeB",
+    "name": "scalus2026-2-full-proposal",
+    "pinnedAt": "2026-06-29T08:57:01.912Z"
   },
   "annex1": {
-    "cid": "QmQ6RiAPBZfuRqSh2bCS1HBBxSUoVoGob55bM43vimHxfJ",
-    "name": "scalus2026-2-annex-1-scope-placeholder",
-    "pinnedAt": "2026-05-14T08:59:09.408Z"
+    "cid": "QmXmA7iGezVzHHNXZZdHRVkEMdNT5qfjX3R6bsjYsn7LUn",
+    "name": "scalus2026-2-annex-1-scope",
+    "pinnedAt": "2026-06-29T08:57:50.744Z"
   },
   "annex2": {
-    "cid": "QmSEhgYGnfVHmc432P7cZmWq2ocNrS1FhTsz3GqY2zJv84",
-    "name": "scalus2026-2-annex-2-competitive-placeholder",
-    "pinnedAt": "2026-05-14T08:59:47.434Z"
+    "cid": "QmZxgZMk9tjLkV39b3ppXWxHhFdyHqShmuLgrfAH6bQiTa",
+    "name": "scalus2026-2-annex-2-competitive",
+    "pinnedAt": "2026-06-29T08:58:26.601Z"
   },
   "annex3": {
-    "cid": "QmaVmFXvbFnS5vjVtb9uuQugDU8tbqiWCe2QrZijbMCP6r",
-    "name": "scalus2026-2-annex-3-retrospective-placeholder",
-    "pinnedAt": "2026-05-14T09:01:04.956Z"
+    "cid": "QmdxcAZoSy2hAhNmmGsH6A9HyiuJDJM5jeH8BVHkBkeMMk",
+    "name": "scalus2026-2-annex-3-retrospective",
+    "pinnedAt": "2026-06-29T08:59:01.986Z"
   },
   "anchor": {
-    "cid": "QmSJzmG6P9FZUiNVTMMceoVH5xpCrbSUYLrmyJ6RbX5x2M",
+    "cid": "QmcZPndRnPR3giqybj1u24VVFx5q4csN9uYHuFCtT38uqD",
     "name": "scalus2026-2-anchor-preview",
-    "pinnedAt": "2026-06-25T12:28:37.021Z"
+    "pinnedAt": "2026-06-29T09:00:33.939Z"
   }
 }
