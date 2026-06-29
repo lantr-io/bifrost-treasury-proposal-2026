@@ -65,6 +65,11 @@ object RecoverDeposits {
 
     def main(args: Array[String]): Unit = {
         val submit  = args.contains("--submit")
+        // --delegate-only: do just the Phase-1 DRep delegation (Tx 1) and stop
+        // before building/submitting the withdrawal (Tx 2). Lets the operator
+        // broadcast and confirm the delegation first, then review Tx 2
+        // separately before withdrawing.
+        val delegateOnly = args.contains("--delegate-only")
         val network = resolveNetwork(args)
         val net     = if network == "mainnet" then Network.Mainnet else Network.Testnet
         bfBase = s"https://cardano-$network.blockfrost.io/api/v0"
@@ -150,6 +155,20 @@ object RecoverDeposits {
                 acct = fetchAccount(apiKey, stakeBech32)
                 println(s"[ok] account now DRep-delegated (drep_id=${acct.drepId.getOrElse("?")})")
             }
+        }
+
+        if delegateOnly then {
+            if submit then
+                println(
+                  "\n[delegate-only] delegation (Tx 1) submitted + confirmed; stopping before the\n" +
+                      "                withdrawal (Tx 2). Re-run without --delegate-only to withdraw."
+                )
+            else
+                println(
+                  "\n[delegate-only] dry-run: built the delegation (Tx 1) only; not submitting,\n" +
+                      "                and not building the withdrawal (Tx 2)."
+                )
+            sys.exit(0)
         }
 
         // --- Phase 2: the withdrawal tx ---------------------------------------
