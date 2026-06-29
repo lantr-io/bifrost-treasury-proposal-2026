@@ -18,13 +18,19 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
 ₳2,464,844 and are point-in-time).
 
 - **Fresh deployment** (reuses existing admin + board keys; new T_max forces
-  new treasury/vendor script hashes). Rehearsed end-to-end on **preview**
-  (gov action `c7f69982…`, anchor parsed on Koios) — see
-  `journal/2026-06-25-preview-rehearsal-scalus2026-2.md`.
-- **Mainnet is deferred** — not executed. Runbook in the spec §9.2.
-- **Annex/proposal IPFS references are placeholders** (reuse the prior
-  cycle's PDFs, content-matched). Replace with real scalus2026-2 PDF exports
-  (and converge HackMD Supporting-links) before any mainnet submission.
+  new treasury/vendor script hashes). Rehearsed on **preview** (gov action
+  `e3c1f115…`) then **SUBMITTED ON MAINNET 2026-06-29** via the Scalus pipeline:
+  gov action `gov_action1xg69v73…` (tx `3234567a…`), ₳2,464,844, deposit
+  100,000 ADA, anchor `QmcZPnd…` parsed on Koios. init `e2ab7afa`, register
+  `45f80f36`, treasury `857e556d…`, vendor `e5ae4591…`. See
+  `journal/2026-06-29-mainnet-scalus2026-2-submit.md`. DRep vote runs to epoch 647.
+- **Funding:** the expired prior ₳8,503,000 mainnet proposal (`e0900fdd…`,
+  expired epoch 637) refunded its 100k deposit; recovered via
+  `recover-deposits` to fund this submission's deposit.
+- **IPFS references are the real scalus2026-2 PDFs** (proposal `QmcxVb3ZKX…`,
+  annex1 `QmXmA7iGez…`, annex2 `QmZxgZMk9t…`, annex3 `QmdxcAZoSy…`). The
+  proposal.md Supporting-links repoint is local-only; HackMD still shows
+  `IPFS, PDF` placeholders — converge it for the record.
 
 ## Cross-repo context
 
