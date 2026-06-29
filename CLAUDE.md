@@ -151,6 +151,18 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
   epochs (~6 days, NOT 30). Standard preprod faucet caps at 10k/24h
   per IP, so sourcing the deposit takes either ~10 days of pulls or
   elevated quota from Intersect.
+- **Preview gov-action params differ from preprod and CHANGED in
+  June 2026.** `gov_action_deposit` on preview dropped **100,000 →
+  1,000 tADA** at epoch 1329/1330 (~2026-06-14/15) — verified via both
+  Blockfrost `/epochs/latest/parameters` and Koios `/epoch_params`,
+  and corroborated by our own `c7f69982` action (2026-06-25) which
+  recorded a 1,000-tADA deposit. Preview `gov_action_lifetime` is **30
+  epochs**, not preprod's 6. So on preview the live-fetched 1,000 tADA
+  is correct — do NOT hardcode 100,000. Mainnet is still 100,000 ADA
+  (confirmed by the 2025 Scalus withdrawal `8ad3d454…#17`). Always read
+  the deposit live from protocol params; the `ProposalProcedure.deposit`
+  must equal it exactly or the tx is rejected. Testnet params reset/drift,
+  so re-verify each cycle.
 - **CIP-100 anchor hash is blake2b-256, not SHA-256.** Use
   `sodium.crypto_generichash(32, anchorBytes)`. Verify independently
   with `b2sum -l 256`.
