@@ -29,7 +29,7 @@ interface Section {
 
 /** Split markdown into sections keyed by heading text. Body is only the
  *  prose between this heading and the next heading at any level — descendant
- *  subsections are separate entries, joined back in by sectionWithDescendants. */
+ *  subsections are separate entries, joined back in by sectionContents. */
 function parseSections(md: string): Section[] {
   const lines = md.split("\n");
   const sections: Section[] = [];
@@ -63,19 +63,24 @@ function findSection(sections: Section[], heading: string): Section {
   return s;
 }
 
-/** Concatenate one parent section plus all its descendants, preserving the
- *  original heading markup so the rendered text reads as one document. */
-function sectionWithDescendants(sections: Section[], heading: string): string {
+/** Full content of a parent section: every descendant subsection (heading +
+ *  body), but NOT the parent's own heading line — that heading is redundant
+ *  with the CIP-108 field name (e.g. "motivation") the content lands in.
+ *  Unlike a fixed subsection list this captures the WHOLE section, so adding a
+ *  subsection under it on HackMD flows through automatically. */
+function sectionContents(sections: Section[], heading: string): string {
   const idx = sections.findIndex((x) => x.heading === heading);
   if (idx < 0) throw new Error(`Section not found: "${heading}"`);
   const root = sections[idx]!;
-  const parts: string[] = [`${"#".repeat(root.level)} ${root.heading}`, "", root.body];
+  const parts: string[] = [];
+  if (root.body) parts.push(root.body);
   for (let j = idx + 1; j < sections.length; j++) {
     const s = sections[j]!;
     if (s.level <= root.level) break;
-    parts.push("", `${"#".repeat(s.level)} ${s.heading}`, "", s.body);
+    parts.push(`${"#".repeat(s.level)} ${s.heading}`);
+    if (s.body) parts.push(s.body);
   }
-  return parts.join("\n").trim();
+  return parts.join("\n\n").trim();
 }
 
 /** Rewrite known IPFS gateway URLs and ipfs:// URIs to the canonical
@@ -117,12 +122,10 @@ function buildAnchor(md: string, network: Network): unknown {
   // via the references array.
   const abstract = findSection(sections, "Abstract").body;
 
-  const motivationHeadings = [
-    "The Application Layer Decides the Next Chapter",
-  ];
-  const motivation = motivationHeadings
-    .map((h) => sectionWithDescendants(sections, h))
-    .join("\n\n");
+  // The whole `## Motivation` section (every subsection), not a hardcoded
+  // first subsection — the earlier bug only emitted "The Application Layer
+  // Decides the Next Chapter" and dropped the rest of Motivation.
+  const motivation = sectionContents(sections, "Motivation");
 
   // Rationale = everything from `## Rationale` to (but not including) the
   // final `## Supporting links` section. The trailing Supporting-links list
