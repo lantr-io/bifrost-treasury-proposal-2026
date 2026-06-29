@@ -88,9 +88,16 @@ object Config {
 
     val preview: RawConfig = preprod.copy(network = Net.Preview)
 
-    /** Mainnet is intentionally a not-runnable placeholder. */
-    def mainnet: RawConfig =
-        sys.error("mainnet params not filled in — see params/mainnet.ts before any mainnet run")
+    /** Mainnet — mirrors `params/mainnet.ts` (the bun parity counterpart). Same operator + board
+      * keypair as preview/preprod: the payment pkh is identical; only the Shelley header byte (network
+      * = 1) differs, so the `addr1…` form is just the mainnet encoding of the same admin key. Amount,
+      * T_max, and grace are identical to preprod — same proposal, different network.
+      */
+    val mainnet: RawConfig = preprod.copy(
+      network = Net.Mainnet,
+      adminAddress =
+          "addr1qyhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdsztfcct"
+    )
 
     def forNetwork(net: Net): RawConfig = net match
         case Net.Preview => preview

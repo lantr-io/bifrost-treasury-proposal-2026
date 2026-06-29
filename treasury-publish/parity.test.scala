@@ -63,4 +63,32 @@ class ParitySuite extends munit.FunSuite {
     test("registry asset name is REGISTRY") {
         assertEquals(Scripts.RegistryAssetNameHex, fixture("registryAssetNameHex").str)
     }
+
+    test(
+      "mainnet config mirrors preprod — same key identities, amount, T_max → same script hashes"
+    ) {
+        val mp = Config.resolve(Config.mainnet)
+        val pp = Config.resolve(Config.preprod)
+        assertEquals(Config.mainnet.network, Net.Mainnet)
+        // The mainnet addr1… is the same operator key in network-1 form: parsing it
+        // must yield the same payment pkh as the preprod addr_test1… form.
+        assertEquals(mp.adminPkhHex, pp.adminPkhHex, "mainnet admin pkh must equal preprod")
+        assertEquals(mp.boardPkhs, pp.boardPkhs, "board pkhs must match")
+        assertEquals(mp.amountLovelace, pp.amountLovelace, "amount must match")
+        assertEquals(mp.treasuryExpirationMs, pp.treasuryExpirationMs, "T_max must match")
+        assertEquals(mp.vendorExpirationMs, pp.vendorExpirationMs, "vendor expiry must match")
+        // Script identities are network-independent, so the mainnet config must
+        // produce exactly the audited TS-oracle hashes (same as preprod/preview).
+        val seedTx = fixture("seed")("txId").str
+        val seedIx = fixture("seed")("outputIndex").num.toLong
+        val pol = Scripts.registryPolicy(seedTx, seedIx).toHex
+        assertEquals(
+          Scripts.treasuryScript(mp, pol).scriptHash.toHex,
+          fixture("treasuryScriptHash").str
+        )
+        assertEquals(
+          Scripts.vendorScript(mp, pol).scriptHash.toHex,
+          fixture("vendorScriptHash").str
+        )
+    }
 }

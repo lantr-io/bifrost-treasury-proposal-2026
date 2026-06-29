@@ -49,7 +49,10 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
 - Scripts default to `--dry-run` (build tx, print summary, do not submit).
   Submission requires the explicit `--submit` flag.
 - Preprod concrete config: `params/preprod.ts` (runnable).
-- Mainnet placeholder: `params/mainnet.ts` (NOT runnable until TODOs filled).
+- Mainnet config: `params/mainnet.ts` (bun) + `Config.mainnet` (scalus) are
+  filled in and runnable — ₳2,464,844, T_max 2027-07-01, admin `addr1qyhvk2…`.
+  `params/select.ts` still does NOT auto-dispatch to mainnet; scripts import it
+  explicitly so every mainnet path is visible at the call site.
 - Pinned versions in `package.json`; bumps are deliberate and justified in
   the commit message.
 - Commit style: conventional (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
