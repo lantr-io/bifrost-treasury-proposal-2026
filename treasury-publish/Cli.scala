@@ -21,4 +21,22 @@ object Cli {
     }
 
     def isSubmit(args: Seq[String]): Boolean = args.contains("--submit")
+
+    /** Optional `--seed <txid#ix>` override for the one-shot seed UTxO. When set, init uses exactly
+      * this UTxO instead of auto-picking, so a parity run can force the bun and scalus pipelines
+      * onto the identical seed (otherwise the oneshot policy and every downstream script hash
+      * diverge).
+      */
+    def seed(args: Seq[String]): Option[(String, Int)] =
+        args
+            .sliding(2)
+            .collectFirst { case Seq("--seed", value) => value }
+            .orElse(args.collectFirst {
+                case a if a.startsWith("--seed=") => a.drop("--seed=".length)
+            })
+            .map { ref =>
+                ref.split("#") match
+                    case Array(tx, ix) => (tx, ix.toInt)
+                    case _             => sys.error(s"--seed must be <txid#ix> (got $ref)")
+            }
 }

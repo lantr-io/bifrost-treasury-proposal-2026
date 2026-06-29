@@ -37,9 +37,17 @@ object InitRegistryTool {
         val env = provider.cardanoInfo
         val adminAddr = Chain.paymentAddress(net, keys)
 
-        // Pick the one-shot seed: an ada-only admin UTxO (also leaves headroom for fees).
+        // Pick the one-shot seed: either an explicit `--seed <txid#ix>` (parity
+        // runs, so bun and scalus share the identical seed) or, by default, the
+        // smallest ada-only admin UTxO clearing the fee headroom.
         val utxos = Chain.findUtxos(provider, adminAddr)
-        val seed = Chain.pickAdaOnlyUtxo(utxos, 5_000_000)
+        val seed = Cli.seed(args) match
+            case Some((txId, ix)) =>
+                utxos
+                    .find { case (in, _) => in.transactionId.toHex == txId && in.index.toInt == ix }
+                    .map { case (in, out) => Utxo(in, out) }
+                    .getOrElse(sys.error(s"--seed $txId#$ix not found among admin wallet UTxOs"))
+            case None => Chain.pickAdaOnlyUtxo(utxos, 5_000_000)
         val seedTxId = seed.input.transactionId.toHex
         val seedIx = seed.input.index
 

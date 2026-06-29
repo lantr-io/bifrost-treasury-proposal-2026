@@ -61,7 +61,11 @@ async function main(): Promise<void> {
     );
   }
 
-  // Pick any UTxO at the admin wallet to serve as the one-shot seed.
+  // Pick the one-shot seed UTxO. Default: the first wallet UTxO. An explicit
+  // `--seed <txid#ix>` overrides this so a parity run can force both the bun
+  // and the scalus pipeline onto the identical seed — without it each picks a
+  // different UTxO, the oneshot policy diverges, and every downstream hash
+  // (treasury/vendor) differs.
   const walletUtxos = await blaze.wallet.getUnspentOutputs();
   if (walletUtxos.length === 0) {
     const addrs = await blaze.wallet.getUsedAddresses();
@@ -69,7 +73,24 @@ async function main(): Promise<void> {
       `Admin wallet has no UTxOs. Fund ${addrs[0]?.toBech32()} on ${rawConfig.network} faucet first.`,
     );
   }
-  const seed = walletUtxos[0]!;
+  const seedFlagIdx = process.argv.indexOf("--seed");
+  const seedRef = seedFlagIdx >= 0 ? process.argv[seedFlagIdx + 1] : undefined;
+  let seed = walletUtxos[0]!;
+  if (seedRef) {
+    const [wantTx, wantIxStr] = seedRef.split("#");
+    const wantIx = BigInt(wantIxStr ?? "");
+    const match = walletUtxos.find(
+      (u) =>
+        u.input().transactionId().toString() === wantTx &&
+        u.input().index() === wantIx,
+    );
+    if (!match) {
+      throw new Error(
+        `--seed ${seedRef} not found among admin wallet UTxOs`,
+      );
+    }
+    seed = match;
+  }
   const seedInput = seed.input();
   const seedUtxoData = {
     transaction_id: seedInput.transactionId(),
