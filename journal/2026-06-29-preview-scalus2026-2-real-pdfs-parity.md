@@ -5,7 +5,17 @@
 **Purpose:** (1) replace the placeholder IPFS PDFs with the real
 scalus2026-2 exports and rebuild the CIP-108 anchor; (2) prove the Scalus
 `treasury-publish` reimplementation produces byte-identical deployment
-artifacts to the canonical bun pipeline.
+artifacts to the canonical bun pipeline; (3) cut the budget to the new
+proposal total **₳2,464,844** ($0.16/ADA, was ₳2,991,667) across both
+pipelines.
+
+> **Budget correction (same day):** the morning anchor already carried
+> ₳2,464,844 (HackMD text was ahead), but the config still emitted
+> ₳2,991,667 — an inconsistency. The amount feeds only the gov-action
+> withdrawal, not the treasury/vendor config, so script hashes are unchanged;
+> only `amountLovelace` (bun `params/*`, scalus `Config.scala`) + the two
+> bun amount tests were updated. Gov withdrawal JSON now emits
+> `2464844000000`; bun⇄scalus parity re-verified PARITY OK.
 
 ## Proposal refresh
 
@@ -49,7 +59,7 @@ picks `walletUtxos[0]` and scalus the smallest ada-only UTxO — different seeds
 | treasury reward | `stake_test17plvj4vugtrmcgj4nucwjfvgx3c55h9p5sy9ukkhm6zwnyq9u926j` |
 | vendor reward | `stake_test17p9uluewdgjzltvzh05qgcrz74hfk8kjd3kk97ltsx3hy9seaqgcn` |
 | admin reward | `stake_test1uzlvah74gljhkhehgh5u5dywmuljtm2v068nh7prgpp4uxcw7f8f4` (already registered — skipped) |
-| gov withdrawal JSON | identical (reward acct, amount `2991667000000`, guardrails `fa24fb30…`, anchor url+hash) |
+| gov withdrawal JSON | identical (reward acct, amount `2464844000000`, guardrails `fa24fb30…`, anchor url+hash) |
 
 - Registry datum byte-for-byte parity covered by the offline `ParitySuite`
   (4/4 green) and the TS oracle.

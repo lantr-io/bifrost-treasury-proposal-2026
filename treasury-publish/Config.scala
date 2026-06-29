@@ -69,8 +69,8 @@ object Config {
 
     // ---- Concrete network configs (mirror params/preprod.ts) -----------------
 
-    /** Reduced resubmission "Scalus 2026" — ₳2,991,667, T_max 2027-07-01, vendor grace +30d. Board =
-      * production K_1..K_3. Preview re-uses these.
+    /** Reduced resubmission "Scalus 2026" — ₳2,464,844 ($0.16/ADA), T_max 2027-07-01, vendor grace
+      * +30d. Board = production K_1..K_3. Preview re-uses these.
       */
     val preprod: RawConfig = RawConfig(
       network = Net.Preprod,
@@ -81,7 +81,7 @@ object Config {
         "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
         "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef" // K_3 — Riley Kilgore (IOG)
       ),
-      amountLovelace = BigInt("2991667000000"),
+      amountLovelace = BigInt("2464844000000"),
       treasuryExpirationISO = "2027-07-01T00:00:00Z",
       vendorExpirationGraceDays = 30
     )

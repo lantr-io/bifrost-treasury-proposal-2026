@@ -10,8 +10,8 @@ import type { RawConfig, ResolvedConfig } from "./common";
  * Uses the real proposal totals and dates so testnet exercises the same
  * script parameters that mainnet will mint.
  *
- *   amount   : ₳2,991,667 (reduced resubmission, no contingency, per HackMD
- *              scalus2026-2 Budget)
+ *   amount   : ₳2,464,844 (reduced resubmission, no contingency, $0.16/ADA,
+ *              per HackMD scalus2026-2 Budget)
  *   T_max    : 2027-07-01 = end of 9-month delivery (July 2026 - Q1 2027) +
  *              lean buffer (covers the Q2 2027 financial-audit report)
  *   vendor.expiration: T_max + 30 days (= 2027-07-31)
@@ -47,7 +47,7 @@ export const preprodRawConfig: RawConfig = {
     "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), 2026-05-13
     "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), 2026-05-13
   ],
-  amountLovelace: 2_991_667_000_000n,
+  amountLovelace: 2_464_844_000_000n,
   treasuryExpirationISO: "2027-07-01T00:00:00Z",
   vendorExpirationGraceDays: 30,
 };

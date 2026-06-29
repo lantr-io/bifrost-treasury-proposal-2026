@@ -27,7 +27,7 @@ export function mainnetRawConfig(): RawConfig {
       "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
       "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG)
     ],
-    amountLovelace: 2_991_667_000_000n, // ₳2,991,667 — reduced resubmission, no contingency, per HackMD scalus2026-2 Budget
+    amountLovelace: 2_464_844_000_000n, // ₳2,464,844 — reduced resubmission, no contingency, $0.16/ADA, per HackMD scalus2026-2 Budget
     treasuryExpirationISO: "2027-07-01T00:00:00Z", // T_max = 9-month delivery (July 2026 — Q1 2027) + lean buffer (covers Q2 2027 audit report)
     vendorExpirationGraceDays: 30, // vendor expiry = T_max + 30d (= 2027-07-31)
   };

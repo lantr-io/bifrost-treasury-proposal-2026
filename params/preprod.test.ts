@@ -6,8 +6,8 @@ const FAKE_REGISTRY_POLICY =
   "cafebabecafebabecafebabecafebabecafebabecafebabecafebabe";
 
 describe("preprod raw config", () => {
-  test("withdrawal amount matches the proposal total (₳2,991,667)", () => {
-    expect(preprodRawConfig.amountLovelace).toBe(2_991_667_000_000n);
+  test("withdrawal amount matches the proposal total (₳2,464,844)", () => {
+    expect(preprodRawConfig.amountLovelace).toBe(2_464_844_000_000n);
   });
 
   test("treasury expires 2027-07-01 (9-month delivery July 2026 - Q1 2027)", () => {
