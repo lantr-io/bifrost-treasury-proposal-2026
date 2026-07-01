@@ -116,6 +116,11 @@ function buildAnchor(md: string, network: Network): unknown {
   const sections = parseSections(md);
   const titleSection = sections.find((s) => s.level === 1);
   if (!titleSection) throw new Error("no H1 title in proposal markdown");
+  if (titleSection.heading.length > 80) {
+    throw new Error(
+      `H1 title is ${titleSection.heading.length} chars, CIP-108 caps title at 80: "${titleSection.heading}"`,
+    );
+  }
 
   // Curated CIP-108 mapping. Voters see these inline in governance UIs;
   // the full proposal (milestones, budget, risks, annexes) is reachable

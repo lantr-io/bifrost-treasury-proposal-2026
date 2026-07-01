@@ -230,3 +230,16 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
   GitHub, HackMD, and gov.tools. Escape as `\$`. The HackMD-sync
   pipeline drops escapes — the local fix is one-way until HackMD is
   also corrected.
+- **CIP-108 caps `body.title` at 80 characters** (spec text + upstream
+  JSON schema `maxLength`, confirmed 2026-07-01 — not folklore). Our
+  vendored `schemas/cip-0108.common.schema.json` (pinned since commit
+  `3f3d685`) had drifted from upstream and was missing this (plus
+  `abstract.maxLength: 2500`, required `witness` fields, and
+  `references.uniqueItems`) — re-synced verbatim. `build-anchor.ts` now
+  fails fast on an oversized H1 title, `assertAnchorValid` enforces the
+  full schema, and scalus's `BuildGovAction.assertTitleLength` guards
+  the submission step. **Informational only:** the already-submitted
+  mainnet and preview anchors both carry an 84-char title (over the
+  cap) predating this fix — their anchor hash is already on-chain, so
+  this cannot be corrected retroactively without invalidating the
+  governance action.

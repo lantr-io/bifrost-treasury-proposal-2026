@@ -21,6 +21,15 @@ object BuildGovActionTool {
     // Constitution guardrails script hash — genesis default on preprod/preview/mainnet.
     private val GuardrailsScriptHash = "fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64"
 
+    // CIP-108 caps body.title at 80 characters. The anchor pipeline (bun) is
+    // the source of truth and schema-validates this already; this is a
+    // last-line guard before scalus submits the irreversible proposal tx.
+    private[treasurypublish] def assertTitleLength(title: String): Unit =
+        require(
+          title.length <= 80,
+          s"anchor body.title is ${title.length} chars (CIP-108 caps title at 80): \"$title\""
+        )
+
     @main def gov(args: String*): Unit = {
         val net = Cli.net(args)
         val submit = Cli.isSubmit(args)
@@ -52,6 +61,7 @@ object BuildGovActionTool {
           s"$anchorPath not found — run the bun anchor pipeline (build-anchor/sign-anchor/pin) first"
         )
         val anchorBytes = Files.readAllBytes(anchorPath)
+        assertTitleLength(ujson.read(new String(anchorBytes, java.nio.charset.StandardCharsets.UTF_8))("body")("title").str)
         val anchorHash =
             DataHash.fromByteString(blake2b_256(ByteString.unsafeFromArray(anchorBytes)))
         val pinned = ujson.read(Files.readString(Path.of("gov/pinned.json")))
