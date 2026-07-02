@@ -67,15 +67,21 @@ Cardano treasury
 treasury contract  ────────────────────────────────────┐
    │ Fund  ₳3,937,500 (core dev)          │ Disburse (on invoice)   │ stays
    ▼                                       ▼                          ▼
-vendor contract                     vendor / auditor / legal     contingency
-  ├ M1 matures Q3'26 ─ withdraw       wallets (fixed chunks)      ₳1,121,093 ADA
-  ├ M2 matures Q4'26 ─ withdraw                                    (Sweep → Cardano
-  └ M3 matures Q1'27 ─ withdraw                                     treasury if unused)
+vendor contract (4×₳984,375)        vendor / auditor / legal     contingency
+  ├ M0 matures at funding ─ withdraw  wallets (fixed chunks)      ₳1,121,093 ADA
+  ├ M1 matures 2026-09-30 ─ withdraw                               (Sweep → Cardano
+  ├ M2 matures 2026-12-31 ─ withdraw                               treasury if unused)
+  └ M3 matures 2027-03-31 ─ withdraw
 ```
 
-The core-dev split across M1/M2/M3 is **decided at fund time** (it lives in the
-vendor datum, not in script parameters), default even thirds
-(₳1,312,500 each) unless weighted.
+The core-dev ₳3,937,500 is split into **four equal payouts of ₳984,375**:
+**M0** (matures at funding — an upfront mobilization advance so vendors can
+start M1 work), then **M1/M2/M3** maturing at the ends of Q3 2026 (2026-09-30),
+Q4 2026 (2026-12-31), and Q1 2027 (2027-03-31). M0's maturation is set to the
+fund-tx date at fund time; M1/M2/M3 are fixed calendar dates. The schedule
+lives in the vendor datum (set per Fund call), not in script parameters.
+Note: M0 is an internal cashflow construct (an advance), **not** a new proposal
+deliverable — the proposal's deliverables remain M1/M2/M3.
 
 ### Operational constraints (from the contracts)
 
@@ -195,7 +201,10 @@ that must agree:
   of Q1 2027 delivery (Mar 31) + a 4-month buffer, so M3 can mature and
   `fund`/final ADA `disburse` complete comfortably before expiration. Vendor
   expiration = T_max + 30d = **2027-08-30**.
-- **Core-dev milestone split** across M1/M2/M3 (default even thirds).
+- **Core-dev milestone split** (confirmed): four equal payouts of ₳984,375 —
+  M0 (upfront advance, matures at funding) + M1/M2/M3 at quarter-ends. The
+  proposal itself gives no per-milestone budget (only per-workstream), so this
+  split is our operational choice.
 - **FluidTokens vendor pkh:** `1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175`
   (28-byte payment key hash, format-validated). Supplied as a bare hash only —
   full pubkey + proof-of-control signature still to be obtained and verified
