@@ -191,13 +191,16 @@ that must agree:
 
 ## 8. Values to confirm during review
 
-- **T_max (treasury expiration):** default proposal here is
-  **2027-04-30T00:00:00Z** — end of Q1 2027 delivery (Mar 31) + ~1-month buffer
-  so M3 can mature and `fund`/final ADA `disburse` can complete before
-  expiration. Vendor expiration = T_max + 30d = 2027-05-30. Confirm the exact
-  date.
+- **T_max (treasury expiration):** **2027-07-31T00:00:00Z** (confirmed) — end
+  of Q1 2027 delivery (Mar 31) + a 4-month buffer, so M3 can mature and
+  `fund`/final ADA `disburse` complete comfortably before expiration. Vendor
+  expiration = T_max + 30d = **2027-08-30**.
 - **Core-dev milestone split** across M1/M2/M3 (default even thirds).
-- **FluidTokens vendor pkh** (supplied before deploy).
+- **FluidTokens vendor pkh:** `1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175`
+  (28-byte payment key hash, format-validated). Supplied as a bare hash only —
+  full pubkey + proof-of-control signature still to be obtained and verified
+  *before* the immutable registry mint, since a wrong hash bakes in
+  permanently.
 
 ## 9. Out of scope
 
