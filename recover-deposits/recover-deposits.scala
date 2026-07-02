@@ -2,9 +2,9 @@
 //> using dep org.scalus::scalus-cardano-ledger:0.18.2
 //> using mainClass RecoverDeposits
 
-// Recovers expired governance-action deposits from the Scalus treasury
-// withdrawal proposals into the admin payment address, on any of the three
-// Cardano networks (preview / preprod / mainnet).
+// Recovers expired governance-action deposits from treasury-withdrawal
+// proposals into the admin payment address, on any of the three Cardano
+// networks (preview / preprod / mainnet).
 //
 // When a TreasuryWithdrawals proposal expires/drops, the ledger refunds its
 // gov-action deposit (100,000 ADA) to the proposal's deposit-return reward

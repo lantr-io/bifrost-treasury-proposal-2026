@@ -2,50 +2,100 @@
 
 ## What this repo is
 
-Operational setup for the Cardano treasury withdrawal funding the Scalus
-Application Platform and Node Diversity initiative. Parameterizes and drives
-the audited SundaeSwap `treasury-funds` contracts via their published TS
-package. **Does not port or reimplement contracts.**
+Operational setup for the Cardano treasury withdrawal funding **Phase 1 of the
+Bifrost Bridge** (Bitcoin↔Cardano bridge, delivered jointly by Lantr
+Engineering and FluidTokens). Parameterizes and drives the audited SundaeSwap
+`treasury-funds` contracts via their published TS package and a parallel Scala
+(scalus) reimplementation. **Does not port or reimplement the contracts.**
 
-## Active proposal (as of 2026-06-29)
+Two pipelines drive the same audited contracts and must stay in lockstep:
 
-The live effort is the **reduced resubmission** "Scalus 2026: Maintenance,
-Dijkstra Readiness, Interoperability & Application Runtime" (HackMD
-`@lantr/scalus2026-2`): **₳2,464,844** ($0.16/ADA), 9 months, no contingency,
-T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
-12-month proposal. Design + plan: `docs/superpowers/specs/2026-06-25-*.md` and
-`docs/superpowers/plans/2026-06-25-*.md` (those docs predate the budget cut to
-₳2,464,844 and are point-in-time).
+- **Scala / scalus (`treasury-publish/`) — primary execution path.**
+- **bun / TypeScript (`scripts/`, `params/`) — cross-check oracle.**
 
-- **Fresh deployment** (reuses existing admin + board keys; new T_max forces
-  new treasury/vendor script hashes). Rehearsed on **preview** (gov action
-  `e3c1f115…`) then **SUBMITTED ON MAINNET 2026-06-29** via the Scalus pipeline:
-  gov action `gov_action1xg69v73…` (tx `3234567a…`), ₳2,464,844, deposit
-  100,000 ADA, anchor `QmcZPnd…` parsed on Koios. init `e2ab7afa`, register
-  `45f80f36`, treasury `857e556d…`, vendor `e5ae4591…`. See
-  `journal/2026-06-29-mainnet-scalus2026-2-submit.md`. DRep vote runs to epoch 647.
-- **Funding:** the expired prior ₳8,503,000 mainnet proposal (`e0900fdd…`,
-  expired epoch 637) refunded its 100k deposit; recovered via
-  `recover-deposits` to fund this submission's deposit.
-- **IPFS references are the real scalus2026-2 PDFs** (proposal `QmcxVb3ZKX…`,
-  annex1 `QmXmA7iGez…`, annex2 `QmZxgZMk9t…`, annex3 `QmdxcAZoSy…`). The
-  proposal.md Supporting-links repoint is local-only; HackMD still shows
-  `IPFS, PDF` placeholders — converge it for the record.
+Both produce byte-identical deterministic artifacts (registry policy, treasury
+/ vendor script hashes, registry datum, gov-action JSON). Parity is enforced
+by `treasury-publish/parity.test.scala` (offline, against a fixture generated
+by `scripts/parity-oracle.ts`) and `scripts/compare-parity-preview.sh` (live,
+dry-run).
+
+## Active proposal (as of 2026-07-02)
+
+**Bifrost Bridge Phase 1** — "Mainnet Hardening & Audits" (HackMD
+`@lantr/bifrost-bridge-2026`): **₳12,332,031** total incl. a 10% refundable
+contingency (₳1,121,093); net committed ₳11,210,938 (≈ $1,793,750 @ $0.16/ADA).
+9 months (Jul 2026 – Mar 2027). T_max **2027-07-31** (Q1 2027 delivery +
+4-month buffer); vendor expiration = T_max + 30d = **2027-08-30**. Three
+delivery milestones M1 (Q3'26) / M2 (Q4'26) / M3 (Q1'27).
+
+Design + phasing: `docs/superpowers/specs/2026-07-02-bifrost-treasury-design.md`.
+
+**Near-term scope: publish the treasury-withdrawal governance action on
+Cardano *preview*.** That is the `init → register → gov → submit` path only.
+Everything below the gov action is deferred:
+
+- **Deferred (post-ratification):** funding execution (`fund` / `disburse` /
+  `vendor-withdraw`), the USDC/OTC conversion, and mainnet submission.
+
+**Fresh deployment** (reuses the existing board keys; a new T_max forces new
+treasury/vendor script hashes). Identities:
+
+- **K_op** — Lantr operator (also Lantr's vendor signer). Fresh key generated
+  2026-07-02 (`keys/admin.*`), pkh `9edd850b20f4b20fc4a528bb4fcff0ca198470d224ab7d776b0452e3`.
+  **Not** the old Scalus admin key.
+- **FluidTokens** vendor pkh `1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175`
+  (supplied as a bare hash — obtain their vkey + a proof-of-control signature
+  before the immutable mint).
+- **Board (3)** — Benkort (CF) / Gianelloni (Blink) / Kilgore (IOG), unchanged.
+
+### Permission topology (baked into script params at mint)
+
+| Action | Multisig |
+|---|---|
+| `treasury.reorganize` | K_op alone |
+| `treasury.sweep` | 1-of-3 board |
+| `treasury.disburse` | AllOf[ Lantr, FluidTokens, 1-of-3 board ] |
+| `treasury.fund` | 2-of-3 board (+ vendor consent, enforced by `fund.ak`) |
+| `vendor.pause` | 1-of-3 board |
+| `vendor.resume` | 2-of-3 board |
+| `vendor.modify` | 2-of-3 board (+ vendor consent) |
+| vendor claim (`withdraw`) | AllOf[ Lantr, FluidTokens ] (2-of-2, set at fund time) |
+
+### Funding model (hybrid — deferred, but drives the config)
+
+Only **Core development (₳3,937,500)** is locked in the vendor contract as
+**four equal payouts of ₳984,375**: M0 (upfront mobilization advance, matures
+at funding) + M1/M2/M3 at the quarter-ends. Everything else (audits, PM,
+ecosystem, legal ≈ ₳7.27M) is `Disburse`d on invoice; the 10% contingency
+stays at the treasury contract in ADA and is swept back to the Cardano Treasury
+if unused. The milestone schedule and vendor claim multisig live in the
+VendorDatum (set at fund time), NOT in script parameters.
+
+**USDC/OTC (deferred).** The team intends to convert the committed spend to
+USDC and fund the vendor contract in USDC. Two verified contract constraints
+shape that later design: (1) the swap cannot be a single atomic treasury tx
+(`disburse`'s `equal_plus_min_ada` forbids USDC re-entering a treasury output
+in the same tx) — do Disburse ADA → ops wallet → OTC → pay USDC back into the
+treasury address; (2) the contingency must stay in ADA — `sweep` refunds via
+the Conway ADA-only `treasury_donation` and forces native assets to be retained
+at the script, so USDC cannot be donated back to the Cardano Treasury.
 
 ## Cross-repo context
 
 - Source contracts: `/Users/nau/projects/lantr/treasury-contracts/` (Aiken,
   audited by TxPipe and MLabs).
-- Scalus monorepo: `/Users/nau/projects/lantr/scalus/` — consult for Scalus
-  API patterns if a Scalus-side counterpart is ever added.
+- The bridge itself: `/Users/nau/projects/lantr/ft-bifrost-bridge/` — the
+  project this treasury withdrawal funds.
+- Scalus monorepo: `/Users/nau/projects/lantr/scalus/` — Scala/scalus API
+  patterns for the `treasury-publish/` pipeline.
 
 ## Dev environment
 
 - `flake.nix` provides the toolchain: `bun`, `nodejs`, `jq`, `nixpkgs-fmt`,
-  and `cardano-cli` (from the IOG `cardano-node` flake, cached at
+  `scala-cli`, and `cardano-cli` (from the IOG `cardano-node` flake, cached at
   `cache.iog.io`).
 - Enter with `nix develop` (or via direnv). Pinned to `nixpkgs/nixos-25.11`.
-- The first shell entry pulls the cardano-cli closure from `cache.iog.io`;
+- First shell entry pulls the cardano-cli closure from `cache.iog.io`;
   subsequent entries are instant.
 
 ## Conventions
@@ -54,55 +104,66 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
   by scripts and gitignored.
 - Scripts default to `--dry-run` (build tx, print summary, do not submit).
   Submission requires the explicit `--submit` flag.
-- Preprod concrete config: `params/preprod.ts` (runnable).
-- Mainnet config: `params/mainnet.ts` (bun) + `Config.mainnet` (scalus) are
-  filled in and runnable — ₳2,464,844, T_max 2027-07-01, admin `addr1qyhvk2…`.
-  `params/select.ts` still does NOT auto-dispatch to mainnet; scripts import it
+- Preview/preprod concrete config: `params/preview.ts` / `params/preprod.ts`
+  (bun) and `Config.preview` / `Config.preprod` (scala). Both express the same
+  Bifrost params + permission topology; keep them in parity.
+- Mainnet config: `params/mainnet.ts` (bun) + `Config.mainnet` (scala) are
+  filled in but **deferred** — submission waits on a clean preview rehearsal.
+  `params/select.ts` does NOT auto-dispatch to mainnet; scripts import it
   explicitly so every mainnet path is visible at the call site.
+- Any change to the config that alters a script hash (amount, T_max, any pkh,
+  permission topology) must be mirrored in **both** pipelines and re-verified:
+  regenerate the parity fixture (`bun scripts/parity-oracle.ts >
+  treasury-publish/fixtures/parity-preprod.json`) and run
+  `scala-cli test treasury-publish` + `bun run test`.
 - Pinned versions in `package.json`; bumps are deliberate and justified in
   the commit message.
 - Commit style: conventional (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
 - **Proposal source flow is one-way:** HackMD
-  (https://hackmd.io/@lantr/scalus2026) is the canonical full-text source.
-  `docs/proposal.md` is the synced mirror (`curl
-  https://hackmd.io/@lantr/scalus2026/download -o docs/proposal.md`).
-  `docs/proposal-main.md` and `docs/annex-{1,2,3}.md` are derived from
-  `docs/proposal.md` by `bun run extract-pieces` and **must not be
-  hand-edited** — the next extraction overwrites them. Edit on HackMD →
-  sync → re-extract → re-pin.
+  (https://hackmd.io/@lantr/bifrost-bridge-2026) is the canonical full-text
+  source. `docs/proposal.md` is the synced mirror (`curl
+  https://hackmd.io/@lantr/bifrost-bridge-2026/download -o docs/proposal.md`).
+  If the proposal has annexes, `bun run extract-pieces` splits `docs/proposal.md`
+  into pinnable pieces; those derived files **must not be hand-edited**. Edit on
+  HackMD → sync → re-extract → re-pin.
 
-## Preprod workflow order
+## Preview workflow order (near-term goal)
 
-1. `bun run gen-keys` — produce admin payment + stake keys.
-2. `bun run extract-pieces` — split `docs/proposal.md` into
-   `docs/proposal-main.md` + `docs/annex-{1,2,3}.md`.
-3. `bun run pin <path> --role <role> --name <label>` for each of:
-   `proposal-main`, `annex1`, `annex2`, `annex3`. Each pin records its
-   CID into `gov/pinned.json` (committed).
-4. `bun run build-anchor -- --network preprod` — regenerate
-   `gov/anchor.preprod.json` from `docs/proposal.md`, embedding the four
-   IPFS CIDs in `body.references`.
-5. `bun run pin gov/anchor.preprod.json --role anchor --name …` — the
-   resulting CID becomes `ANCHOR_URL` in the gov action.
-6. `bun run init` — mint one-shot registry NFT, publish registry datum.
-7. `bun run register` — register all three stake credentials in one tx:
-   treasury + vendor (vote-delegated to AlwaysAbstain per constitution)
-   and the admin's personal stake key (registered without delegation,
-   so the gov-action deposit refund can land in a usable reward account).
-8. `bun run gov` — emit the `treasuryWithdrawal` governance-action JSON.
-9. (Manual) submit the gov action via `cardano-cli`, wait for it to pass.
-10. `bun run withdraw` — pull ADA from the treasury reward account.
-11. `bun run fund` — treasury → vendor contract (requires milestone
-    schedule wired in; currently a `TODO(milestone-schedule)` stub).
-12. (Wait for milestone maturation.)
-13. `bun run vendor-withdraw` — admin claims the matured payout.
+1. `bun run gen-keys` — produce the K_op operator payment + stake keys
+   (already done; idempotent).
+2. `curl …/bifrost-bridge-2026/download -o docs/proposal.md` — sync the
+   proposal text; `bun run extract-pieces` if it has annexes.
+3. `bun run pin <path> --role <role> --name <label>` for each pinnable piece.
+   Each pin records its CID into `gov/pinned.json`.
+4. `bun run build-anchor -- --network preview` — build `gov/anchor.preview.json`
+   (CIP-108) from `docs/proposal.md`, embedding the IPFS CIDs in
+   `body.references`.
+5. `bun run sign-anchor` — add the ed25519 `authors[]` witness over the
+   URDNA2015-canonicalized body.
+6. `bun run pin gov/anchor.preview.json --role anchor --name …` — the CID
+   becomes `ANCHOR_URL` in the gov action.
+7. `bun run init` (or `scala-cli run treasury-publish --main-class
+   treasurypublish.init`) — mint the one-shot registry NFT, publish the
+   registry datum.
+8. `bun run register` — register treasury + vendor stake credentials
+   (vote-delegated to AlwaysAbstain per the constitution) and the admin's
+   personal stake key (so the gov-action deposit refund lands in a usable
+   reward account).
+9. `bun run gov` — emit the `treasuryWithdrawal` governance-action JSON.
+10. `scripts/compare-parity-preview.sh <seed#ix> preview` — assert bun ⇄ scala
+    parity on the live artifacts before submitting.
+11. (Submit) the gov action via `cardano-cli`; deposit is read live from
+    protocol params (preview ≈ 1,000 tADA — do NOT hardcode 100,000).
+
+Post-ratification funding (`fund` → `vendor-withdraw`, `disburse`) is deferred.
 
 ## What NOT to do
 
-- Do not add contract code (Aiken, Scalus, or otherwise). If a change requires
+- Do not add contract code (Aiken, Scala, or otherwise). If a change requires
   contract logic, raise it upstream with SundaeSwap.
 - Do not add business-logic tests for SundaeSwap's package — we trust it.
 - Do not commit secrets, `.env`, or anything under `keys/` / `deployment/`.
+- Do not change config in one pipeline only — bun and scala must stay in parity.
 
 ## Gotchas (lessons that cost real time)
 
@@ -112,134 +173,83 @@ T_max **2027-07-01** (vendor +30d). It supersedes the expired ₳8,503,000 /
   so the ternary `this.trace ? <stripped> : <traced>` always picks
   TRACED. Result: vendor validator at ~17 KB exceeds the 16,384-byte
   `max_tx_size` and cannot be witnessed in any single tx — registration
-  silently impossible. Workaround: `scripts/patch-sundae.ts`
-  (postinstall) rewrites `this.trace` → `trace`, and we pass `trace:
-  true` to `Utils.loadScripts(...)` and `OneshotOneshotMint(...)` to
-  select the stripped (production) variant. Filed upstream:
+  silently impossible. Workaround: `scripts/patch-sundae.ts` (postinstall)
+  rewrites `this.trace` → `trace`, and we pass `trace: true` to
+  `Utils.loadScripts(...)` and `OneshotOneshotMint(...)` to select the
+  stripped (production) variant. Filed upstream:
   https://github.com/SundaeSwap-finance/treasury-contracts/issues/53.
 - **`max_tx_size` is 16,384 bytes on BOTH preprod and mainnet** — the
-  script-bloat ceiling is not preprod-specific. Verify with `gh
-  query` / Blockfrost `/epochs/latest/parameters`.
-- **Conway treasury withdrawals must reference the constitution's
-  guardrails script.** Set `policyHash` in the
-  `treasury_withdrawals_action` to the constitution's script hash (on
-  preprod: `fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64`;
-  query via `cardano-cli conway query constitution --testnet-magic 1`).
-  The script must also be present as a witness with a Proposing
-  redeemer (Unit/Void data), or the ledger rejects with
-  `InvalidGuardrailsScriptHash` / `MissingScriptWitnessesUTXOW`.
-- **Blaze's `addProposal()` does not auto-wire the Proposing redeemer
-  or the guardrails script witness.** Manually:
-  `tx.requiredPlutusScripts.add(scriptHash)`, push a `Redeemer` with
-  `purpose: RedeemerPurpose.propose, index: 0n, data: Void().toCore()`
-  into `tx.redeemers`, and `tx.provideScript(guardrailsScript)`. Same
-  internal mechanics Blaze uses for `addRegisterStake` with a script
-  credential, just not exposed via API. See
-  `scripts/03-build-gov-action.ts`.
-- **Blockfrost vs Blaze script CBOR wrap.** Blockfrost
-  `/scripts/{hash}/cbor` serves scripts as single-wrap
-  `bytes(flat_uplc)`. Blaze's `PlutusV3Script.fromCbor` expects
-  double-wrap `bytes(bytes(flat_uplc))` because that's the on-chain
-  witness encoding it hashes from. Add one more CBOR `bytes(...)`
-  header to a Blockfrost script before passing to `fromCbor` — see
+  script-bloat ceiling is not preprod-specific. Verify via Blockfrost
+  `/epochs/latest/parameters`.
+- **Conway treasury withdrawals must reference the constitution's guardrails
+  script.** Set `policyHash` in the `treasury_withdrawals_action` to the
+  constitution's script hash (query via `cardano-cli conway query constitution`).
+  The script must also be present as a witness with a Proposing redeemer
+  (Unit/Void data), or the ledger rejects with `InvalidGuardrailsScriptHash` /
+  `MissingScriptWitnessesUTXOW`.
+- **Blaze's `addProposal()` does not auto-wire the Proposing redeemer or the
+  guardrails script witness.** Manually: `tx.requiredPlutusScripts.add(scriptHash)`,
+  push a `Redeemer` with `purpose: RedeemerPurpose.propose, index: 0n, data:
+  Void().toCore()` into `tx.redeemers`, and `tx.provideScript(guardrailsScript)`.
+  See `scripts/03-build-gov-action.ts`.
+- **Blockfrost vs Blaze script CBOR wrap.** Blockfrost `/scripts/{hash}/cbor`
+  serves scripts single-wrapped `bytes(flat_uplc)`; Blaze's
+  `PlutusV3Script.fromCbor` expects double-wrap `bytes(bytes(flat_uplc))`. Add
+  one more CBOR `bytes(...)` header before passing to `fromCbor` — see
   `fetchScriptCbor` in `03-build-gov-action.ts`.
-- **`HotSingleWallet` produces an enterprise address unless you pass a
-  stake skey.** `loadProvider` auto-loads `keys/admin.stake.skey` if
-  present so the wallet's `address` is the base form (matches
-  `keys/admin.addr`). Without it, `blaze.wallet.getUnspentOutputs()`
-  queries the wrong address and finds zero UTxOs even when you
-  funded the base address.
-- **Multi-key signing for the operator+board multisig is not wired
-  yet.** `01-init` and `02-register` only need K_op's signature.
-  `treasury.fund` / `disburse` / `sweep` / `vendor.modify` will need
-  loading `keys/board-{1,2,3}.skey`, signing each, and accumulating
-  witnesses. Not blocking gov-action submission; relevant only
-  post-ratification.
-- **Conway preprod gov-action params:** `gov_action_deposit` is
-  100,000 tADA (same as mainnet) and `gov_action_lifetime` is 6
-  epochs (~6 days, NOT 30). Standard preprod faucet caps at 10k/24h
-  per IP, so sourcing the deposit takes either ~10 days of pulls or
-  elevated quota from Intersect.
-- **Preview gov-action params differ from preprod and CHANGED in
-  June 2026.** `gov_action_deposit` on preview dropped **100,000 →
-  1,000 tADA** at epoch 1329/1330 (~2026-06-14/15) — verified via both
-  Blockfrost `/epochs/latest/parameters` and Koios `/epoch_params`,
-  and corroborated by our own `c7f69982` action (2026-06-25) which
-  recorded a 1,000-tADA deposit. Preview `gov_action_lifetime` is **30
-  epochs**, not preprod's 6. So on preview the live-fetched 1,000 tADA
-  is correct — do NOT hardcode 100,000. Mainnet is still 100,000 ADA
-  (confirmed by the 2025 Scalus withdrawal `8ad3d454…#17`). Always read
-  the deposit live from protocol params; the `ProposalProcedure.deposit`
-  must equal it exactly or the tx is rejected. Testnet params reset/drift,
-  so re-verify each cycle.
+- **`HotSingleWallet` produces an enterprise address unless you pass a stake
+  skey.** `loadProvider` auto-loads `keys/admin.stake.skey` if present so the
+  wallet's `address` is the base form (matches `keys/admin.addr`). Without it,
+  `blaze.wallet.getUnspentOutputs()` queries the wrong address and finds zero
+  UTxOs even when you funded the base address.
+- **Multi-key signing for the two-vendor + board multisig is not wired yet.**
+  `init` and `register` only need K_op's signature. `fund` / `disburse` /
+  `sweep` / `vendor.modify` / vendor `withdraw` will need loading the relevant
+  signers (both vendors, and/or board members) and accumulating witnesses. Not
+  blocking gov-action submission; relevant only post-ratification.
+- **Preview gov-action params differ from preprod and CHANGED in June 2026.**
+  `gov_action_deposit` on preview dropped **100,000 → 1,000 tADA** at
+  epoch 1329/1330 (~2026-06-14/15) — verified via Blockfrost and Koios. Preview
+  `gov_action_lifetime` is **30 epochs**, not preprod's 6. Mainnet is still
+  100,000 ADA. Always read the deposit live from protocol params; the
+  `ProposalProcedure.deposit` must equal it exactly or the tx is rejected.
+  Testnet params reset/drift, so re-verify each cycle.
+- **Conway preprod gov-action params:** `gov_action_deposit` is 100,000 tADA
+  and `gov_action_lifetime` is 6 epochs (~6 days, NOT 30). Standard preprod
+  faucet caps at 10k/24h per IP.
 - **CIP-100 anchor hash is blake2b-256, not SHA-256.** Use
-  `sodium.crypto_generichash(32, anchorBytes)`. Verify independently
-  with `b2sum -l 256`.
-- **Anchor URL scheme: `ipfs://` works on mainnet indexers.** Surveyed
-  the last 20 mainnet gov actions on cexplorer.io (2026-05): 19/20 use
-  `ipfs://` anchor URLs and 17 of those display valid metadata. The
-  earlier hypothesis that `ipfs://` itself causes "Invalid metadata"
-  on cexplorer was based on preprod observation only — mainnet's
-  offchain fetcher resolves IPFS fine. We still emit
-  `https://gateway.pinata.cloud/ipfs/<cid>` in `03-build-gov-action.ts`
-  as belt-and-braces (HTTPS can only help; the bytes at the CID are
-  content-addressed either way), but on mainnet `ipfs://` is not the
-  bug. Preprod cexplorer may behave differently — not re-verified.
+  `sodium.crypto_generichash(32, anchorBytes)`. Verify with `b2sum -l 256`.
+- **Anchor URL scheme: `ipfs://` works on mainnet indexers** (19/20 of the last
+  20 mainnet gov actions surveyed 2026-05 use it, most displaying valid
+  metadata). We still emit `https://gateway.pinata.cloud/ipfs/<cid>` in
+  `03-build-gov-action.ts` as belt-and-braces. Preprod cexplorer may behave
+  differently — not re-verified.
 - **Missing top-level `authors` IS the dbsync hard reject for "Invalid
-  metadata".** Out of 3 invalid-metadata actions in the mainnet survey,
-  1 (HLABS Pebble + Gerolamo 2026 Budget) is missing `authors` entirely
-  and matches the rejection pattern in
-  https://github.com/IntersectMBO/cardano-db-sync/issues/2088. The
-  other 2 invalid actions had full `authors` + ed25519 witnesses and
-  were just cexplorer's offchain fetcher failing (see next gotcha).
-  Emit `authors[]` with a real ed25519 witness — necessary, even
-  though many real-world anchors get away without it.
-- **"Invalid metadata" on cexplorer is ~10-15% noise from its own
-  offchain fetcher.** In the same mainnet survey, 2 of 3 invalid
-  actions had structurally identical anchors to valid siblings — full
-  authors+witness, hash matches, canonical structure — yet cexplorer
-  showed "Invalid metadata". Koios's `/proposal_list` returned
-  populated `meta_json` for all three. So: after submitting, don't
-  treat cexplorer's badge as authoritative. Verify via Koios; if Koios
-  shows the parsed body, the ledger and most tooling see it correctly
+  metadata".** Emit `authors[]` with a real ed25519 witness — see
+  https://github.com/IntersectMBO/cardano-db-sync/issues/2088.
+- **"Invalid metadata" on cexplorer is ~10-15% noise from its own offchain
+  fetcher.** After submitting, verify via Koios `/proposal_list` (`meta_json`);
+  if Koios shows the parsed body, the ledger and most tooling see it correctly
   even if cexplorer's UI lags.
-- **CIP-100 / CIP-108 spec compliance is enforced by dbsync.** The
-  JSON Schema at
-  `https://raw.githubusercontent.com/cardano-foundation/CIPs/master/CIP-0108/cip-0108.common.schema.json`
-  marks `authors` as required at the top level, and dbsync enforces
-  this — see the gotcha above. Our pipeline emits a fully canonical
-  anchor: nested `@context` matching the CIP-108 reference example,
-  populated `authors[]` with an ed25519 witness over the
-  URDNA2015-canonicalized body, no extra body fields. Schema validation
-  runs at the end of both `build-anchor` and `sign-anchor` via
-  `scripts/lib/validate-anchor.ts` (using `schemas/cip-0108.common.schema.json`
-  vendored at a pinned version). Note: 9 of 17 valid mainnet anchors
-  actually use a non-canonical flat `@context` shape, so the strict
-  nested form isn't *required* in practice — but our pipeline emits
-  it anyway as a strict superset.
-- **CIP-100 body signing is URDNA2015 → blake2b-256 → ed25519.** Filter
-  the JSON-LD document to `{@context, body}`, canonicalize via
-  `jsonld.canonize` with `algorithm: "URDNA2015", format: "application/n-quads"`,
-  ensure the trailing newline is present, blake2b-256 the UTF-8 bytes,
-  ed25519-sign that 32-byte hash. The signature lives in
-  `authors[*].witness.signature` (hex). See `scripts/sign-anchor.ts`.
-  Filtering at the JSON-LD level (rather than canonicalizing the full
-  doc and then trying to extract the body subgraph from N-Quads) is the
-  trick used by `gitmachtl/cardano-signer` — saves a lot of complexity.
-- **Bare `$` in `docs/proposal.md` triggers MathJax rendering** on
-  GitHub, HackMD, and gov.tools. Escape as `\$`. The HackMD-sync
-  pipeline drops escapes — the local fix is one-way until HackMD is
-  also corrected.
-- **CIP-108 caps `body.title` at 80 characters** (spec text + upstream
-  JSON schema `maxLength`, confirmed 2026-07-01 — not folklore). Our
-  vendored `schemas/cip-0108.common.schema.json` (pinned since commit
-  `3f3d685`) had drifted from upstream and was missing this (plus
-  `abstract.maxLength: 2500`, required `witness` fields, and
-  `references.uniqueItems`) — re-synced verbatim. `build-anchor.ts` now
-  fails fast on an oversized H1 title, `assertAnchorValid` enforces the
-  full schema, and scalus's `BuildGovAction.assertTitleLength` guards
-  the submission step. **Informational only:** the already-submitted
-  mainnet and preview anchors both carry an 84-char title (over the
-  cap) predating this fix — their anchor hash is already on-chain, so
-  this cannot be corrected retroactively without invalidating the
-  governance action.
+- **CIP-100 / CIP-108 spec compliance is enforced by dbsync.** `authors` is
+  required at the top level. Our pipeline emits a canonical anchor: nested
+  `@context`, populated `authors[]` with an ed25519 witness over the
+  URDNA2015-canonicalized body, no extra body fields. Schema validation runs at
+  the end of both `build-anchor` and `sign-anchor` via
+  `scripts/lib/validate-anchor.ts` against the vendored
+  `schemas/cip-0108.common.schema.json`.
+- **CIP-100 body signing is URDNA2015 → blake2b-256 → ed25519.** Filter the
+  JSON-LD document to `{@context, body}`, canonicalize via `jsonld.canonize`
+  (`algorithm: "URDNA2015", format: "application/n-quads"`), ensure the trailing
+  newline, blake2b-256 the UTF-8 bytes, ed25519-sign that 32-byte hash. The
+  signature lives in `authors[*].witness.signature` (hex). See
+  `scripts/sign-anchor.ts`.
+- **Bare `$` in `docs/proposal.md` triggers MathJax rendering** on GitHub,
+  HackMD, and gov.tools. Escape as `\$`. The HackMD-sync pipeline drops
+  escapes — the local fix is one-way until HackMD is also corrected. (The
+  Bifrost proposal uses `$…$` LaTeX heavily for the bridge's economic model —
+  watch this when syncing.)
+- **CIP-108 caps `body.title` at 80 characters** (spec text + upstream JSON
+  schema `maxLength`). `build-anchor.ts` fails fast on an oversized H1 title,
+  `assertAnchorValid` enforces the full schema, and scala's
+  `BuildGovAction.assertTitleLength` guards the submission step.

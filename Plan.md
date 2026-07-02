@@ -1,381 +1,221 @@
-# Treasury Withdrawal Proposal — Preprod End-to-End Plan
+# Bifrost Treasury — Preview End-to-End Plan
 
-Goal: prove the full proposal pipeline on preprod before mainnet. The
-upstream-facing pieces (anchor format, gov-action submission, deposit
-mechanics) only exist on a real network. The contract-validator pieces
-(treasury withdraw → vendor fund → milestone maturation → vendor claim)
-only run after the gov action ratifies — and ratification depends on
-DRep activity we don't control. If the action expires without
-ratification, those later stages don't get exercised on preprod and we
-defer them to mainnet readiness review on a case-by-case basis.
+Goal: publish the Bifrost Bridge treasury-withdrawal governance action on the
+**preview** testnet, proving the full upstream-facing pipeline (anchor format,
+gov-action submission, deposit mechanics) before mainnet. The contract-validator
+pieces (withdraw → fund → milestone maturation → vendor claim) only run after
+the gov action ratifies and are **deferred** — see the design doc's Scope &
+phasing.
 
-## Confirmed parameters (from HackMD proposal, 2026-05-08)
+Every deterministic artifact is produced by **both** pipelines (scala
+`treasury-publish/` primary, bun `scripts/` oracle) and checked for parity.
 
-- **Total withdrawal**: ₳8,503,000 (incl. 10% refundable contingency).
-  Treasury holds the contingency; only base ₳7,730,000 is locked into
-  vendor milestones at fund-vendor time. Contingency is later disbursed
-  via direct `treasury.disburse`, additional `treasury.fund`, or
-  `vendor.modify` (all require operator + board co-sign).
-- **`treasury.expiration` (T_max)**: `2027-09-01T00:00:00Z` — end of
-  12-month delivery (May 2027) + 3-month contingency window.
-- **`vendor.expiration`**: T_max + 30 days = `2027-10-01T00:00:00Z`
-  (grace for late Modify cleanup).
-- **`payout_upperbound`**: T_max — milestones picked at fund-vendor time
-  must mature on or before this.
+## Confirmed parameters (HackMD `@lantr/bifrost-bridge-2026`)
 
-These values are baked into `params/preprod.ts`. Same shape will go into
-`params/mainnet.ts` once the multisig topology and operator/board pkhs
-are filled in.
+- **Total withdrawal**: ₳12,332,031 (Phase 1 total incl. 10% refundable
+  contingency ₳1,121,093; net committed ₳11,210,938).
+- **`treasury.expiration` (T_max)**: `2027-07-31T00:00:00Z` — Q1 2027 delivery
+  + 4-month buffer.
+- **`vendor.expiration`**: T_max + 30 days = `2027-08-30T00:00:00Z`.
+- **`payout_upperbound`**: T_max — milestones set at fund time must mature on or
+  before this.
+
+Baked into `params/{preprod,preview}.ts` and `Config.{preprod,preview}` (scala).
+`params/mainnet.ts` + `Config.mainnet` carry the same values with the mainnet
+K_op address, but mainnet submission is deferred.
+
+### Identities & topology (implemented, verified in parity)
+
+| Role | Identity | Pubkey hash |
+|---|---|---|
+| `K_op` | Lantr (operator + Lantr vendor signer) | `9edd850b20f4b20fc4a528bb4fcff0ca198470d224ab7d776b0452e3` |
+| vendor | FluidTokens | `1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175` |
+| `K_1` | Matthias Benkort (Cardano Foundation) | `7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb` |
+| `K_2` | Chris Gianelloni (Blink Labs) | `058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe` |
+| `K_3` | Riley Kilgore (IOG) | `fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef` |
+
+| Action | Multisig |
+|---|---|
+| `treasury.reorganize` | `K_op` |
+| `treasury.sweep` | `AtLeast(1, board)` |
+| `treasury.disburse` | `AllOf[Lantr, FluidTokens, AtLeast(1, board)]` |
+| `treasury.fund` | `AtLeast(2, board)` (+ vendor consent, enforced by `fund.ak`) |
+| `vendor.pause` | `AtLeast(1, board)` |
+| `vendor.resume` | `AtLeast(2, board)` |
+| `vendor.modify` | `AtLeast(2, board)` (+ vendor consent) |
+| vendor claim | `AllOf[Lantr, FluidTokens]` (2-of-2, set in VendorDatum at fund time) |
+
+> **Before the immutable mint:** obtain FluidTokens' payment vkey + a
+> proof-of-control signature and re-derive the pkh yourself. A wrong pkh bakes
+> into the treasury/vendor script hashes permanently.
 
 ---
 
 ## Stage 1 — Anchor preparation
+
 ### 1.0 Pinning strategy
 
 Voters reading the anchor through gov.tools can click any entry in
-`body.references`. Splitting the proposal into individually-addressable
-IPFS objects gives them: (a) stable per-annex CIDs that don't change if
-the parent proposal text is reorganized; (b) the option to pull a
-specific annex without downloading the full document; (c) a single
-`proposal-main` CID for readers who want only the main argument.
+`body.references`. If the proposal has annexes, splitting it into
+individually-addressable IPFS objects gives stable per-annex CIDs plus a single
+`proposal-main` CID. The full proposal text still lives inside the anchor's
+`body.rationale`, so the anchor stays self-contained.
 
-The full proposal text (with annexes inline) still lives inside the
-anchor's `body.rationale`, so the anchor remains self-contained — the
-per-piece CIDs are *additional* references, not replacements.
+`docs/proposal.md` is the canonical HackMD-mirrored full text and the input
+`build-anchor` reads to populate `body.rationale`. Any split files are derived
+from it via `extract-pieces` (deterministic); re-run before each pin batch.
 
-Files to pin (one CID each):
+### 1.1 Pinning credentials
 
-| File                     | Role           | Source                              |
-|--------------------------|----------------|-------------------------------------|
-| `docs/proposal-main.md`  | `proposal-main`| proposal.md minus the annex bodies  |
-| `docs/annex-1.md`        | `annex1`       | "### Annex 1: Detailed Scope …"     |
-| `docs/annex-2.md`        | `annex2`       | "### Annex 2: Product Development …"|
-| `docs/annex-3.md`        | `annex3`       | "### Annex 3: 2025 Retrospective"   |
-| `gov/anchor.preprod.json`| `anchor`       | built by `build-anchor` (final URL) |
-
-(Annex 4 in `proposal.md` is currently a `<!-- … -->` placeholder; skip.)
-
-`docs/proposal.md` stays as the canonical HackMD-mirrored full text and
-is the input that `build-anchor` reads to populate `body.rationale`. The
-four split files are derived from it via a deterministic extraction
-step (1.2). Drift between them is impossible as long as you re-run the
-extract step before each pin batch.
-
-### 1.1 Set up pinning credentials
-
-Edit `.env` (copy from `.env.example` if missing):
+Edit `.env` (copy from `.env.example`):
 
 ```
-PINATA_JWT=…                # Pinata JWT, https://app.pinata.cloud/developers/api-keys
+PINATA_JWT=…                # https://app.pinata.cloud/developers/api-keys
 BLOCKFROST_IPFS_PROJECT_ID= # separate from BLOCKFROST_PROJECT_ID (chain)
 ```
 
-At least one is required. Setting both gets redundancy.
+At least one; both gives redundancy.
 
-### 1.2 Extract the split files
-
-```
-bun run extract-pieces
-```
-
-Reads `docs/proposal.md` and writes:
-- `docs/proposal-main.md` (everything outside the annex section)
-- `docs/annex-1.md`, `docs/annex-2.md`, `docs/annex-3.md`
-
-Idempotent. Re-run after any `proposal.md` edit so the split files stay
-in sync. Files are committed to git so the IPFS-pinned bytes are
-auditable from the repo.
-
-### 1.3 Pin proposal-main and each annex
+### 1.2 Sync + (optional) extract
 
 ```
-bun run pin docs/proposal-main.md --role proposal-main --name scalus-treasury-proposal-main
-bun run pin docs/annex-1.md       --role annex1        --name scalus-treasury-annex-1-scope
-bun run pin docs/annex-2.md       --role annex2        --name scalus-treasury-annex-2-methodology
-bun run pin docs/annex-3.md       --role annex3        --name scalus-treasury-annex-3-retrospective
+curl https://hackmd.io/@lantr/bifrost-bridge-2026/download -o docs/proposal.md
+bun run extract-pieces        # only if the proposal has annexes
 ```
 
-Each pin verifies public-gateway retrievability before recording its
-CID into `gov/pinned.json`.
+### 1.3 Pin the pieces
+
+```
+bun run pin docs/proposal-main.md --role proposal-main --name bifrost-proposal-main
+bun run pin docs/annex-N.md       --role annexN        --name bifrost-annex-N     # per annex, if any
+```
+
+Each pin verifies public-gateway retrievability before recording its CID into
+`gov/pinned.json`.
 
 ### 1.4 Build the anchor
 
 ```
-bun run build-anchor -- --network preprod
+bun run build-anchor -- --network preview
 ```
 
-Reads all four CIDs from `gov/pinned.json` and emits
-`gov/anchor.preprod.json` with:
-- the canonical CIP-100 / CIP-108 nested `@context` (matches the
-  reference example in the CIP-0108 repo so URDNA2015 canonicalization
-  expands cleanly);
-- `body.rationale` = full proposal text (annexes inline) — voters see
-  this rendered in their wallet/gov.tools UI without leaving the anchor;
-- `body.references` = `ipfs://` link for `proposal-main` + one per annex,
-  plus the existing external links (HackMD, Scalus, audits, etc);
-- an `authors` array with one entry (Lantr Engineering) whose `witness`
-  fields are blank placeholders, filled in by the next step.
+Reads the CIDs from `gov/pinned.json` and emits `gov/anchor.preview.json` with
+the canonical CIP-100/CIP-108 nested `@context`, `body.rationale` = full
+proposal text, `body.references` = `ipfs://` links + external links, and an
+`authors` array (Lantr Engineering) with blank witness placeholders. Validates
+against `schemas/cip-0108.common.schema.json` before writing.
 
-The script validates its output against `schemas/cip-0108.common.schema.json`
-before writing — fails fast on any spec violation.
+> Watch the 80-char `body.title` cap and escape bare `$` (the Bifrost proposal
+> uses `$…$` LaTeX heavily). See CLAUDE.md gotchas.
 
 ### 1.5 Sign the anchor
 
 ```
-bun run sign-anchor gov/anchor.preprod.json
+bun run sign-anchor gov/anchor.preview.json
 ```
 
-Computes the URDNA2015 canonical form of `{@context, body}`, hashes it
-with blake2b-256, ed25519-signs that hash with `keys/admin.skey`, and
-writes the `publicKey` + `signature` into `authors[0].witness`. The
-body and `@context` are untouched.
-
-Re-validates the result against the schema. The signature round-trips
-(verifiable with libsodium's `crypto_sign_verify_detached`).
+URDNA2015-canonicalizes `{@context, body}`, blake2b-256 hashes it, ed25519-signs
+with `keys/admin.skey`, writes `authors[0].witness`. Re-validates.
 
 ### 1.6 Pin the anchor
 
 ```
-bun run pin gov/anchor.preprod.json --role anchor --name scalus-treasury-anchor-preprod
+bun run pin gov/anchor.preview.json --role anchor --name bifrost-anchor-preview
 ```
 
-The resulting CID becomes the anchor URL in the gov action.
-`03-build-gov-action.ts` reads it from `gov/pinned.json` automatically
-and constructs the on-chain URL as
-`https://gateway.pinata.cloud/ipfs/<cid>` — HTTPS rather than
-`ipfs://` because indexers (Blockfrost, cexplorer, gov.tools) only
-fetch HTTPS. See CLAUDE.md "Gotchas".
+The CID becomes the anchor URL in the gov action (emitted as an HTTPS gateway
+URL; see CLAUDE.md gotchas on `ipfs://` vs `https://`).
 
 ---
 
 ## Stage 2 — Operator wallet
-- [ ] `bun run gen-keys` (idempotent — keep existing keys if present).
-- [ ] Confirm `keys/admin.addr` is a base address (`addr_test1q…`,
-      ~108 chars) and `keys/admin.stake.addr` is a stake address
-      (`stake_test1u…`).
-- [ ] **Confirm `params/preprod.ts:adminAddress` matches `keys/admin.addr`.**
-      The committed value is the canonical preprod proposer; if you
-      regenerate keys, edit `params/preprod.ts` (and the matching
-      assertion in `params/preprod.test.ts`) to the new address.
-      Mismatch will make `bun run init` sign with the new key while
-      requiring the old pkh as a `--required-signer` — and fail.
-- [ ] Fund admin address from preprod faucet
-      (https://docs.cardano.org/cardano-testnets/tools/faucet). The
-      gov-action deposit is a protocol parameter — query it before
-      pulling funds:
+
+- [x] `bun run gen-keys` — K_op generated (`keys/admin.*`).
+- [ ] Confirm `keys/admin.addr` is a base address (`addr_test1q…`) and matches
+      `params/preprod.ts:adminAddress` (it does — pkh `9edd850b…`).
+- [ ] Fund the admin base address from the preview faucet
+      (https://docs.cardano.org/cardano-testnets/tools/faucet). Read the deposit
+      live — on **preview** it's ~1,000 tADA and lifetime is 30 epochs (do NOT
+      hardcode 100,000):
       ```
-      cardano-cli conway query gov-state --testnet-magic 1 \
+      cardano-cli conway query gov-state --testnet-magic 2 \
         | jq '.currentPParams.govActionDeposit, .currentPParams.govActionLifetime'
       ```
-      Pull at least `govActionDeposit + 50 tADA` for fees & minUTxOs. If
-      a single faucet pull is capped, request elevated quota in Intersect
-      Discord, or combine multiple addresses.
-- [ ] Verify balance via
-      `cardano-cli conway query utxo --address $(cat keys/admin.addr) --testnet-magic 1`.
+      Pull `govActionDeposit + ~50 tADA` for fees & minUTxOs.
+- [ ] Verify:
+      `cardano-cli conway query utxo --address $(cat keys/admin.addr) --testnet-magic 2`.
 
 ---
 
-## Stage 3 — Init & register scripts
-- [ ] `bun run init --submit`. Verify on Cardanoscan
-      (https://preprod.cardanoscan.io/transaction/<txhash>) that the
-      registry NFT is locked at the registry script address. Capture
-      txhash from `deployment/preprod.json:txs.initRegistry`.
-- [ ] `bun run register --submit`. Registers **three** stake credentials
-      in one tx: treasury (vote-delegated to AlwaysAbstain), vendor
-      (same), and the admin's personal stake key (no delegation —
-      registered only so the gov-action deposit refund can land in a
-      usable reward account when the action ratifies or expires).
-      Verify all three exist:
-      ```
-      cardano-cli conway query stake-address-info \
-        --address <treasuryReward> --testnet-magic 1
-      cardano-cli conway query stake-address-info \
-        --address $(cat keys/admin.stake.addr) --testnet-magic 1
-      ```
-- [ ] `bun run gov` to emit `gov/preprod-withdrawal.json` and the
-      cardano-cli draft template. Sanity-check the printed hash matches
-      blake2b-256 of `gov/anchor.preprod.json` (independent computation
-      via `b2sum -l 256` or python `hashlib.blake2b`).
+## Stage 3 — Init & register
+
+- [ ] `bun run init --submit` (or `scala-cli run treasury-publish --main-class
+      treasurypublish.init -- --network preview --submit`). Mints the one-shot
+      registry NFT; capture txhash from `deployment/preview.json:txs.initRegistry`.
+- [ ] `bun run register --submit`. Registers three stake credentials in one tx:
+      treasury + vendor (both vote-delegated to AlwaysAbstain), and the admin's
+      personal stake key (no delegation — so the gov-action deposit refund lands
+      in a usable reward account).
+- [ ] `bun run gov` (dry-run) to emit `gov/preview-withdrawal.json`. Sanity-check
+      the printed anchor hash matches `b2sum -l 256 gov/anchor.preview.json`.
+- [ ] `scripts/compare-parity-preview.sh <seed#ix> preview` — assert bun ⇄ scala
+      parity on registry policy, treasury/vendor hashes, reward accounts, and the
+      gov-action JSON before submitting.
 
 ---
 
 ## Stage 4 — Gov-action submission
+
 - [ ] `bun run gov --submit`. Builds and broadcasts the
-      `treasury_withdrawals_action` proposal via Blaze + Blockfrost
-      (no local cardano-node needed). The script:
-      - reads `state.treasuryScriptHashHex` from
-        `deployment/preprod.json` and derives the funds-receiving stake
-        address;
-      - fetches the live `gov_action_deposit` from Blockfrost
-        `/epochs/latest/parameters` (currently 100,000 tADA);
-      - sets `policyHash` to the constitution's guardrails hash
-        (preprod: `fa24fb30…d4a64`) — Conway requires this;
-      - manually wires up the Proposing redeemer (`Void` data) and
-        registers the guardrails script as required, since Blaze's
-        `addProposal()` doesn't (see CLAUDE.md "Gotchas");
-      - fetches the guardrails script CBOR from Blockfrost, applies the
-        extra CBOR `bytes(...)` wrapper Blaze expects, and provides it
-        as a witness;
-      - signs with `keys/admin.skey`, submits, and writes the tx hash
-        to `deployment/preprod.json:txs.govAction`.
-- [ ] Verify on https://preprod.cardanoscan.io/govactions and
-      https://gov.tools/?network=preprod that the action is listed with
-      our anchor URL and hash.
-- [ ] Click through to the anchor URL in gov.tools to confirm the
-      rendered proposal looks correct (title, abstract, motivation,
-      rationale render in the UI).
+      `treasury_withdrawals_action` via Blaze + Blockfrost. The script:
+      - derives the funds-receiving stake address from
+        `state.treasuryScriptHashHex`;
+      - fetches the live `gov_action_deposit` from protocol params;
+      - sets `policyHash` to the constitution's guardrails hash (query via
+        `cardano-cli conway query constitution --testnet-magic 2`);
+      - manually wires the Proposing redeemer (`Void`) + guardrails script
+        witness (Blaze's `addProposal()` doesn't — see CLAUDE.md gotchas);
+      - signs with `keys/admin.skey`, submits, records the tx hash.
+- [ ] Verify on https://gov.tools/?network=preview that the action lists with
+      our anchor URL + hash and renders correctly (title/abstract/rationale).
+      Cross-check via Koios `/proposal_list` (`meta_json`) — cexplorer's
+      "invalid metadata" badge is ~10-15% noise.
 
-`bun run gov` (no `--submit`) emits `gov/preprod-withdrawal.json` (a
-human-readable summary) and prints the equivalent `cardano-cli` flow
-for documentation. We don't run the cli flow because it requires a
-synced node socket; our path is Blaze-only.
-
-**Two outcomes from here:**
-- **Ratification** — DReps approve, action enacts at the next epoch
-  boundary, treasury reward account credited. Continue with Stage 5.
-- **Expiry** — `govActionLifetime` (~6 epochs ≈ 6 days on preprod)
-  passes without enough DRep approval. The 100k tADA deposit lands in
-  the admin reward account (registered in Stage 3); recover it with a
-  `Withdrawals` tx signed by `keys/admin.stake.skey`. The validator
-  pieces (Stage 5) don't get exercised on preprod — note this for the
-  mainnet readiness review.
-
-Optionally post in Intersect's voltaire-testnet channel to nudge votes.
+**Two outcomes:**
+- **Ratification** → action enacts, treasury reward account credited → the
+  deferred funding stage becomes exercisable.
+- **Expiry** → the deposit lands in the admin reward account (Stage 3); recover
+  it with a `Withdrawals` tx signed by `keys/admin.stake.skey` (or via
+  `recover-deposits/`).
 
 ---
 
-## Stage 5 — Withdraw, fund vendor, vendor claim (only after ratification)
+## Stage 5 — Funding execution (DEFERRED, post-ratification)
 
-Only run if Stage 4 reaches ratification. If the action expires, skip
-this stage and note for the mainnet readiness review that the validator
-pieces weren't exercised on preprod.
+Not part of the near-term preview scope. When designed, this covers:
 
-- [ ] `bun run withdraw --submit`. Pulls the ratified amount from the
-      treasury reward account into a UTxO at the treasury script.
-- [ ] **Wire `05-fund-vendor.ts` schedule first** (see
-      `TODO(milestone-schedule)` in that file), then
-      `bun run fund --submit`. Locks the milestone schedule at the
-      vendor script; contingency change stays at the treasury script.
-- [ ] Wait until the first milestone matures (real-time on preprod, so
-      this is a real-clock wait).
-- [ ] `bun run vendor-withdraw --submit`. Verify admin wallet received
-      the first milestone payout.
-- [ ] Wait for subsequent milestones, repeat `vendor-withdraw`.
-- [ ] Optionally test sweep-after-expiration (need `07-sweep.ts` —
-      currently missing).
-
----
-
-## Stage 6 — Mainnet readiness signoff
-
-Mainnet promotion requires the upstream-facing flow to be green on
-preprod:
-
-- Stage 4 outcome: gov-action visible on chain with correct anchor URL
-  + hash; rendered correctly in gov.tools; deposit handled (ratified
-  with funds received, or expired with deposit returned).
-
-Stage 5 (validator exercises) is best-effort on preprod — only
-exercised if the action ratifies. If it expires without ratification,
-note that on the mainnet readiness review and decide whether to
-re-submit on preprod with negotiated DRep votes, or accept the
-mainnet-only verification of the validator path.
-
-Then proceed with the mainnet-specific work below (multisig topology,
-final pkhs).
+- `withdraw` — pull the ratified amount into a UTxO at the treasury script.
+- `fund` — lock Core development (₳3,937,500) at the vendor script as four
+  ₳984,375 payouts: M0 (matures at funding) + M1/M2/M3 at quarter-ends, gated by
+  the 2-of-2 vendor multisig. **Wire `05-fund-vendor.ts`** (currently a
+  `TODO(milestone-schedule)` stub) first.
+- `disburse` — pay audits/PM/ecosystem/legal on invoice (both vendors + 1 board).
+  **A disburse script does not exist yet** — to be added.
+- `vendor-withdraw` — vendors claim matured milestones (2-of-2).
+- **USDC conversion** — convert the committed spend to USDC before funding;
+  contingency stays in ADA (see design doc §5 for the two contract constraints).
+- Multi-key signing (both vendors, board members) — currently only K_op signing
+  is wired; `fund`/`disburse`/`vendor.modify`/vendor `withdraw` need the
+  additional signers accumulated.
+- `07-sweep.ts` (post-expiration sweep back to the Cardano treasury) — missing.
 
 ---
 
-## Treasury Withdrawal Script Address (mainnet topology)
+## Stage 6 — Mainnet readiness
 
-Single-scope deployment: one registry NFT, one `treasury.ak`, one
-`vendor.ak`. `vendor.ak` is enabled but not exercised at setup — script
-parameters (vendor permissions, vendor expiration) are committed at registry
-mint; the per-Fund `vendor` multisig and milestone schedule are deferred
-until an actual project requires milestone vesting.
-
-### Roles
-
-| Role  | Identity         | Pubkey hash |
-|-------|------------------|-------------|
-| `K_op`| Lantr (operator) | TODO        |
-| `K_1` | KtorZ?           | TODO        |
-| `K_2` | Chris?           | TODO        |
-| `K_3` | Damian?          | TODO        |
-
-Confirm each board member in writing before pinning pkhs. The operator key
-`K_op` is held by Lantr.
-
-### Permissions
-
-Topology adapted from Dingo (operator + 3-member independent board). Every
-permission that disposes of value — paying it out (`disburse`, `sweep`),
-committing it to a milestone schedule (`fund`), or restructuring an
-existing schedule (`modify`) — requires the operator (`K_op`) plus board
-co-sign. Status-only changes (`pause`, `resume`) are board-only. No-flow
-ops (`reorganize`) are operator-only.
-
-| Action               | Multisig                                     | Plain English                |
-|----------------------|----------------------------------------------|------------------------------|
-| `treasury.reorganize`| `K_op`                                       | operator alone (no value leaves) |
-| `treasury.disburse`  | `AllOf [K_op, AtLeast(2, [K_1, K_2, K_3])]`  | operator + 2-of-3 board      |
-| `treasury.sweep`     | `AllOf [K_op, AtLeast(1, [K_1, K_2, K_3])]`  | operator + 1-of-3 board      |
-| `treasury.fund`      | `AllOf [K_op, AtLeast(2, [K_1, K_2, K_3])]`  | operator + 2-of-3 board      |
-| `vendor.pause`       | `AtLeast(1, [K_1, K_2, K_3])`                | 1-of-3 board (cheap to flag) |
-| `vendor.resume`      | `AtLeast(2, [K_1, K_2, K_3])`                | 2-of-3 board (deliberate)    |
-| `vendor.modify`      | `AllOf [K_op, AtLeast(2, [K_1, K_2, K_3])]`  | operator + 2-of-3 board      |
-
-The `vendor` multisig (in `VendorDatum`, set per `Fund` call) is TBD per
-project and decided at Fund time, not at registry mint.
-
-#### Operational hardening
-
-Every value-leaving permission (`disburse`, `sweep`, `modify`) requires at
-least 2 distinct keys (operator + ≥1 board). Standard hardening still
-applies:
-
-- [ ] Each role's key held on a hardware wallet (no hot-key signing).
-- [ ] Off-chain runbook: any disburse tx is announced in a pre-agreed
-      channel with all 4 role-holders before signing; quiet submission
-      flagged immediately as anomaly.
-- [ ] Optional follow-up: add a `Script`-predicate cap on per-tx disburse
-      amount (separate withdraw script gating large outflows behind a
-      stricter board threshold).
-
-### Time bounds (confirmed)
-
-```
-treasury.expiration  = 2027-09-01T00:00:00Z   // T_max = end of 12-month delivery + 3-month contingency
-vendor.expiration    = 2027-10-01T00:00:00Z   // T_max + 30 days
-payout_upperbound    = 2027-09-01T00:00:00Z   // = T_max
-```
-
-Already wired into `params/preprod.ts`. Same values copy into
-`params/mainnet.ts` once the multisig topology lands.
-
-### Implementation TODOs (mainnet)
-
-- `params/common.ts`: extend `RawConfig` (or add a separate
-  `MultisigRawConfig`) with `operatorAddress` + `boardAddresses: string[]`
-  so production setup expresses the operator+3-board topology. Current
-  model assumes a single admin.
-- `params/mainnet.ts`: fill in once pkhs are confirmed. Time bounds are
-  already known.
-- `scripts/01-init-registry.ts`, `02-register-scripts.ts`,
-  `05-fund-vendor.ts`, `06-vendor-withdraw.ts`: verify they accept the
-  multi-key role model (currently hardcode `keys/admin.skey`).
-- `scripts/05-fund-vendor.ts`: wire in the milestone schedule (vendor
-  datum, set per Fund call). Currently a `TODO(milestone-schedule)`
-  stub — non-runnable until decided.
-- New `scripts/07-sweep.ts`: post-expiration sweep back to Cardano
-  treasury (currently missing entirely).
-- **Switch anchor URL from `ipfs://` to `https://`.** Preprod gov
-  action `gov_action1xvzf2t…` showed "invalid metadata" on cexplorer
-  because indexers (Blockfrost + downstream tools) only resolve
-  HTTPS — voters never see the rendered description. For mainnet:
-  publish `gov/anchor.mainnet.json` to
-  `github.com/lantr-io/scalus-treasury-proposal-2026` and use the
-  raw URL as `ANCHOR_URL`. Keep IPFS pins as `body.references`
-  entries inside the anchor for content-addressed redundancy. Update
-  `scripts/03-build-gov-action.ts` to read the URL from a state field
-  that the pin/publish step writes (instead of `requirePin('anchor').cid`).
+Mainnet promotion requires the preview upstream-facing flow green: gov action on
+chain with correct anchor URL + hash, rendered in gov.tools, deposit handled
+(ratified with funds received, or expired with deposit recovered). Then fill in
+mainnet specifics: re-verify FluidTokens key-of-control, re-read live mainnet
+gov-action params (deposit 100,000 ADA), and submit via the explicitly-imported
+`params/mainnet.ts` / `Config.mainnet` path.

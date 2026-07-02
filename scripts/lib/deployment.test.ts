@@ -10,7 +10,7 @@ import {
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "scalus-treasury-"));
+  dir = mkdtempSync(join(tmpdir(), "bifrost-treasury-"));
 });
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
