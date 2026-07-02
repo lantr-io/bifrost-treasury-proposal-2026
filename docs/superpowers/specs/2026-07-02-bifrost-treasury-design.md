@@ -16,6 +16,29 @@ Cardano treasury withdrawal to fund Phase 1 (mainnet hardening + audits) of
 the Bitcoin↔Cardano bridge, delivered jointly by **Lantr Engineering** and
 **FluidTokens**.
 
+## Scope & phasing
+
+**Near-term deliverable (this plan): publish the Bifrost treasury-withdrawal
+governance action on Cardano *preview*.** That is the `init → register → gov →
+submit` path only, mirrored across both pipelines with parity green.
+
+Everything needed to publish is already settled and *independent of the funding
+mechanics*: the treasury/vendor **script parameters** bake in only the
+permission topology (§4), the two vendor pkhs, T_max, `payout_upperbound`, and
+the registry token — not the milestone schedule, vendor claim multisig, or
+stablecoin. Those are all set at fund time.
+
+**Deferred to a later phase (post-ratification, not in this plan):**
+
+- Funding execution — `fund` (vendor contract), `disburse` (fixed costs),
+  `vendor-withdraw`. §3 describes the intended shape but is not built now.
+- **USDC conversion (§5).** The team intends to fund the vendor contract (and
+  possibly the fixed-cost disbursements) in USDC. Open decisions — *which*
+  stablecoin (no native Circle USDC on Cardano; candidates USDM / USDA /
+  bridged USDC) and the conversion scope (vendor-only vs whole committed
+  spend) — are deferred until funding execution is designed.
+- Mainnet config + submission (after a clean preview rehearsal).
+
 ## 2. Proposal facts (as of 2026-07-02)
 
 | Field | Value |
@@ -123,13 +146,14 @@ vendors + 1-of-3 board" is a stronger practical control than the Scalus setup
 (single operator + 2-of-3 board), while matching the proposal text. 2-of-3
 board is reserved for the structural actions (fund/modify/resume).
 
-## 5. USDC / OTC conversion — documented, not built
+## 5. USDC / OTC conversion — deferred phase (intended, decisions open)
 
-A USD-denominated 9-month budget carries ADA price risk. Converting the
-committed spend to USDC via OTC is sound and the disburse redeemer is designed
-for it, but for now the repo stays **ADA-only** and the conversion is captured
-as a documented future/manual procedure in `docs/`, including the two hard
-constraints discovered in the contracts:
+A USD-denominated 9-month budget carries ADA price risk, so the team intends to
+convert the committed spend to USDC and fund the vendor contract in USDC. This
+is **not** part of the near-term preview-publication plan (see Scope & phasing)
+and its open decisions — which stablecoin, and vendor-only vs whole-committed
+scope — are unresolved. Whichever way it goes, these two contract constraints
+(verified) hold and must shape that later design:
 
 1. **The swap cannot be a single atomic treasury tx.** `disburse` enforces
    `equal_plus_min_ada(input − amount, output)`, which forbids *adding* USDC to
