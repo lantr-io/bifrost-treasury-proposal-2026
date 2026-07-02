@@ -57,7 +57,7 @@ class ParitySuite extends munit.FunSuite {
 
     test("admin payment key hash derives from the configured address") {
         val r = Config.resolve(Config.preprod)
-        assertEquals(r.adminPkhHex, "2ecb28d3eea1e723e033cb63fbf5d90bc07aa8e986e04e2400d42104")
+        assertEquals(r.adminPkhHex, "9edd850b20f4b20fc4a528bb4fcff0ca198470d224ab7d776b0452e3")
     }
 
     test("registry asset name is REGISTRY") {

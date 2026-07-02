@@ -1,26 +1,37 @@
 import { describe, expect, test } from "bun:test";
-import { preprodRawConfig, buildTreasuryConfig, buildVendorConfig } from "./preprod";
+import {
+  preprodRawConfig,
+  buildTreasuryConfig,
+  buildVendorConfig,
+  vendorMultisig,
+} from "./preprod";
 import { resolveConfig } from "./common";
 
 const FAKE_REGISTRY_POLICY =
   "cafebabecafebabecafebabecafebabecafebabecafebabecafebabe";
 
-describe("preprod raw config", () => {
-  test("withdrawal amount matches the proposal total (₳2,464,844)", () => {
-    expect(preprodRawConfig.amountLovelace).toBe(2_464_844_000_000n);
+describe("preprod raw config (Bifrost)", () => {
+  test("withdrawal amount matches the Phase 1 total incl. contingency (₳12,332,031)", () => {
+    expect(preprodRawConfig.amountLovelace).toBe(12_332_031_000_000n);
   });
 
-  test("treasury expires 2027-07-01 (9-month delivery July 2026 - Q1 2027)", () => {
-    expect(preprodRawConfig.treasuryExpirationISO).toBe("2027-07-01T00:00:00Z");
+  test("treasury expires 2027-07-31 (Q1 2027 delivery + 4-month buffer)", () => {
+    expect(preprodRawConfig.treasuryExpirationISO).toBe("2027-07-31T00:00:00Z");
   });
 
   test("vendor grace is 30 days", () => {
     expect(preprodRawConfig.vendorExpirationGraceDays).toBe(30);
   });
 
-  test("admin address matches the designated proposer address", () => {
+  test("admin address is the Lantr K_op operator address", () => {
     expect(preprodRawConfig.adminAddress).toBe(
-      "addr_test1qqhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdspa5c55",
+      "addr_test1qz0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrqvy0jxa",
+    );
+  });
+
+  test("FluidTokens vendor pkh", () => {
+    expect(preprodRawConfig.fluidTokensPkh).toBe(
+      "1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175",
     );
   });
 
@@ -33,17 +44,15 @@ describe("preprod raw config", () => {
   });
 });
 
-describe("buildTreasuryConfig — operator+board topology", () => {
-  const resolved = resolveConfig(preprodRawConfig);
+const resolved = resolveConfig(preprodRawConfig);
+const op = { Signature: { key_hash: resolved.adminPkhHex } };
+const ft = { Signature: { key_hash: resolved.fluidTokensPkh } };
+const board = resolved.boardPkhs.map((k) => ({ Signature: { key_hash: k } }));
+const board1 = { AtLeast: { required: 1n, scripts: board } };
+const board2 = { AtLeast: { required: 2n, scripts: board } };
+
+describe("buildTreasuryConfig — two-vendor + board topology", () => {
   const cfg = buildTreasuryConfig(resolved, FAKE_REGISTRY_POLICY);
-  const op = { Signature: { key_hash: resolved.adminPkhHex } };
-  const board = resolved.boardPkhs.map((k) => ({ Signature: { key_hash: k } }));
-  const opPlus1 = {
-    AllOf: { scripts: [op, { AtLeast: { required: 1n, scripts: board } }] },
-  };
-  const opPlus2 = {
-    AllOf: { scripts: [op, { AtLeast: { required: 2n, scripts: board } }] },
-  };
 
   test("registry token + expiration + payout_upperbound", () => {
     expect(cfg.registry_token).toBe(FAKE_REGISTRY_POLICY);
@@ -55,27 +64,23 @@ describe("buildTreasuryConfig — operator+board topology", () => {
     expect(cfg.permissions.reorganize).toEqual(op);
   });
 
-  test("disburse = K_op + 2-of-3 board (same as fund — both value-out)", () => {
-    expect(cfg.permissions.disburse).toEqual(opPlus2);
+  test("disburse = both vendors (Lantr + FluidTokens) + 1-of-3 board", () => {
+    expect(cfg.permissions.disburse).toEqual({
+      AllOf: { scripts: [op, ft, board1] },
+    });
   });
 
-  test("sweep = K_op + 1-of-3 board (reversible: returns funds to Cardano treasury)", () => {
-    expect(cfg.permissions.sweep).toEqual(opPlus1);
+  test("sweep = 1-of-3 board (returns funds to Cardano treasury)", () => {
+    expect(cfg.permissions.sweep).toEqual(board1);
   });
 
-  test("fund = K_op + 2-of-3 board", () => {
-    expect(cfg.permissions.fund).toEqual(opPlus2);
+  test("fund = 2-of-3 board (vendor consent enforced by fund.ak)", () => {
+    expect(cfg.permissions.fund).toEqual(board2);
   });
 });
 
-describe("buildVendorConfig — operator+board topology", () => {
-  const resolved = resolveConfig(preprodRawConfig);
+describe("buildVendorConfig — board topology", () => {
   const cfg = buildVendorConfig(resolved, FAKE_REGISTRY_POLICY);
-  const op = { Signature: { key_hash: resolved.adminPkhHex } };
-  const board = resolved.boardPkhs.map((k) => ({ Signature: { key_hash: k } }));
-  const board1 = { AtLeast: { required: 1n, scripts: board } };
-  const board2 = { AtLeast: { required: 2n, scripts: board } };
-  const opPlus2 = { AllOf: { scripts: [op, board2] } };
 
   test("registry token + vendor expiration (= T_max + grace)", () => {
     expect(cfg.registry_token).toBe(FAKE_REGISTRY_POLICY);
@@ -91,7 +96,13 @@ describe("buildVendorConfig — operator+board topology", () => {
     expect(cfg.permissions.resume).toEqual(board2);
   });
 
-  test("modify = K_op + 2-of-3 board", () => {
-    expect(cfg.permissions.modify).toEqual(opPlus2);
+  test("modify = 2-of-3 board (vendor consent enforced by vendor.ak)", () => {
+    expect(cfg.permissions.modify).toEqual(board2);
+  });
+});
+
+describe("vendorMultisig — 2-of-2 vendor claim", () => {
+  test("AllOf[Lantr, FluidTokens]", () => {
+    expect(vendorMultisig(resolved)).toEqual({ AllOf: { scripts: [op, ft] } });
   });
 });

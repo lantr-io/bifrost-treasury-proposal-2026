@@ -21,6 +21,7 @@ final case class RawConfig(
     network: Net,
     adminAddress: String,
     boardPkhs: Seq[String], // exactly 3, hex pkhs (K_1, K_2, K_3)
+    fluidTokensPkh: String, // FluidTokens vendor pkh (hex, 56 chars)
     amountLovelace: BigInt,
     treasuryExpirationISO: String,
     vendorExpirationGraceDays: Int
@@ -31,6 +32,7 @@ final case class ResolvedConfig(
     adminAddress: String,
     adminPkhHex: String,
     boardPkhs: Seq[String],
+    fluidTokensPkh: String,
     amountLovelace: BigInt,
     treasuryExpirationMs: BigInt,
     vendorExpirationMs: BigInt,
@@ -53,6 +55,10 @@ object Config {
         raw.boardPkhs.zipWithIndex.foreach { (p, i) =>
             require(p.matches("[0-9a-f]{56}"), s"boardPkhs[$i] is not a 56-char hex pkh: \"$p\"")
         }
+        require(
+          raw.fluidTokensPkh.matches("[0-9a-f]{56}"),
+          s"fluidTokensPkh is not a 56-char hex pkh: \"${raw.fluidTokensPkh}\""
+        )
         val tMs = BigInt(Instant.parse(raw.treasuryExpirationISO).toEpochMilli)
         val vMs = tMs + BigInt(raw.vendorExpirationGraceDays) * MsPerDay
         ResolvedConfig(
@@ -60,6 +66,7 @@ object Config {
           adminAddress = raw.adminAddress,
           adminPkhHex = addressPaymentKeyHash(raw.adminAddress),
           boardPkhs = raw.boardPkhs,
+          fluidTokensPkh = raw.fluidTokensPkh,
           amountLovelace = raw.amountLovelace,
           treasuryExpirationMs = tMs,
           vendorExpirationMs = vMs,
@@ -69,20 +76,23 @@ object Config {
 
     // ---- Concrete network configs (mirror params/preprod.ts) -----------------
 
-    /** Reduced resubmission "Scalus 2026" — ₳2,464,844 ($0.16/ADA), T_max 2027-07-01, vendor grace
-      * +30d. Board = production K_1..K_3. Preview re-uses these.
+    /** Bifrost Bridge — ₳12,332,031 ($0.16/ADA, incl. 10% contingency), T_max 2027-07-31, vendor
+      * grace +30d. Two joint vendors (Lantr = K_op, FluidTokens) + production board K_1..K_3.
+      * Preview re-uses these. See params/preprod.ts (bun parity counterpart).
       */
     val preprod: RawConfig = RawConfig(
       network = Net.Preprod,
+      // K_op — Lantr operator (also Lantr vendor signer). Fresh key, 2026-07-02.
       adminAddress =
-          "addr_test1qqhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdspa5c55",
+          "addr_test1qz0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrqvy0jxa",
       boardPkhs = Seq(
         "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (CF)
         "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
         "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef" // K_3 — Riley Kilgore (IOG)
       ),
-      amountLovelace = BigInt("2464844000000"),
-      treasuryExpirationISO = "2027-07-01T00:00:00Z",
+      fluidTokensPkh = "1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175",
+      amountLovelace = BigInt("12332031000000"),
+      treasuryExpirationISO = "2027-07-31T00:00:00Z",
       vendorExpirationGraceDays = 30
     )
 
@@ -96,7 +106,7 @@ object Config {
     val mainnet: RawConfig = preprod.copy(
       network = Net.Mainnet,
       adminAddress =
-          "addr1qyhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdsztfcct"
+          "addr1qx0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrq0jjj2z"
     )
 
     def forNetwork(net: Net): RawConfig = net match

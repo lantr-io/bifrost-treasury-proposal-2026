@@ -6,49 +6,42 @@ import type {
 import type { RawConfig, ResolvedConfig } from "./common";
 
 /**
- * Preprod / preview concrete config (preview re-exports from this module).
- * Uses the real proposal totals and dates so testnet exercises the same
- * script parameters that mainnet will mint.
+ * Preprod / preview concrete config for the Bifrost Bridge treasury
+ * withdrawal (preview re-exports and re-networks this module). Uses the real
+ * proposal totals and dates so testnet exercises the same script parameters
+ * that mainnet will mint.
  *
- *   amount   : ₳2,464,844 (reduced resubmission, no contingency, $0.16/ADA,
- *              per HackMD scalus2026-2 Budget)
- *   T_max    : 2027-07-01 = end of 9-month delivery (July 2026 - Q1 2027) +
- *              lean buffer (covers the Q2 2027 financial-audit report)
- *   vendor.expiration: T_max + 30 days (= 2027-07-31)
- *   topology : operator (K_op) + 3-board (K_1..K_3) per Plan.md.
+ *   amount   : ₳12,332,031 — Phase 1 total incl. 10% refundable contingency
+ *              ($0.16/ADA), per HackMD @lantr/bifrost-bridge-2026 Budget.
+ *   T_max    : 2027-07-31 = end of Q1 2027 delivery + 4-month buffer (so M3
+ *              matures and fund/final ADA disburse land before expiration).
+ *   vendor.expiration: T_max + 30 days (= 2027-08-30).
+ *   topology : two joint vendors (Lantr = K_op, FluidTokens) + 3 oversight
+ *              board members (K_1..K_3), per docs/superpowers/specs/
+ *              2026-07-02-bifrost-treasury-design.md §4.
  *
- * Board pkhs: all three are the production board members' pubkey hashes
- * (same as in params/mainnet.ts) so testnet rehearsals exercise the real
- * multisig topology.
+ * K_op is Lantr's freshly generated operator key (keys/admin.*); it doubles
+ * as Lantr's vendor signer. The board pkhs are the production oversight
+ * members (CF / Blink / IOG) — external, we hold only their pkhs.
  *
- * Consequence: keys/board-{1,2,3}.skey no longer correspond to anything
- * in the on-chain script — local signing as any K_i is no longer possible
- * on testnet. Any future fund/disburse/sweep test on preprod/preview
- * will require hardware signatures from the actual board members.
- *
- * Also: the existing preview deployment (deployment/preview.json) was
- * minted with the OLD dev pkhs and has on-chain script hashes
- *   treasury: da192329...656b   vendor: 32e27ef4...28c2
- * which do NOT reproduce from this updated source. Subsequent scripts
- * (02-register, 03-build-gov-action) read those hashes from the
- * deployment file directly, so the live preview action continues to
- * work; only future fresh `init` runs use the new pkhs.
- *
- * Milestone schedule is NOT defined here. It is decided at fund-vendor
- * time (vendor datum, not script parameter), and the existing
- * 05-fund-vendor.ts will need a wired schedule before it can run.
+ * The milestone schedule (M0 advance + M1/M2/M3) and the vendor claim
+ * multisig live in the VendorDatum, set at fund time — NOT script parameters,
+ * so they don't affect the treasury/vendor script hashes.
  */
 export const preprodRawConfig: RawConfig = {
   network: "preprod",
+  // K_op — Lantr operator (also Lantr vendor signer). Fresh key, 2026-07-02.
   adminAddress:
-    "addr_test1qqhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdspa5c55",
+    "addr_test1qz0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrqvy0jxa",
   boardPkhs: [
-    "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation), 2026-05-13
-    "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs), 2026-05-13
-    "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG), 2026-05-13
+    "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation)
+    "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
+    "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG)
   ],
-  amountLovelace: 2_464_844_000_000n,
-  treasuryExpirationISO: "2027-07-01T00:00:00Z",
+  // FluidTokens vendor (second of the two joint vendors).
+  fluidTokensPkh: "1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175",
+  amountLovelace: 12_332_031_000_000n,
+  treasuryExpirationISO: "2027-07-31T00:00:00Z",
   vendorExpirationGraceDays: 30,
 };
 
@@ -64,47 +57,50 @@ const atLeast = (
 ): MultisigScript => ({ AtLeast: { required, scripts } });
 
 interface PermissionGroup {
+  /** Lantr K_op — operator and Lantr's vendor signer. */
   opSig: MultisigScript;
+  /** FluidTokens vendor. */
+  ftSig: MultisigScript;
   boardSigs: MultisigScript[];
   /** AtLeast(1, board) — any single board member. */
   board1: MultisigScript;
   /** AtLeast(2, board) — board majority. */
   board2: MultisigScript;
-  /** AllOf [K_op, AtLeast(1, board)] — operator + 1 board co-sign. */
-  opPlus1: MultisigScript;
-  /** AllOf [K_op, AtLeast(2, board)] — operator + board majority. */
-  opPlus2: MultisigScript;
+  /** AllOf [Lantr, FluidTokens, AtLeast(1, board)] — both vendors + 1 board. */
+  bothVendorsPlus1: MultisigScript;
+  /** AllOf [Lantr, FluidTokens] — 2-of-2 vendor claim multisig. */
+  vendorClaim: MultisigScript;
 }
 
 function permissionGroup(resolved: ResolvedConfig): PermissionGroup {
   const opSig = sig(resolved.adminPkhHex);
+  const ftSig = sig(resolved.fluidTokensPkh);
   const boardSigs = resolved.boardPkhs.map(sig);
   const board1 = atLeast(1n, boardSigs);
   const board2 = atLeast(2n, boardSigs);
-  const opPlus1 = allOf([opSig, board1]);
-  const opPlus2 = allOf([opSig, board2]);
-  return { opSig, boardSigs, board1, board2, opPlus1, opPlus2 };
+  const bothVendorsPlus1 = allOf([opSig, ftSig, board1]);
+  const vendorClaim = allOf([opSig, ftSig]);
+  return { opSig, ftSig, boardSigs, board1, board2, bothVendorsPlus1, vendorClaim };
 }
 
 export function buildTreasuryConfig(
   resolved: ResolvedConfig,
   registryPolicyHex: string,
 ): TreasuryConfiguration {
-  const { opSig, opPlus1, opPlus2 } = permissionGroup(resolved);
+  const { opSig, board1, board2, bothVendorsPlus1 } = permissionGroup(resolved);
   return {
     registry_token: registryPolicyHex,
     permissions: {
       // K_op alone — no value leaves the script.
       reorganize: opSig,
-      // Operator + 1-of-3 board (cheap, reversible: sweep just returns
-      // funds to the Cardano treasury at expiry).
-      sweep: opPlus1,
-      // Operator + 2-of-3 board (board majority). Disburse moves funds
-      // out of the treasury script to a recipient address; fund commits
-      // funds to a vendor milestone schedule. Both are value-out
-      // operations, so both require the same elevated threshold.
-      disburse: opPlus2,
-      fund: opPlus2,
+      // 1-of-3 board — benign; only returns funds to the Cardano treasury.
+      sweep: board1,
+      // Both vendors (Lantr + FluidTokens) + any 1 board member. Disburse
+      // routes value to arbitrary recipients (audits, legal, etc.).
+      disburse: bothVendorsPlus1,
+      // 2-of-3 board (board majority). Commits funds to a vendor milestone
+      // schedule; fund.ak additionally forces the vendor multisig to consent.
+      fund: board2,
     },
     expiration: resolved.treasuryExpirationMs,
     payout_upperbound: resolved.vendorPayoutUpperboundMs,
@@ -115,27 +111,27 @@ export function buildVendorConfig(
   resolved: ResolvedConfig,
   registryPolicyHex: string,
 ): VendorConfiguration {
-  const { board1, board2, opPlus2 } = permissionGroup(resolved);
+  const { board1, board2 } = permissionGroup(resolved);
   return {
     registry_token: registryPolicyHex,
     permissions: {
-      // 1-of-3 board (cheap to flag).
+      // 1-of-3 board (cheap to flag / contest a milestone).
       pause: board1,
       // 2-of-3 board (deliberate).
       resume: board2,
-      // Operator + 2-of-3 board (restructures the milestone schedule).
-      modify: opPlus2,
+      // 2-of-3 board — restructures the milestone schedule; vendor.ak
+      // additionally forces the vendor multisig to consent.
+      modify: board2,
     },
     expiration: resolved.vendorExpirationMs,
   };
 }
 
 /**
- * The vendor multisig (in VendorDatum, set per Fund call) that gates
- * claim-on-maturation. For the preprod test this is K_op alone — Lantr
- * (vendor) signs to claim each matured milestone. Real per-project
- * deployments would set this at Fund time.
+ * The vendor claim multisig (in VendorDatum, set per Fund call) that gates
+ * claim-on-maturation: AllOf[Lantr, FluidTokens] (2-of-2). Both joint vendors
+ * must sign to withdraw a matured milestone.
  */
 export function vendorMultisig(resolved: ResolvedConfig): MultisigScript {
-  return sig(resolved.adminPkhHex);
+  return permissionGroup(resolved).vendorClaim;
 }

@@ -10,22 +10,17 @@ import {
 import { Core } from "@blaze-cardano/sdk";
 
 /**
- * Generate the operator + oversight-board keypairs for preprod.
+ * Generate the operator (K_op) keypair.
  *
  *   keys/admin.{skey,vkey}        — operator (K_op) payment key (Ed25519)
  *   keys/admin.stake.{skey,vkey}  — operator stake key (Ed25519)
  *   keys/admin.addr               — Shelley base address (addr_test1q…)
  *   keys/admin.stake.addr         — bech32 stake address (stake_test1…)
- *   keys/board-{1,2,3}.{skey,vkey,pkh}
- *                                 — oversight board members K_1..K_3.
- *                                   Payment-only (no addresses): they sign
- *                                   the multisig validators in
- *                                   params/preprod.ts; they don't hold ADA
- *                                   directly.
  *
- * Idempotent per file: each output is generated only if absent. The
- * operator base address is required for the gov-action deposit return;
- * board pkhs land in params/preprod.ts.
+ * K_op is Lantr's operator key: it submits txs, pays fees, posts/receives the
+ * gov-action deposit, and doubles as Lantr's vendor signer. Idempotent: keys
+ * are generated only if absent. The oversight board (CF / Blink / IOG) is
+ * external — only their pkhs live in params/*, never their signing keys here.
  */
 async function generateAdmin(base: string): Promise<void> {
   const skPath = `${base}/admin.skey`;
@@ -88,29 +83,6 @@ async function generateAdmin(base: string): Promise<void> {
   console.log(`Operator stake addr  : ${stakeRewardAccount.toString()}`);
 }
 
-async function generateBoardMember(base: string, n: number): Promise<void> {
-  const skPath = `${base}/board-${n}.skey`;
-  const vkPath = `${base}/board-${n}.vkey`;
-  const pkhPath = `${base}/board-${n}.pkh`;
-
-  if (existsSync(skPath)) {
-    console.log(`${skPath} exists — keeping existing board-${n} key`);
-    return;
-  }
-
-  const seed = crypto.getRandomValues(new Uint8Array(32));
-  const sk = Ed25519PrivateKey.fromNormalBytes(seed);
-  const vk = await sk.toPublic();
-  const pkhHex = (await vk.hash()).hex();
-
-  writeFileSync(skPath, sk.hex() + "\n", { mode: 0o600 });
-  writeFileSync(vkPath, vk.hex() + "\n");
-  writeFileSync(pkhPath, pkhHex + "\n");
-
-  console.log(`Wrote ${skPath}, ${vkPath}, ${pkhPath}`);
-  console.log(`Board K_${n} pkh : ${pkhHex}`);
-}
-
 async function main(): Promise<void> {
   await sodium.ready;
 
@@ -118,16 +90,14 @@ async function main(): Promise<void> {
   mkdirSync(base, { recursive: true });
 
   await generateAdmin(base);
-  for (const n of [1, 2, 3]) {
-    await generateBoardMember(base, n);
-  }
+
+  // The three oversight-board members (CF / Blink / IOG) are external; we hold
+  // only their payment pkhs (already in params/*), never their signing keys.
+  // No board keys are generated locally.
 
   console.log("");
-  console.log("NOTE: Fund the operator base address on preprod via the faucet:");
+  console.log("NOTE: Fund the operator base address on the preview faucet:");
   console.log("  https://docs.cardano.org/cardano-testnets/tools/faucet");
-  console.log("");
-  console.log("Update params/preprod.ts:boardPkhs from keys/board-{1,2,3}.pkh");
-  console.log("(or run gen-keys after editing params if you trust the file order).");
 }
 
 main().catch((err) => {

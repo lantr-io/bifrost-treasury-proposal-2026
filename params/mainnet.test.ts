@@ -6,30 +6,36 @@ import { buildTreasuryConfig, buildVendorConfig } from "./preprod";
 const FAKE_REGISTRY_POLICY =
   "cafebabecafebabecafebabecafebabecafebabecafebabecafebabe";
 
-describe("mainnet raw config", () => {
+describe("mainnet raw config (Bifrost)", () => {
   const raw = mainnetRawConfig();
 
   test("network is mainnet", () => {
     expect(raw.network).toBe("mainnet");
   });
 
-  test("adminAddress is mainnet bech32 (addr1…) with payment-pkh matching the testnet admin keypair", () => {
+  test("adminAddress is the mainnet (addr1…) form of the K_op keypair", () => {
     expect(raw.adminAddress).toMatch(/^addr1[02-9ac-hj-np-z]+$/);
     expect(raw.adminAddress).toBe(
-      "addr1qyhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdsztfcct",
+      "addr1qx0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrq0jjj2z",
     );
   });
 
-  test("withdrawal amount matches the proposal total (₳2,464,844)", () => {
-    expect(raw.amountLovelace).toBe(2_464_844_000_000n);
+  test("withdrawal amount matches the Phase 1 total incl. contingency (₳12,332,031)", () => {
+    expect(raw.amountLovelace).toBe(12_332_031_000_000n);
   });
 
-  test("T_max = 2027-07-01 (9-month delivery July 2026 - Q1 2027, lean buffer, no contingency)", () => {
-    expect(raw.treasuryExpirationISO).toBe("2027-07-01T00:00:00Z");
+  test("T_max = 2027-07-31 (Q1 2027 delivery + 4-month buffer)", () => {
+    expect(raw.treasuryExpirationISO).toBe("2027-07-31T00:00:00Z");
   });
 
   test("vendor grace is 30 days", () => {
     expect(raw.vendorExpirationGraceDays).toBe(30);
+  });
+
+  test("FluidTokens vendor pkh matches the testnet config", () => {
+    expect(raw.fluidTokensPkh).toBe(
+      "1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175",
+    );
   });
 
   test("board pkhs match the preview/preprod production set (same humans on mainnet)", () => {
@@ -44,9 +50,9 @@ describe("mainnet raw config", () => {
 describe("mainnet resolveConfig + permissions", () => {
   const resolved = resolveConfig(mainnetRawConfig());
 
-  test("resolved admin pkh matches preview admin pkh (same keypair)", () => {
+  test("resolved admin pkh matches the K_op keypair (same pkh as testnet)", () => {
     expect(resolved.adminPkhHex).toBe(
-      "2ecb28d3eea1e723e033cb63fbf5d90bc07aa8e986e04e2400d42104",
+      "9edd850b20f4b20fc4a528bb4fcff0ca198470d224ab7d776b0452e3",
     );
   });
 

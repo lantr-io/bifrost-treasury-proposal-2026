@@ -32,10 +32,17 @@ describe("resolveConfig", () => {
       "11".repeat(28),
       "22".repeat(28),
     ],
+    fluidTokensPkh: "33".repeat(28),
     amountLovelace: 8_503_000_000_000n,
     treasuryExpirationISO: "2027-09-01T00:00:00Z",
     vendorExpirationGraceDays: 30,
   };
+
+  test("rejects a malformed fluidTokensPkh", () => {
+    expect(() =>
+      resolveConfig({ ...baseRaw, fluidTokensPkh: "not-a-pkh" }),
+    ).toThrow(/fluidTokensPkh/);
+  });
 
   test("treasuryExpirationMs matches the supplied ISO timestamp", () => {
     const resolved = resolveConfig(baseRaw);

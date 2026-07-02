@@ -34,24 +34,27 @@ object ContractData {
 
     /** The reusable permission building blocks (mirror preprod.ts permissionGroup). */
     final case class PermissionGroup(
-        opSig: Data, // K_op alone
+        opSig: Data, // Lantr K_op (operator + Lantr vendor signer)
+        ftSig: Data, // FluidTokens vendor
         board1: Data, // AtLeast(1, board)
         board2: Data, // AtLeast(2, board)
-        opPlus1: Data, // AllOf[K_op, AtLeast(1, board)]
-        opPlus2: Data // AllOf[K_op, AtLeast(2, board)]
+        bothVendorsPlus1: Data, // AllOf[Lantr, FluidTokens, AtLeast(1, board)]  (disburse)
+        vendorClaim: Data // AllOf[Lantr, FluidTokens]  (2-of-2 vendor claim, set at fund time)
     )
 
     def permissionGroup(r: ResolvedConfig): PermissionGroup = {
         val opSig = sig(r.adminPkhHex)
+        val ftSig = sig(r.fluidTokensPkh)
         val boardSigs = r.boardPkhs.map(sig)
         val board1 = atLeast(1, boardSigs)
         val board2 = atLeast(2, boardSigs)
         PermissionGroup(
           opSig = opSig,
+          ftSig = ftSig,
           board1 = board1,
           board2 = board2,
-          opPlus1 = allOf(Seq(opSig, board1)),
-          opPlus2 = allOf(Seq(opSig, board2))
+          bothVendorsPlus1 = allOf(Seq(opSig, ftSig, board1)),
+          vendorClaim = allOf(Seq(opSig, ftSig))
         )
     }
 
@@ -60,7 +63,7 @@ object ContractData {
     def treasuryConfig(r: ResolvedConfig, registryPolicyHex: String): Data = {
         val g = permissionGroup(r)
         // schema order: reorganize, sweep, fund, disburse
-        val perms = Data.Constr(0, PList(g.opSig, g.opPlus1, g.opPlus2, g.opPlus2))
+        val perms = Data.Constr(0, PList(g.opSig, g.board1, g.board2, g.bothVendorsPlus1))
         Data.Constr(
           0,
           PList(
@@ -83,7 +86,7 @@ object ContractData {
     def vendorConfig(r: ResolvedConfig, registryPolicyHex: String): Data = {
         val g = permissionGroup(r)
         // schema order: pause, resume, modify
-        val perms = Data.Constr(0, PList(g.board1, g.board2, g.opPlus2))
+        val perms = Data.Constr(0, PList(g.board1, g.board2, g.board2))
         Data.Constr(
           0,
           PList(

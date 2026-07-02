@@ -13,6 +13,12 @@ export interface RawConfig {
    *  into treasury and vendor script parameters at registry-mint time;
    *  immutable thereafter. */
   boardPkhs: readonly [string, string, string];
+  /** FluidTokens vendor payment key hash (hex, 56 chars). The second of the
+   *  two joint vendors — Lantr (the operator, `adminAddress`) is the first.
+   *  Enters the treasury `disburse` permission (both vendors + 1 board) baked
+   *  into the treasury script params, and the 2-of-2 vendor claim multisig
+   *  set at fund time. */
+  fluidTokensPkh: string;
   /** Total amount to withdraw from the Cardano treasury, in lovelace.
    *  Held at the treasury script after enactment; vendor milestones are
    *  funded from this pool at fund-vendor time and any unallocated balance
@@ -34,6 +40,8 @@ export interface ResolvedConfig {
   adminAddress: string;
   adminPkhHex: string;
   boardPkhs: readonly [string, string, string];
+  /** FluidTokens vendor payment key hash (hex, 56 chars). */
+  fluidTokensPkh: string;
   amountLovelace: bigint;
   /** POSIX ms; matches RawConfig.treasuryExpirationISO. */
   treasuryExpirationMs: bigint;
@@ -116,11 +124,18 @@ export function resolveConfig(raw: RawConfig): ResolvedConfig {
     }
   }
 
+  if (!/^[0-9a-f]{56}$/.test(raw.fluidTokensPkh)) {
+    throw new Error(
+      `fluidTokensPkh is not a 56-char hex pkh: "${raw.fluidTokensPkh}"`,
+    );
+  }
+
   return {
     network: raw.network,
     adminAddress,
     adminPkhHex: addressPaymentKeyHash(adminAddress),
     boardPkhs: raw.boardPkhs,
+    fluidTokensPkh: raw.fluidTokensPkh,
     amountLovelace: raw.amountLovelace,
     treasuryExpirationMs: treasuryMs,
     vendorExpirationMs: vendorMs,

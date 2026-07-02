@@ -1,34 +1,36 @@
 import type { RawConfig } from "./common";
 
 /**
- * Mainnet config — locked in after the preview end-to-end test
- * (2026-05-14, gov_action1tq67zl7…). Wrapped in a function so that merely
- * importing this module is harmless; calling it (only when
- * NETWORK=mainnet) is the explicit acknowledgement that you intend the
- * mainnet path. params/select.ts deliberately does NOT dispatch to this —
- * scripts must import it directly to make every mainnet code path visible
- * at the import site.
+ * Mainnet config for the Bifrost Bridge treasury withdrawal. Wrapped in a
+ * function so that merely importing this module is harmless; calling it (only
+ * when NETWORK=mainnet is intended) is the explicit acknowledgement of the
+ * mainnet path. params/select.ts deliberately does NOT dispatch here —
+ * scripts must import it directly so every mainnet code path is visible at the
+ * import site.
  *
- * Shape matches preprod/preview (operator + 3-board); mainnet uses the
- * same keypair as the testnet `addr_test1q…` (same admin.{vkey,stake.vkey}),
- * which is fine because Shelley addresses are network-discriminated by
- * header byte — the testnet payment pkh equals the mainnet payment pkh.
+ * Mainnet submission is deferred until a clean preview rehearsal (see
+ * docs/superpowers/specs/2026-07-02-bifrost-treasury-design.md, Scope &
+ * phasing). Values mirror the testnet config: the operator base address is
+ * the mainnet (addr1…) form of the SAME K_op keypair as the testnet
+ * addr_test1q… — identical payment+stake pkhs, differing only in the Shelley
+ * header byte (network=1).
  */
 export function mainnetRawConfig(): RawConfig {
   return {
     network: "mainnet",
-    // operator (K_op). Same payment+stake keypair as the preview admin
-    // (verified by blake2b-224(vkey) → pkh match); differs only in the
-    // Shelley header byte (network=1).
+    // K_op — Lantr operator (also Lantr vendor signer). Mainnet form of the
+    // fresh 2026-07-02 keypair (same pkh as the testnet admin address).
     adminAddress:
-      "addr1qyhvk2xna6s7wglqx09k87l4my9uq74gaxrwqn3yqr2zzp97em0a23l90d0nw30feg6gahelyhk5cl5080uzxszrtcdsztfcct",
+      "addr1qx0dmpgtyr6tyr7y555tkn707r9pnprs6gj2klthdvz99c7vcjy2fsjf8aenxn80lyr8czps6dh04jdsd40y8kcn9qrq0jjj2z",
     boardPkhs: [
       "7095faf3d48d582fbae8b3f2e726670d7a35e2400c783d992bbdeffb", // K_1 — Matthias Benkort (Cardano Foundation)
       "058a5ab0c66647dcce82d7244f80bfea41ba76c7c9ccaf86a41b00fe", // K_2 — Chris Gianelloni (Blink Labs)
       "fe0921cfa53b2deef20f185258f8bc6e127ab6fa1084e62f0830ddef", // K_3 — Riley Kilgore (IOG)
     ],
-    amountLovelace: 2_464_844_000_000n, // ₳2,464,844 — reduced resubmission, no contingency, $0.16/ADA, per HackMD scalus2026-2 Budget
-    treasuryExpirationISO: "2027-07-01T00:00:00Z", // T_max = 9-month delivery (July 2026 — Q1 2027) + lean buffer (covers Q2 2027 audit report)
-    vendorExpirationGraceDays: 30, // vendor expiry = T_max + 30d (= 2027-07-31)
+    // FluidTokens vendor (second of the two joint vendors).
+    fluidTokensPkh: "1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175",
+    amountLovelace: 12_332_031_000_000n, // ₳12,332,031 — Phase 1 total incl. 10% contingency, per HackMD bifrost-bridge-2026 Budget
+    treasuryExpirationISO: "2027-07-31T00:00:00Z", // T_max = Q1 2027 delivery + 4-month buffer
+    vendorExpirationGraceDays: 30, // vendor expiry = T_max + 30d (= 2027-08-30)
   };
 }
