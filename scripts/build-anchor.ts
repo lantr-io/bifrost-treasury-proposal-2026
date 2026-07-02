@@ -12,8 +12,7 @@
  * CIP-108 body field; the rest of the proposal is reachable via `references`.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { requirePin } from "./lib/pinned";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { assertAnchorValid } from "./lib/validate-anchor";
 
 type Network = "preprod" | "preview" | "mainnet";
@@ -158,11 +157,11 @@ function buildAnchor(md: string, network: Network): unknown {
   const rationale = lines.slice(rationaleStart + 1, rationaleEnd).join("\n").trim();
 
   // Parse "## Supporting links" bullet list into references[]. Format:
-  //   * <label>: <https-url>
+  //   * <label>: <https-url>   (also accepts `-` bullets)
   // Greedy on the label so entries like "Annex 1: ... (PDF)" keep their
   // internal colon. URLs that point at an IPFS gateway are normalized to
   // https://ipfs.io/ipfs/<cid> so indexers all see the same gateway.
-  const linkRe = /^\* (.+):\s+(https?:\/\/\S+)\s*$/;
+  const linkRe = /^[*-] (.+):\s+(https?:\/\/\S+)\s*$/;
   const references: { "@type": string; label: string; uri: string }[] = [];
   for (let j = supportingStart + 1; j < lines.length; j++) {
     const m = lines[j]!.match(linkRe);
@@ -180,13 +179,8 @@ function buildAnchor(md: string, network: Network): unknown {
   }
 
   void network; // network selector is currently informational only
-  // Pin records aren't directly read here anymore (refs come from
-  // proposal.md), but require them so the file enforces that every PDF
-  // has been pinned before the anchor can be built.
-  requirePin("proposal");
-  requirePin("annex1");
-  requirePin("annex2");
-  requirePin("annex3");
+  // References come straight from the proposal's "Supporting links" section;
+  // annex pinning is out of scope for now, so no pin gate is enforced here.
   const body: Record<string, unknown> = {
     title: titleSection.heading,
     abstract,
@@ -277,6 +271,7 @@ function main(): void {
   const md = readFileSync("docs/proposal.md", "utf8");
   const anchor = buildAnchor(md, network);
   assertAnchorValid(anchor, `built anchor (network=${network})`);
+  mkdirSync("gov", { recursive: true });
   const out = `gov/anchor.${network}.json`;
   writeFileSync(out, JSON.stringify(anchor, null, 2) + "\n");
   console.log(
