@@ -96,4 +96,52 @@ object ContractData {
           )
         )
     }
+
+    // ---- Redeemers, datums, and value encodings for funding execution --------
+    //
+    // Constructor indices match the audited blueprint (lib/types.ak). Verified
+    // against the SundaeSwap TS package's `Data.serialize(...)` calls per endpoint.
+
+    private val nil: PList[Data] = PList.from(Seq.empty[Data])
+
+    /** Treasury / vendor output datum = Void (Constr 0 []). The treasury spend
+      * ignores its input datum; outputs carry Void by convention. */
+    val void: Data = Data.Constr(0, nil)
+
+    /** Value as `Pairs<PolicyId, Pairs<AssetName, Int>>` (Plutus Map of Maps).
+      * `assets` maps policyHex -> (assetNameHex -> quantity). ADA is the empty
+      * policy + empty asset name; pass it in `assets` under key "" -> ("" -> n). */
+    def value(assets: Seq[(String, Seq[(String, BigInt)])]): Data =
+        Data.Map(PList.from(assets.map { (policyHex, toks) =>
+            Data.B(bs(policyHex)) -> Data.Map(
+              PList.from(toks.map { (nameHex, qty) => Data.B(bs(nameHex)) -> Data.I(qty) })
+            )
+        }))
+
+    /** Pure-ADA value of `lovelace` (empty policy, empty asset name). */
+    def adaValue(lovelace: BigInt): Data = value(Seq("" -> Seq("" -> lovelace)))
+
+    // TreasurySpendRedeemer: Reorganize=0, SweepTreasury=1, Fund=2, Disburse=3
+    val reorganizeRedeemer: Data = Data.Constr(0, nil)
+    val sweepTreasuryRedeemer: Data = Data.Constr(1, nil)
+    def fundRedeemer(amount: Data): Data = Data.Constr(2, PList(amount))
+    def disburseRedeemer(amount: Data): Data = Data.Constr(3, PList(amount))
+
+    // VendorSpendRedeemer: Withdraw=0, Adjudicate=1, Modify=2, SweepVendor=3, Malformed=4
+    val withdrawRedeemer: Data = Data.Constr(0, nil)
+    def adjudicateRedeemer(statuses: Seq[Boolean]): Data =
+        Data.Constr(1, PList(Data.List(PList.from(statuses.map(payoutStatus)))))
+    val modifyRedeemer: Data = Data.Constr(2, nil)
+    val sweepVendorRedeemer: Data = Data.Constr(3, nil)
+
+    /** PayoutStatus: Active=Constr 0 [], Paused=Constr 1 []. */
+    def payoutStatus(active: Boolean): Data = Data.Constr(if active then 0 else 1, nil)
+
+    /** Payout { maturation: Int, value: Pairs, status: PayoutStatus }. */
+    def payout(maturationMs: BigInt, value: Data, active: Boolean): Data =
+        Data.Constr(0, PList(Data.I(maturationMs), value, payoutStatus(active)))
+
+    /** VendorDatum { vendor: MultisigScript, payouts: List<Payout> }. */
+    def vendorDatum(vendor: Data, payouts: Seq[Data]): Data =
+        Data.Constr(0, PList(vendor, Data.List(PList.from(payouts))))
 }

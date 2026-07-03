@@ -22,6 +22,16 @@ object Cli {
 
     def isSubmit(args: Seq[String]): Boolean = args.contains("--submit")
 
+    /** `--profile <slug>` selects a non-production deployment (funding-flow test
+      * profiles). Absent ⇒ production, keyed off `--network`. */
+    def profile(args: Seq[String]): Option[String] =
+        args
+            .sliding(2)
+            .collectFirst { case Seq("--profile", value) => value }
+            .orElse(args.collectFirst {
+                case a if a.startsWith("--profile=") => a.drop("--profile=".length)
+            })
+
     /** Optional `--seed <txid#ix>` override for the one-shot seed UTxO. When set, init uses exactly
       * this UTxO instead of auto-picking, so a parity run can force the bun and scalus pipelines
       * onto the identical seed (otherwise the oneshot policy and every downstream script hash

@@ -16,12 +16,13 @@ import java.nio.file.Path
 // ScriptHashRegistry datum carrying the treasury + vendor script hashes.
 object InitRegistryTool {
     @main def init(args: String*): Unit = {
-        val net = Cli.net(args)
+        val d = Deploy.select(args)
+        val net = d.net
         val submit = Cli.isSubmit(args)
-        val r = Config.resolve(Config.forNetwork(net))
+        val r = Config.resolve(d.raw)
 
-        if Deployment.load(net).isDefined then {
-            println(s"${Deployment.path(net)} already exists — init already ran. Skipping.")
+        if Deployment.load(d.slug).isDefined then {
+            println(s"${Deployment.path(d.slug)} already exists — init already ran. Skipping.")
             return
         }
 
@@ -96,7 +97,7 @@ object InitRegistryTool {
         println(s"\n[submit] broadcasting ${tx.id.toHex} …")
         Chain.submit(provider, tx)
         Deployment.save(
-          net,
+          d.slug,
           DeploymentState(
             network = net.slug,
             seedTxId = seedTxId,
@@ -109,6 +110,6 @@ object InitRegistryTool {
             txs = Map("initRegistry" -> tx.id.toHex)
           )
         )
-        println(s"[done] submitted; wrote ${Deployment.path(net)}")
+        println(s"[done] submitted; wrote ${Deployment.path(d.slug)}")
     }
 }

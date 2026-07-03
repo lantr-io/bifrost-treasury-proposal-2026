@@ -18,10 +18,10 @@ final case class DeploymentState(
 )
 
 object Deployment {
-    def path(net: Net): Path = Path.of(s"deployment/${net.slug}.json")
+    def path(slug: String): Path = Path.of(s"deployment/$slug.json")
 
-    def load(net: Net): Option[DeploymentState] = {
-        val p = path(net)
+    def load(slug: String): Option[DeploymentState] = {
+        val p = path(slug)
         if !Files.exists(p) then None
         else {
             val j = ujson.read(Files.readString(p))
@@ -41,7 +41,7 @@ object Deployment {
         }
     }
 
-    def save(net: Net, state: DeploymentState): Unit = {
+    def save(slug: String, state: DeploymentState): Unit = {
         val obj = ujson.Obj(
           "network" -> state.network,
           "seedUtxo" -> ujson.Obj(
@@ -55,7 +55,7 @@ object Deployment {
           "treasuryExpirationMs" -> state.treasuryExpirationMs.toString,
           "txs" -> ujson.Obj.from(state.txs.map((k, v) => k -> ujson.Str(v)))
         )
-        val p = path(net)
+        val p = path(slug)
         Files.createDirectories(p.getParent)
         Files.writeString(p, ujson.write(obj, indent = 2) + "\n")
     }

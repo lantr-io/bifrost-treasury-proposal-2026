@@ -1,0 +1,144 @@
+package treasurypublish
+
+import scalus.cardano.ledger.*
+import scalus.cardano.address.{Address, Network, ShelleyAddress, ShelleyDelegationPart, ShelleyPaymentPart}
+import scalus.cardano.node.BlockfrostProvider
+import scalus.cardano.txbuilder.TransactionSigner
+import scalus.uplc.builtin.{ByteString, Data}
+import scalus.uplc.builtin.Builtins.blake2b_224
+import scalus.crypto.ed25519.{JvmEd25519Signer, SigningKey, VerificationKey}
+
+import java.nio.file.{Files, Path}
+
+// Shared plumbing for the funding-execution tools (seed / reorganize / disburse
+// / fund / vendor-withdraw / adjudicate / modify / sweep). Loads the test
+// deployment, recompiles + cross-checks the treasury/vendor scripts, derives the
+// script addresses (BasePaymentScriptStakeScript — payment == stake == script
+// hash, matching the audited SundaeSwap package), and finds the registry NFT
+// reference UTxO. Also loads the multisig signers (real K_op + the stand-in
+// FluidTokens/board keys under keys/test/).
+object Funding {
+
+    /** A signing party: raw ed25519 key material + payment key hash. */
+    final case class Member(name: String, priv: ByteString, pub: VerificationKey, pkh: AddrKeyHash)
+
+    private def loadMember(name: String, skPath: Path): Member = {
+        val priv = ByteString.fromHex(Files.readString(skPath).trim)
+        val pub = JvmEd25519Signer.derivePublicKey(SigningKey.unsafeFromByteString(priv))
+        Member(name, priv, pub, AddrKeyHash(blake2b_224(pub)))
+    }
+
+    final case class Ctx(
+        d: Deploy,
+        r: ResolvedConfig,
+        provider: BlockfrostProvider,
+        state: DeploymentState,
+        op: Member, // K_op (Lantr) — also the fee-paying wallet
+        ft: Member,
+        board: Seq[Member], // board1, board2, board3 (stand-ins)
+        treasuryScript: Script.PlutusV3,
+        vendorScript: Script.PlutusV3,
+        treasuryAddr: ShelleyAddress,
+        vendorAddr: ShelleyAddress,
+        adminAddr: ShelleyAddress,
+        registryRef: Utxo
+    ) {
+        /** The 2-of-2 vendor claim multisig (AllOf[Lantr, FluidTokens]) baked
+          * into the VendorDatum at fund time. */
+        def vendorClaim: Data = ContractData.permissionGroup(r).vendorClaim
+
+        /** Required-signer key hashes for a multisig action. */
+        def pkhs(members: Seq[Member]): Set[AddrKeyHash] = members.map(_.pkh).toSet
+
+        /** Signer over the given multisig members PLUS K_op (who always signs the
+          * fee/collateral inputs drawn from the operator wallet). TxBuilder.sign
+          * filters down to the expected signers, so extra keys are harmless. */
+        def signer(members: Seq[Member]): TransactionSigner =
+            TransactionSigner((op +: members).map(m => (m.priv, m.pub: ByteString)).toSet)
+    }
+
+    def scriptBase(ln: Network, h: ScriptHash): ShelleyAddress =
+        ShelleyAddress(ln, ShelleyPaymentPart.Script(h), ShelleyDelegationPart.Script(h))
+
+    def load(args: Seq[String]): Ctx = {
+        val d = Deploy.select(args)
+        require(
+          d.slug.startsWith("preview-test"),
+          s"funding tools only run against test deployments, got --profile ${d.slug}"
+        )
+        val r = Config.resolve(d.raw)
+        val state = Deployment
+            .load(d.slug)
+            .getOrElse(sys.error(s"${Deployment.path(d.slug)} not found — run `init --profile ${d.slug} --submit` first"))
+
+        val apiKey = Chain.loadBlockfrostKey(d.net)
+        val provider = Chain.provider(d.net, apiKey)
+        val keys = Chain.loadAdminKeys("keys")
+        val ln = Chain.ledgerNetwork(d.net)
+
+        val treasuryScript = Scripts.treasuryScript(r, state.registryPolicyHex)
+        val vendorScript = Scripts.vendorScript(r, state.registryPolicyHex)
+        require(
+          treasuryScript.scriptHash.toHex == state.treasuryScriptHashHex,
+          s"treasury hash ${treasuryScript.scriptHash.toHex} != deployment ${state.treasuryScriptHashHex}"
+        )
+        require(
+          vendorScript.scriptHash.toHex == state.vendorScriptHashHex,
+          s"vendor hash ${vendorScript.scriptHash.toHex} != deployment ${state.vendorScriptHashHex}"
+        )
+
+        val registryPolicy = Scripts.registryPolicy(state.seedTxId, state.seedOutputIndex)
+        val registryAddr =
+            ShelleyAddress(ln, ShelleyPaymentPart.Script(registryPolicy), ShelleyDelegationPart.Null)
+        val regUtxos = Chain.findUtxos(provider, registryAddr)
+        require(regUtxos.nonEmpty, s"no registry UTxO at ${registryAddr.toBech32.get}")
+        val (regIn, regOut) = regUtxos.head
+        val registryRef = Utxo(regIn, regOut)
+
+        val testDir = Path.of("keys/test")
+        Ctx(
+          d = d,
+          r = r,
+          provider = provider,
+          state = state,
+          op = Member("op", keys.payPriv, keys.payPub, keys.payKeyHash),
+          ft = loadMember("ft", testDir.resolve("ft.skey")),
+          board = Seq("board1", "board2", "board3").map(n => loadMember(n, testDir.resolve(s"$n.skey"))),
+          treasuryScript = treasuryScript,
+          vendorScript = vendorScript,
+          treasuryAddr = scriptBase(ln, treasuryScript.scriptHash),
+          vendorAddr = scriptBase(ln, vendorScript.scriptHash),
+          adminAddr = Chain.paymentAddress(d.net, keys),
+          registryRef = registryRef
+        )
+    }
+
+    /** Parse a bech32 address arg, defaulting to the operator wallet. */
+    def addrOrAdmin(args: Seq[String], ctx: Ctx): Address =
+        args
+            .sliding(2)
+            .collectFirst { case Seq("--to", v) => v }
+            .map(Address.fromBech32)
+            .getOrElse(ctx.adminAddr)
+
+    /** `--ada <n>` in whole ADA → lovelace; falls back to `default`. */
+    def adaArg(args: Seq[String], default: BigInt): BigInt =
+        args
+            .sliding(2)
+            .collectFirst { case Seq("--ada", v) => (BigDecimal(v) * 1_000_000).toBigInt }
+            .getOrElse(default)
+
+    def treasuryUtxos(ctx: Ctx): Seq[Utxo] =
+        Chain.findUtxos(ctx.provider, ctx.treasuryAddr).map { case (i, o) => Utxo(i, o) }.toSeq
+
+    def vendorUtxos(ctx: Ctx): Seq[Utxo] =
+        Chain.findUtxos(ctx.provider, ctx.vendorAddr).map { case (i, o) => Utxo(i, o) }.toSeq
+
+    def largest(us: Seq[Utxo]): Utxo = {
+        require(us.nonEmpty, "no UTxO available at the requested script address")
+        us.maxBy(_.output.value.coin.value)
+    }
+
+    /** ADA-only lovelace held by a UTxO. */
+    def lovelaceOf(u: Utxo): Long = u.output.value.coin.value
+}

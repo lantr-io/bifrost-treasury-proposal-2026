@@ -16,12 +16,13 @@ import scala.concurrent.duration.*
 // if already on-chain (StakeKeyRegisteredDELEG would otherwise reject the tx).
 object RegisterScriptsTool {
     @main def register(args: String*): Unit = {
-        val net = Cli.net(args)
+        val d = Deploy.select(args)
+        val net = d.net
         val submit = Cli.isSubmit(args)
-        val r = Config.resolve(Config.forNetwork(net))
+        val r = Config.resolve(d.raw)
         val state = Deployment
-            .load(net)
-            .getOrElse(sys.error(s"${Deployment.path(net)} not found — run `init --submit` first"))
+            .load(d.slug)
+            .getOrElse(sys.error(s"${Deployment.path(d.slug)} not found — run `init --submit` first"))
 
         val apiKey = Chain.loadBlockfrostKey(net)
         val base = Chain.blockfrostBase(net)
@@ -83,7 +84,7 @@ object RegisterScriptsTool {
 
         println(s"\n[submit] broadcasting ${tx.id.toHex} …")
         Chain.submit(provider, tx)
-        Deployment.save(net, state.copy(txs = state.txs + ("registerScripts" -> tx.id.toHex)))
-        println(s"[done] submitted; updated ${Deployment.path(net)}")
+        Deployment.save(d.slug, state.copy(txs = state.txs + ("registerScripts" -> tx.id.toHex)))
+        println(s"[done] submitted; updated ${Deployment.path(d.slug)}")
     }
 }
