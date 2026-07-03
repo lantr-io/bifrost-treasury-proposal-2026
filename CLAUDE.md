@@ -116,6 +116,14 @@ at the script, so USDC cannot be donated back to the Cardano Treasury.
   regenerate the parity fixture (`bun scripts/parity-oracle.ts >
   treasury-publish/fixtures/parity-preprod.json`) and run
   `scala-cli test treasury-publish` + `bun run test`.
+- The anchor signer has its own offline parity gate: bun `sign-anchor` and scala
+  `signAnchor` must emit a byte-identical CIP-100 witness. If the anchor signing
+  recipe or the stress fixture (`treasury-publish/fixtures/anchor-sign-fixture.json`)
+  changes, regenerate the golden fixture (`bun run sign-parity-oracle` →
+  `treasury-publish/fixtures/sign-parity.json`) and re-run `scala-cli test
+  treasury-publish`. URDNA2015 on the JVM is `titanium-json-ld` + `titanium-rdfc`
+  (needs Java 21; pinned in `treasury-publish/project.scala`); its canonical
+  N-Quads are byte-identical to the bun `jsonld` library.
 - Pinned versions in `package.json`; bumps are deliberate and justified in
   the commit message.
 - Commit style: conventional (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
@@ -144,7 +152,9 @@ at the script, so USDC cannot be donated back to the Cardano Treasury.
    (CIP-108) from `docs/proposal.md`, embedding the IPFS CIDs in
    `body.references`.
 5. `bun run sign-anchor` — add the ed25519 `authors[]` witness over the
-   URDNA2015-canonicalized body.
+   URDNA2015-canonicalized body. (Scala equivalent: `scala-cli run
+   treasury-publish --main-class treasurypublish.signAnchor -- <anchor.json>` —
+   byte-identical witness, enforced by `sign-anchor.parity.test.scala`.)
 6. `bun run pin gov/anchor.preview.json --role anchor --name …` — the CID
    becomes `ANCHOR_URL` in the gov action.
 7. `bun run init` (or `scala-cli run treasury-publish --main-class
