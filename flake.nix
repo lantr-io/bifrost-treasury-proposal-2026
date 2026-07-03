@@ -34,6 +34,7 @@
             age
             scala-cli # runs m5-withdraw/m5-withdraw.scala (Scalus tx builder)
             jdk21 # JVM for scala-cli
+            gh
           ];
 
           # Export secrets from .env (BLOCKFROST_PROJECT_ID, etc.) into the shell.
