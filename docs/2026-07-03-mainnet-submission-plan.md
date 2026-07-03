@@ -51,14 +51,22 @@ Post-ratification funding (`fund`/`disburse`/`vendor-withdraw`) stays deferred.
 5. **Go/no-go authority**: who signs off on the ₳12,332,031 ask + 100k deposit
    spend, and confirms all identities/dates one final time.
 
+## Decisions (2026-07-03)
+
+- **Deposit funding: NEEDS ARRANGING — this is the critical path.** Nothing on
+  mainnet proceeds until ~100k ADA is at `addr1qx0dmpg…`.
+- **No preprod rehearsal** — go straight to mainnet on the strength of the
+  preview `init→register→gov` rehearsal. (Accepted trade-off: the 100k-deposit
+  coin-selection/collateral shape is first exercised with real ADA — mitigated
+  by a mandatory `gov` dry-run before `--submit`.)
+- **Timing: ASAP once the three blockers clear.** Ample runway before T_max
+  2027-07-31.
+
 ## Execution sequence
 
 Each step is dry-run first (default), then `--submit` only after go/no-go.
+(Preprod dress rehearsal intentionally skipped per the decision above.)
 
-0. **(optional) Preprod dress rehearsal of the 100k-deposit path.** Preprod's
-   `gov_action_deposit` is also 100,000 tADA — the one part preview (1,000)
-   didn't exercise. A full preprod `init → register → gov` shakes out the
-   large-deposit coin-selection + collateral before real ADA is at stake.
 1. **Anchor (reuse).** `build-anchor --network mainnet` → copy the two existing
    witnesses from the preview anchor (body hash identical) → verify both with
    `insert-witness` semantics (sig over `22a9ed01…`, FT pkh `1c471b31…`) →
@@ -93,14 +101,20 @@ Each step is dry-run first (default), then `--submit` only after go/no-go.
 | Submitting too close to T_max 2027-07-31 | Submit with runway for the full voting lifetime + a buffer. |
 | Accidental mainnet dispatch | `--network mainnet` is explicit; bun `select.ts` never auto-routes to mainnet. Keep it deliberate. |
 
-## Open decisions (need input)
+## Critical path
 
-- **Deposit funding**: is the mainnet K_op wallet funded with ~100k ADA, or does
-  that need arranging (and from where)?
-- **Preprod rehearsal**: run the 100k-deposit `init→register→gov` on preprod
-  first, or go straight to mainnet on the strength of the preview rehearsal?
-- **Timing**: target submission date, given T_max 2027-07-31 and the voting
-  window?
+```
+[fund ~100k ADA at addr1qx0dmpg…]  ← BLOCKER, needs arranging
+        │  (in parallel: add mainnet BLOCKFROST_PROJECT_ID to .env;
+        │   verify live mainnet guardrails hash)
+        ▼
+init --submit → register --submit → gov (dry-run) → go/no-go → gov --submit
+        ▼
+verify (Koios/IPFS) → journal/ record
+```
+
+The two non-funding prereqs (mainnet Blockfrost key, guardrails-hash check) can
+be done any time and are cheap; the ~100k ADA deposit is the long pole.
 
 ## Explicitly NOT in this plan
 
