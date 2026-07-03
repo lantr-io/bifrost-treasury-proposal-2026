@@ -1,7 +1,7 @@
 package treasurypublish
 
 import scalus.cardano.ledger.*
-import scalus.cardano.txbuilder.TxBuilder
+import scalus.cardano.txbuilder.{Change, TransactionBuilder, TxBuilder}
 import scalus.utils.showDetailed
 
 import scala.concurrent.Await
@@ -135,5 +135,70 @@ object TreasuryActions {
             if remainder > 0 then t = t.payTo(ctx.treasuryAddr, Value(Coin(remainder)), ContractData.void)
             t
         }
+    }
+
+    // ---- sweep treasury → Cardano Treasury (1-of-3 board) --------------------
+    // Donates a treasury UTxO's ADA to the Cardano Treasury via the Conway
+    // `treasury_donation` field. The sweep permission (board) authorises this
+    // early; after expiry it is permissionless. scalus's TxBuilder has no
+    // donation step, so we assemble the context, inject `donation` onto the body
+    // BEFORE balancing (the sweep script does `expect Some(donation)`, evaluated
+    // before any diff handler runs), then balance with the standard change
+    // handler. ADA-only: the whole UTxO is donated; the operator wallet covers
+    // fee + collateral and receives change.
+    @main def sweepTreasury(args: String*): Unit = {
+        val ctx = Funding.load(args)
+        val submit = Cli.isSubmit(args)
+        val env = ctx.provider.cardanoInfo
+        val input = Funding.largest(Funding.treasuryUtxos(ctx))
+        val donation = Funding.lovelaceOf(input)
+        require(input.output.value.assets.isEmpty, "sweepTreasury supports ADA-only UTxOs (native assets must be retained)")
+
+        val wallet = Chain
+            .findUtxos(ctx.provider, ctx.adminAddr)
+            .collect { case (i, o) if o.value.assets.isEmpty => Utxo(i, o) }
+            .toSeq
+            .sortBy(Funding.lovelaceOf)
+        require(wallet.size >= 2, "need >=2 ada-only operator UTxOs (fee + collateral)")
+        val feeUtxo = wallet.head
+        val collatUtxo = wallet.last
+        val required = Seq(ctx.board(0))
+
+        println(s"[info] profile   : ${ctx.d.slug}")
+        println(s"[info] sweep      : ${input.input.transactionId.toHex}#${input.input.index} → donate $donation lovelace to the Cardano Treasury")
+
+        // Assemble steps, then inject donation into the built context before balancing.
+        val b = TxBuilder(env)
+            .references(ctx.registryRef)
+            .spend(input, ContractData.sweepTreasuryRedeemer, ctx.treasuryScript)
+            .spend(feeUtxo)
+            .collaterals(collatUtxo)
+            .requireSignatures(ctx.pkhs(required))
+            .validTo(Instant.now().plusSeconds(3600))
+            .payTo(ctx.adminAddr, Value.zero) // change output (index 0)
+
+        val built = TransactionBuilder.modify(b.context, b.steps) match
+            case Right(c) => c
+            case Left(e)  => sys.error(s"failed to assemble sweep tx: $e")
+        val withDonation = built.copy(transaction = built.transaction.withBody(_.copy(donation = Some(Coin(donation)))))
+        val balanced = withDonation.balanceContext(
+          env.protocolParams,
+          (diff, tx) => Change.changeOutputDiffHandler(diff, tx, env.protocolParams, 0),
+          b.evaluator
+        ) match
+            case Right(c) => c
+            case Left(e)  => sys.error(s"failed to balance sweep tx: $e")
+        val tx = ctx.signer(required).sign(balanced.transaction)
+
+        println(s"\n[ok] built sweepTreasury tx ${tx.id.toHex} (${tx.toCbor.length} bytes)")
+        println(tx.showDetailed)
+        if !submit then {
+            println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
+            return
+        }
+        println(s"\n[submit] broadcasting ${tx.id.toHex} …")
+        Chain.submit(ctx.provider, tx)
+        Deployment.save(ctx.d.slug, ctx.state.copy(txs = ctx.state.txs + ("sweepTreasury" -> tx.id.toHex)))
+        println(s"[done] submitted; updated ${Deployment.path(ctx.d.slug)}")
     }
 }
