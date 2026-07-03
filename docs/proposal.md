@@ -172,7 +172,7 @@ The swap happens directly between two parties: a Bitcoin holder entering Cardano
 
 Both sides of the swap are cryptographically locked, so neither party can claim the asset without completing their side. The exchange settles in a few Bitcoin block confirmations, significantly faster than the standard deposit path.
 
-![bifrost-atomic-swaps](https://gateway.pinata.cloud/ipfs/QmY9sXBLDvNPGQaCgEvnBXyU2ytY9rKrJxipK5vxB7eZYd)
+![bifrost-atomic-swap](https://gateway.pinata.cloud/ipfs/QmY9sXBLDvNPGQaCgEvnBXyU2ytY9rKrJxipK5vxB7eZYd)
 
 #### Embedded integration
 
@@ -538,7 +538,7 @@ Activity mix:
 #### Self-sustainability transition (Year 3: Q3 2029 - onwards)
 
 Treasury subsidy ends at the close of Growth. Year 3 is the projected period during which Bifrost operates on fee revenue alone, with the operational reserve  accumulated during Bootstrap and Growth serving as buffer. 
-  
+
 Projections (Year 3+):
 
 - Bridge fee revenue covers operational baseline under Base case adoption
