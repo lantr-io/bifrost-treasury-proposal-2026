@@ -19,6 +19,13 @@
  *
  * Usage:
  *   bun scripts/sign-anchor.ts gov/anchor.preprod.json [--key keys/admin.skey]
+ *     [--author <name|idx>] [--print-only]
+ *
+ * --author selects which authors[] entry to sign (0-based index or
+ *   case-insensitive name); default 0. --print-only computes and prints the
+ *   publicKey/signature WITHOUT modifying the file — the mode an out-of-band
+ *   co-author (e.g. FluidTokens) uses to report their witness back for
+ *   insertion via insert-witness.ts.
  *
  * Idempotent: re-running with the same key produces the same signature.
  * The `body` and `@context` are NOT modified — only the witness fields
@@ -57,15 +64,28 @@ interface Anchor {
   authors: Author[];
 }
 
-function parseArgs(argv: string[]): { anchorPath: string; keyPath: string } {
+function parseArgs(argv: string[]): {
+  anchorPath: string;
+  keyPath: string;
+  author: string;
+  printOnly: boolean;
+} {
   const positional: string[] = [];
   let keyPath = "keys/admin.skey";
+  let author = "0";
+  let printOnly = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === "--key") {
       const v = argv[++i];
       if (!v) throw new Error("--key requires a path");
       keyPath = v;
+    } else if (a === "--author") {
+      const v = argv[++i];
+      if (!v) throw new Error("--author requires a value");
+      author = v;
+    } else if (a === "--print-only") {
+      printOnly = true;
     } else if (a.startsWith("--")) {
       throw new Error(`unknown flag: ${a}`);
     } else {
@@ -74,16 +94,32 @@ function parseArgs(argv: string[]): { anchorPath: string; keyPath: string } {
   }
   if (positional.length !== 1) {
     throw new Error(
-      "usage: bun scripts/sign-anchor.ts <anchor.json> [--key keys/admin.skey]",
+      "usage: bun scripts/sign-anchor.ts <anchor.json> [--key keys/admin.skey] [--author <name|idx>] [--print-only]",
     );
   }
-  return { anchorPath: positional[0]!, keyPath };
+  return { anchorPath: positional[0]!, keyPath, author, printOnly };
+}
+
+/** Locate an author by 0-based index or case-insensitive name. */
+function findAuthorIndex(authors: Author[], sel: string): number {
+  if (/^\d+$/.test(sel)) {
+    const idx = Number(sel);
+    if (idx < 0 || idx >= authors.length) {
+      throw new Error(`--author index ${idx} out of range (0..${authors.length - 1})`);
+    }
+    return idx;
+  }
+  const idx = authors.findIndex((a) => a.name.toLowerCase() === sel.toLowerCase());
+  if (idx < 0) {
+    throw new Error(`no author named "${sel}"; anchor has: ${authors.map((a) => a.name).join(", ")}`);
+  }
+  return idx;
 }
 
 async function main(): Promise<void> {
   await sodium.ready;
 
-  const { anchorPath, keyPath } = parseArgs(process.argv.slice(2));
+  const { anchorPath, keyPath, author, printOnly } = parseArgs(process.argv.slice(2));
   const anchor = JSON.parse(readFileSync(anchorPath, "utf8")) as Anchor;
   if (!anchor.body || !anchor["@context"]) {
     throw new Error(`${anchorPath} is missing @context or body`);
@@ -93,6 +129,7 @@ async function main(): Promise<void> {
       `${anchorPath} has no authors[] to sign — build-anchor should emit at least one placeholder`,
     );
   }
+  const authorIdx = findAuthorIndex(anchor.authors, author);
 
   // Step 1+2: canonicalize {@context, body} via URDNA2015 → N-Quads.
   const subset = { "@context": anchor["@context"], body: anchor.body };
@@ -120,10 +157,21 @@ async function main(): Promise<void> {
   const pk = sk.toPublic();
   const signature = sk.sign(HexBlob(bodyHashHex));
 
-  // Step 6: fill in the (first) author's witness. If multiple authors
-  // were declared, only the first is signed by this script — others would
-  // need their own signing pass with their own keys.
-  const witness = anchor.authors[0]!.witness;
+  // --print-only: report the witness for an out-of-band co-author to hand
+  // back (inserted + verified later via insert-witness.ts). Write nothing —
+  // the signer may not even hold the canonical anchor file.
+  if (printOnly) {
+    console.log(`Witness for author[${authorIdx}] "${anchor.authors[authorIdx]!.name}" (NOT written):`);
+    console.log(`  body blake2b-256 : ${bodyHashHex}`);
+    console.log(`  publicKey        : ${pk.hex()}`);
+    console.log(`  signature        : ${signature.hex()}`);
+    console.log(`\nSend the publicKey and signature back to the anchor maintainer.`);
+    return;
+  }
+
+  // Step 6: fill in the selected author's witness. Other authors need their
+  // own signing pass with their own keys (or insert-witness.ts).
+  const witness = anchor.authors[authorIdx]!.witness;
   witness.witnessAlgorithm = "ed25519";
   witness.publicKey = pk.hex();
   witness.signature = signature.hex();
@@ -133,7 +181,7 @@ async function main(): Promise<void> {
   console.log(`Signed ${anchorPath} (schema-valid)`);
   console.log(`  canonicalized body: ${payloadBytes.byteLength} bytes`);
   console.log(`  body blake2b-256  : ${bodyHashHex}`);
-  console.log(`  author            : ${anchor.authors[0]!.name}`);
+  console.log(`  author            : [${authorIdx}] ${anchor.authors[authorIdx]!.name}`);
   console.log(`  publicKey         : ${witness.publicKey}`);
   console.log(`  signature         : ${witness.signature.slice(0, 32)}…`);
 }

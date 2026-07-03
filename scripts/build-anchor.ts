@@ -17,8 +17,27 @@ import { assertAnchorValid } from "./lib/validate-anchor";
 
 type Network = "preprod" | "preview" | "mainnet";
 
-/** Display name that appears in the anchor's `authors` array. */
-const AUTHOR_NAME = "Lantr Engineering";
+/** Display names for the anchor's `authors` array, in order. The proposal is
+ *  delivered jointly by Lantr Engineering and FluidTokens, so both co-sign the
+ *  anchor. Each author gets an empty witness placeholder here; the witnesses are
+ *  filled independently — Lantr via `sign-anchor.ts` (authors[0]), FluidTokens
+ *  via `insert-witness.ts` from a signature they produce out-of-band (authors[1]).
+ *  A CIP-100 author witness signs only the canonicalized `{@context, body}`, NOT
+ *  the authors array, so both parties sign the identical body hash. */
+const AUTHOR_NAMES = ["Lantr Engineering", "FluidTokens"];
+
+/** Governance-verification pointer: the repo that reproduces this proposal's
+ *  on-chain artifacts (registry policy, treasury/vendor script hashes, gov-action
+ *  JSON, and this anchor) from the published params. Injected into references[]
+ *  unconditionally — it belongs with the tooling, not the HackMD proposal text,
+ *  so it survives a re-sync of docs/proposal.md and is present in every network's
+ *  anchor. (Repo is private during the preview rehearsal; goes public at mainnet
+ *  submission so voters/CC can resolve it.) */
+const TOOLING_REFERENCE = {
+  "@type": "Other",
+  label: "Governance verification repo (Lantr)",
+  uri: "https://github.com/lantr-io/bifrost-treasury-proposal-2026",
+};
 
 interface Section {
   level: number;
@@ -178,6 +197,16 @@ function buildAnchor(md: string, network: Network): unknown {
     );
   }
 
+  // Always include the governance-verification repo, even if a HackMD re-sync
+  // of docs/proposal.md drops it from Supporting links. Dedup by normalized URI
+  // (ignore trailing slash + case) so it isn't duplicated if it's also listed.
+  const normUri = (u: string): string => u.replace(/\/+$/, "").toLowerCase();
+  if (
+    !references.some((r) => normUri(r.uri) === normUri(TOOLING_REFERENCE.uri))
+  ) {
+    references.push({ ...TOOLING_REFERENCE });
+  }
+
   void network; // network selector is currently informational only
   // References come straight from the proposal's "Supporting links" section;
   // annex pinning is out of scope for now, so no pin gate is enforced here.
@@ -247,16 +276,14 @@ function buildAnchor(md: string, network: Network): unknown {
   // authors[*].witness is filled in by scripts/sign-anchor.ts after the
   // body is canonicalized and hashed. Emit placeholders here so the JSON
   // round-trips through any tool that round-trips by key.
-  const authors = [
-    {
-      name: AUTHOR_NAME,
-      witness: {
-        witnessAlgorithm: "ed25519",
-        publicKey: "",
-        signature: "",
-      },
+  const authors = AUTHOR_NAMES.map((name) => ({
+    name,
+    witness: {
+      witnessAlgorithm: "ed25519",
+      publicKey: "",
+      signature: "",
     },
-  ];
+  }));
 
   return {
     "@context": context,

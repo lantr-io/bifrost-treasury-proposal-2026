@@ -7,19 +7,17 @@
 
 ## Abstract
 
-Bitcoin is the largest pool of capital in crypto, yet most BTC still sits outside DeFi bacause moving it off the Bitcoin base layer still requires security trade-offs many holders are not willing to accept. Cardano is structurally well suited for Bitcoin DeFi, but it lacks the secure BTC rail needed to compete for that liquidity.
+Bitcoin is the largest pool of capital in crypto, yet most BTC still sits outside DeFi because moving it off the Bitcoin base layer still requires security trade-offs many holders are not willing to accept. Cardano is structurally well suited for Bitcoin DeFi, but it lacks the secure BTC rail needed to compete for that liquidity.
 
 Bifrost is designed to provide that rail: a permissionless Bitcoin-Cardano bridge secured by Cardano’s existing SPO ecosystem that brings BTC onto Cardano as a native Cardano asset that applications can integrate into trading, lending, collateral, and other financial use cases. The bridge is on testnet today under Catalyst Fund 14.
 
 This proposal funds Phase 1 of 2: the work required to take Bifrost from a working testnet to launch readiness. It covers hardening, security audits, formal verification, ecosystem and partner readiness, and the stewardship and economic foundations required for launch. Public rollout and 24 months of operations are intentionally separated into a Phase 2 proposal in Q1 2027, once the bridge has been proven on-chain.
 
-FluidTokens and Lantr Engineering request ₳12,332,031 (approx, \$1,973,125 at \$0.16/ADA, including a 10% refundable contingency) from the Cardano Treasury for a 9-month delivery period from July 2026 to March 2027.
+FluidTokens and Lantr Engineering request ₳12,332,031 (approx, \$1,973,125 at 0.16 USD/ADA, including a 10% refundable contingency) from the Cardano Treasury for a 9-month delivery period from July 2026 to March 2027.
 
-By the end of Phase 1, Bifrost will be an audited bridge running on Cardano mainnet in both custody modes under controlled access, together with the stewardship structure, hardened economic model, and SPO/dApp partner pipeline required for public launch.
+By the end of Phase 1, Bifrost will be an audited bridge running on Cardano mainnet in both custody modes (federated and SPO threshold) under controlled access, together with the stewardship structure, hardened economic model, and SPO/dApp partner pipeline required for public launch.
 
 For Cardano, that means a proven secure rail into Bitcoin liquidity, ready to be opened to the public in Phase 2, and a credible position from which to compete for one of the largest pools of capital in crypto.
-
----
 
 ## Motivation
 
@@ -36,9 +34,6 @@ The reason is not a lack of demand. For many Bitcoin holders, the security trade
 ---
 
 ### Security Remains the Main Barrier to Bitcoin DeFi Adoption
-
-<!--
-When Bitcoin holders move BTC across chains, they are not only evaluating the destination network or application security, but also the route that gets BTC there and the trust assumptions it adds. --> 
 
 When Bitcoin holders move BTC across chains, they are evaluating a chain of security assumptions: the route that moves BTC, the mechanism that represents it on the destination chain, and the security of the network and application where it will be used.
 
@@ -57,6 +52,7 @@ In practice, most existing solutions fall into three categories:
 Each model solves part of the problem, but none has yet become the standard path for serious Bitcoin capital. Bitcoin DeFi still lacks an access model whose security trade-offs a broad base of BTC holders is willing to accept.
 
 --- 
+
 ### Cardano Offers a Secure Destination for Bitcoin Liquidity
 
 Cardano is well positioned to offer a secure destination for Bitcoin liquidity and DeFi. It offers several properties that are structurally closer to Bitcoin’s expectations than those of other smart-contract networks.
@@ -79,8 +75,6 @@ That is also where the timing matters. The market for Bitcoin liquidity is still
 Today, Cardano captures only a negligible share of Bitcoin DeFi activity. Without a secure BTC access path, its applications remain largely cut off from one of the largest pools of capital in crypto.
 
 This is the gap Bifrost is designed to fill, before that opportunity consolidates elsewhere.
-
----
 
 ## Rationale
 
@@ -162,42 +156,13 @@ Three roles operate the bridge:
 
 A holder sends BTC to a Bifrost address: a Taproot script secured by the SPO threshold. Once the deposit is confirmed on Bitcoin and posted to Cardano by a Watchtower, the holder claims the equivalent fBTC on Cardano in a self-service transaction. No operator approval is required.
 
-<!--
-![image](https://hackmd.io/_uploads/S1Y8Ur_1Ge.png)
--->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Bitcoin
-    participant Cardano
-
-    User->>Bitcoin: Send BTC to the Bifrost address
-    Note over Bitcoin: BTC is locked and secured by Cardano validators
-    Bitcoin-->>Cardano: Deposit confirmed and verified on-chain
-    User->>Cardano: Claim fBTC
-    Cardano->>User: fBTC arrives in User's Cardano wallet
-```
+![bifrost-deposit](https://gateway.pinata.cloud/ipfs/QmfCosxQoZJiZ8rUvUymT8HTaabrsG3h5v2d5dbHkF9sTK)
 
 #### Withdrawal (Cardano → Bitcoin) 
 
 A holder returns fBTC on Cardano. A cryptographic threshold of SPOs co-signs the release transaction, which is then broadcast to Bitcoin so BTC arrives at the holder’s address. Withdrawals can be partial: a holder does not need to return the full original deposit.
 
-<!--
-![image](https://hackmd.io/_uploads/HJDgPSOkGe.png)
--->
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Cardano
-    participant Bitcoin
-
-    User->>Cardano: Return fBTC (full or partial amount)
-    Note over Cardano: Majority of Cardano validators approve
-    Cardano-->>Bitcoin: Release transaction broadcast to Bitcoin
-    Bitcoin->>User: BTC arrives at User's Bitcoin address
-```
+![bifrost-withdrawal](https://gateway.pinata.cloud/ipfs/QmXPNPshDHqiRPS5WmVqVwLgkd1WMTQFEzGcL5VSiCZHVd)
 
 #### Atomic swaps fast lane
 
@@ -207,18 +172,7 @@ The swap happens directly between two parties: a Bitcoin holder entering Cardano
 
 Both sides of the swap are cryptographically locked, so neither party can claim the asset without completing their side. The exchange settles in a few Bitcoin block confirmations, significantly faster than the standard deposit path.
 
-```mermaid
-sequenceDiagram
-      actor BTC Holder
-      actor fBTC Holder
-      participant Bitcoin
-      participant Cardano
-
-      BTC Holder->>Bitcoin: Lock BTC (HTLC)
-      fBTC Holder->>Cardano: Lock fBTC (HTLC)
-      BTC Holder->>Cardano: Claim fBTC by revealing secret
-      fBTC Holder->>Bitcoin: Claim BTC using revealed secret
-```
+![bifrost-atomic-swaps](https://gateway.pinata.cloud/ipfs/QmXgABKM53F4rYWGpaEuQkW9Ubzj6QR8915ADXgqoxu2Fc)
 
 #### Embedded integration
 
@@ -271,11 +225,34 @@ Bifrost creates value across four stakeholder groups in the Cardano ecosystem, e
 
 --- 
 
-<!--
-### - Cardano 2030 alignment
+### Cardano 2030 alignment
+
+Bifrost directly contributes to Cardano 2030 by feeding into headline ecosystem KPIs, and aligning with its strategic pillars.
+
+Bifrost opens to the public in Phase 2, thus most of this contribution activates then (see *Phase 2 — Adoption plan*); Phase 1 funds the audited bridge & launch preparation that makes it possible.
+
+**Core KPI Contribution** 
+
+| Vision 2030 KPI | Ecosystem Target by 2030 | Bifrost Target (Base, Q2 2029) | How Bifrost Contributes |
+|---|---|---|---|
+| **TVL** | \$3B | 1,200 BTC | Net-new Bitcoin liquidity locked into Cardano DeFi as fBTC, capital that would otherwise sit outside the ecosystem entirely. |
+| **Annual Transactions** | 324M | ~600K/yr (50K/mo) | Peg-ins, peg-outs, atomic-swap fast-lane, and downstream fBTC DeFi activity. |
+| **Monthly Active Users** | 1M | 3,000 fBTC-holding wallets | A net-new Bitcoin-holder segment onboarded to Cardano. |
+| **Protocol Revenue** | - | Fee-funded; surplus to Treasury | Bridge fees (in fBTC) fund operations; surplus splits to SPOs and the Cardano Treasury (see *Revenue Model & Sustainability*). |
+
+**Cardano 2030 Pillars**
+
+| Pillar | Focus Area | Our contribution |
+|---|---|---|
+| **Pillar 1: Infrastructure & Research Excellence** | Scalability & Interoperability › Cross-chain interoperability | A standardised, secure Bitcoin-Cardano bridge (FROST/Taproot); the same SPO-secured model extends to the wider UTXO family, positioning Cardano as an interoperability hub. |
+| **Pillar 2: Adoption & Utility** | High-Value Verticals › DeFi |  Bifrost is the secure, institutional-grade BTC liquidity onramp onto Cardano; fBTC is then a native, composable asset across Cardano DeFi (trading, lending, collateral, and structured products gain a Bitcoin leg). |
+| | Experience (Business & Consumer) › Invisible technology | SDK and white-label portal let wallets and dApps embed BTC onboarding invisibly; sponsored transactions remove the need for users to hold ADA first. |
+| | Developer Experience › Open-source incentives | Bifrost ships as open-source public infrastructure (Apache 2.0) with an integration SDK any Cardano app can build on without permission. |
+| **Pillar 4: Community & Ecosystem Growth** | Global Engagement & Market Adoption › Proactively Demonstrate Ecosystem Value | A high-assurance flagship that demonstrates Cardano's architectural strengths (eUTxO, SPO-secured custody, formal verification) to the Bitcoin community, building external confidence with holders, institutions, and partners (see *Ecosystem readiness & partnerships*). |
+| **Pillar 5: Ecosystem Sustainability & Resilience** | Financial Stewardship & Tokenomics › Multi-Asset Treasury |  Bridge fee surplus returns to the Cardano Treasury in fBTC, creating a long-lasting return to the Cardano community aligned with the public infrastructure's success. |
+| | SPO Incentives › Diversified SPO roles |  400+ SPOs gain a new economic role beyond block production: securing BTC custody and authorising bridge operations. Rewards are paid in fBTC, aligning SPOs with the success of the bridge they secure. |
 
 --- 
--->
 
 ### Traction & current state
 
@@ -316,23 +293,11 @@ Real users have joined the testnet and are actively bridging BTC.
 
 #### Working with SPOs
 
-Following SPOs volunteered to participate in the Testnet release of the Bifrost product: BTBF, ADA North Pool, BCSH, EASY1, DAVE. They will help us by trying the software, sharing feedback, and providing practical insights on setup, reliability, and operator concerns.
+The following SPOs volunteered to participate in the Testnet release of the Bifrost product: BTBF, ADA North Pool, BCSH, EASY1, DAVE. They will help us by trying the software, sharing feedback, and providing practical insights on setup, reliability, and operator concerns.
 
 #### Cardano dApps engagement
 
-The following Cardano applications have expressed an interest to integrate Bifrost or fBTC into their workflows: Minswap, SundaeSwap, Masumi, Gravity, DeltaDefi, Liqwid, FluidTokens, Vela Finance.
-<!-- 
-| Application | Venue | TVL | MAU |
-|-------------|-------|-----|-----|
-| Minswap | DEX | | |
-| DeltaDefi | DEX | | |
-| Gravity | DEX | | |
-| Liqwid | Lending | | |
-| FluidTokens | Lending | | |
-| Vela Finance | Synthetic stablecoin | | |
-
-
-Together these partners represent roughly $X in existing TVL and N monthly active users, the distribution surface fBTC integrates into from launch. -->
+The following Cardano applications have expressed an interest in integrating Bifrost or fBTC into their workflows: Minswap, SundaeSwap, Masumi, Gravity, DeltaDefi, Liqwid, FluidTokens, Vela Finance.
 
 #### Component maturity
 
@@ -349,7 +314,7 @@ Together these partners represent roughly $X in existing TVL and N monthly activ
 
 Catalyst funded the path to a working testnet. What it did not fund is the path from testnet to an audited mainnet bridge. 
 
-This proposal covers that next step: hardening, audits, formal verification, and deployment to a private mainnet running in both custody modes under controlled access. Public launch and operations follow in Phase 2.
+This proposal covers that next step: hardening, audits, formal verification, and deployment to a private mainnet running in both custody modes (federated and SPO threshold) under controlled access. Public launch and operations follow in Phase 2.
 
 Submitting Phase 1 now means mainnet hardening and audits begin as Catalyst milestones close — with no pause in delivery between the two.
 
@@ -369,9 +334,6 @@ Together, the two teams cover the full delivery surface Bifrost depends on: Bitc
 - **Products:** FluidTokens - pool-based and P2P lending (margin and non-margin loans), asset renting, Bitcoin token staking, account abstraction.
 - **Audits:** protocols and major versions audited by Vacuumlabs, Anastasia Labs, and No.Witness Labs.
 - **Ecosystem collaborations:** Minswap (CIP-113), Finest.
-<!--
-- **Scale:** \$10M ADA ATH TVL · 80k txs processed · 372 active users.
--->
 
 **Lantr Engineering** — blockchain R&D and product development for decentralized infrastructure and mission-critical systems.
 - **Products**: Scalus, Binocular, Cosmex.
@@ -391,7 +353,7 @@ Both teams have successfully delivered Catalyst-funded work across multiple fund
 
 #### Team capacity
 
-The proposal is backed by two engineering teams: 8 senior engineers at FluidTokens and 6 senior engineers at Lantr Engineering, spanning Aiken, TypeScript/JavaScript, Bitcoin and Cardano smart contracts, Scala/Java, Haskell, Rust, compilers, functional programming, and cryptography.
+The proposal is backed by two engineering teams: 8 senior engineers at FluidTokens and 6 senior engineers at Lantr Engineering, spanning Aiken/Scalus, TypeScript/JavaScript, Bitcoin and Cardano smart contracts, Scala, Java, Haskell, Rust, compilers, functional programming, and cryptography.
 
 Beyond the core teams, both organizations can draw on a broader network of trusted senior engineers and domain specialists where additional capacity or specialist review is required.
 
@@ -403,7 +365,7 @@ Bifrost reaches public mainnet in two phases.
 
 This proposal (Phase 1) covers the first three milestones (M1–M3) over nine months, delivering an audited bridge running on Cardano mainnet under controlled access. The staged public launch (M4) and 24 months of operations follow in the Phase 2 proposal (Q1 2027). The full journey is shown below.
 
-![bifrost-phases1_2](https://hackmd.io/_uploads/HJeSdQI-fl.png)
+![bifrost-phases1_2](https://gateway.pinata.cloud/ipfs/QmNxxaqJMcWV1STDfKnqdBxDT2QZSrKAiAqdsMpfroGPhr)
 
 The phases are separated deliberately. This proposal asks the Treasury to fund audited mainnet readiness first, then returns with on-chain proof before requesting funding for public launch and operations. Separating the asks also lets Phase 2 be priced closer to launch, rather than against today’s exchange rate.
 
@@ -433,11 +395,11 @@ This track sets up the institutional and economic foundation the launch depends 
 
 It covers determining and standing up the long-term stewardship structure, hardening the economic model, and the regulatory, compliance, and grant-administration work.
 
-Purpose: deliver a stewardship structure and a hardened economic model, the two foundations the public launch and operations proposal builds on.
+**Purpose**: deliver a stewardship structure and a hardened economic model, the two foundations the public launch and operations proposal builds on.
 
 #### Phase 2: Launch & Operations (funded separately, Q1 2027)
 
-Phase 2 covers the staged public rollout (federated → full SPO mode) and a 24-month window to operate the bridge and grow adoption.
+Phase 2 covers the staged public rollout (federated → full SPO threshold mode) and a 24-month window to operate the bridge and grow adoption.
 
 **Purpose**: deliver Bifrost as maintained public infrastructure that reaches self-sustainability at Year 3, rather than a one-time launch event.
 
@@ -446,7 +408,7 @@ Shown above for the complete picture; not part of this ask.
 
 #### Budget overview (Phase 1)
 
-| Track | Total, \$ | Total, ADA | % |
+| Track | Total, USD | Total, ADA | % |
 |---|---:|---:|---:|
 | 1. Bridge hardening & Security | \$1,363,750 | ₳8,523,438 | 76.0% |
 | 2. Ecosystem readiness & partnerships | \$177,500 | ₳1,109,375 | 9.9% |
@@ -457,7 +419,7 @@ Shown above for the complete picture; not part of this ask.
 
 Funding requested in ADA at a conservative \$0.16/ADA reference rate.
 
-For reference, Phase 2 (Launch & Operations) is estimated at ~\$1.3M and will be requested in Q1 2027.
+For reference, Phase 2 (Launch & Operations) is estimated at \$1.3M and will be requested in Q1 2027.
 
 Per-workstream breakdown and details are in the Detailed Budget section.
 
@@ -525,7 +487,6 @@ Private mainnet - both modes:
 - Monitoring and observability infrastructure live
 - Transparency portal operational
 - Maintenance procedures & IR drill tested
-<!-- - TVL cap and emergency controls active-->
 
 Foundations for Phase 2:
 - Stewardship structure determined and stood up (foundation or equivalent independent form)
@@ -632,8 +593,8 @@ Bifrost charges fees in four contexts, all denominated in **fBTC** (never ADA, u
 
 - **Peg-in fee**: initially low or zero during the Treasury-subsidised buildout (acquisition-led pricing); ramps to peer-comparable rates as the bridge approaches self-sustainability
 - **Peg-out fee**: Bifrost adopts the industry-converged asymmetric two-sided model, peg-out at higher rate than peg-in
-- **Atomic-swap fast-lane fee (Mode 1)**: a small protocol premium fee on user-initiated fast-lane swaps
-- **Sponsored transactions (Mode 2)**: dApps integrating via the SDK can sponsor user fees and gas; covered by the dApp, not by the end user
+- **Atomic-swap fast-lane fee**: a small protocol premium fee on user-initiated fast-lane swaps
+- **Sponsored transactions**: dApps integrating via the SDK can sponsor user fees and gas; covered by the dApp, not by the end user
 
 Fee rate schedule is provisional. Specific peg-in and peg-out rates by phase are set by the Stewardship structure and may be adjusted in response to peer competitive landscape, actual operational costs, and adoption pace. 
 
@@ -651,12 +612,12 @@ Each epoch's fBTC fee revenue flows through a four-level priority waterfall:
 - Governance adjusts this target annually based on observed operational variance.
 - If reserves fall below a 6-month safety floor, surplus distribution pauses until reserves recover.
 
-The exact targets is set during Phase 1 hardening.
+The exact target is set during Phase 1 hardening.
 
 **Why proportional surplus split?**
 
 - **SPOs are aligned with bridge success.** No cap on per-SPO income. As bridge volume grows, SPO pool grows.
-- **Treasury outflows also scales.** No fixed cap. As bridge succeeds, Cardano Treasury outflow grows.
+- **Treasury outflows also scale.** No fixed cap. As bridge succeeds, Cardano Treasury outflow grows.
 - **Both share BTC appreciation.** All denominated in fBTC; USD value grows as BTC appreciates.
 
 Note: The 35% / 65% surplus split is provisional and adjustable by governance within bounds.
@@ -665,7 +626,7 @@ Note: The 35% / 65% surplus split is provisional and adjustable by governance wi
 
 ### Detailed Budget
 
-**Total Treasury ask**: ₳12,332,031 (approximately \$1,973,125 at \$0.16/ADA reference rate), including a 10% refundable contingency reserved to protect delivery.
+**Total Treasury ask**: ₳12,332,031 (approximately \$1,973,125 at 0.16 USD/ADA reference rate), including a 10% refundable contingency reserved to protect delivery.
 
 This proposal (Phase 1) funds nine months of milestone-based delivery (M1–M3, Q3 2026 – Q1 2027):
 
@@ -673,19 +634,19 @@ This proposal (Phase 1) funds nine months of milestone-based delivery (M1–M3, 
 - Ecosystem readiness and partnership development
 - Stewardship-structure and economic-model hardening, the foundations the Phase 2 launch builds on
 
-It does not fund the public launch or operations; those are defered to the Phase 2 proposal (Q1 2027).
+It does not fund the public launch or operations; those are deferred to the Phase 2 proposal (Q1 2027).
 
 Funding is requested in ADA; USD figures are provided as a reference. Unspent contingency is returned to the Cardano Treasury at the end of the term.
 
 **Pricing principles**
 - Funding requested in ADA at a conservative \$0.16/ADA reference rate
-- Engineering and product capacity priced at \$210,000 per FTE-year (~\$100/hour blended rate for senior DLT engineers and product leadership)
+- Engineering and product capacity priced at \$210,000 per FTE-year (\$100/hour blended rate for senior DLT engineers and product leadership)
 - 10% refundable contingency included to protect delivery against technical uncertainty, audit findings, integration risk; unspent contingency returns to the Treasury
-- A portion of the requested ADA will be hedged into stable assets shortly after disbursement to protect the delivery, audits budget against adverse price movement. 
+- A portion of the requested ADA will be hedged into stable assets shortly after disbursement to protect the delivery and security audits budget against adverse price movement. 
 
 #### Budget by workstream (detail)
 
-| Workstream | FTE-months | Fixed, \$ | Total, \$ | Total, ADA | % |
+| Workstream | FTE-months | Fixed, USD | Total, USD | Total, ADA | % |
 |---|---:|---:|---:|---:|---:|
 | Core development  | 36 | — | \$630,000 | ₳3,937,500 | 35.1% |
 | Security & Quality Assurance | 1.5 | \$550,000 | \$576,250 | ₳3,601,563 | 32.1% |
@@ -695,6 +656,8 @@ Funding is requested in ADA; USD figures are provided as a reference. Unspent co
 | **Subtotal** | **52.5** | **\$875,000** | **\$1,793,750** | **₳11,210,938** | **100%** |
 | Refundable contingency | — | — | \$179,375 | ₳1,121,094 | — |
 | **Total**| **52.5** | | **\$1,973,125** | **₳12,332,031** | — |
+
+Detailed scope and workstreams are described in Annex 1.
 
 ---
 
@@ -712,7 +675,6 @@ The stewardship structure will:
 - govern fee parameters and distribution within bounded ranges
 - contract vendors and service providers as needed
 - report quarterly to the Cardano community
-<!-- - Bears regulatory and custody-related liability -->
 
 **Phase 1 commitment**
 
@@ -766,20 +728,19 @@ An independent, multi-party board provides third-party governance. Board members
 
 | Member | Organisations | Projects |
 |--------------|--------|----------|
-| XXXX |  |  | 
-| XXXX |  |  |
-| XXXX |  |  |
-
+| Chris Gianelloni | Blink Labs | Dingo, Adder, Bursa | 
+| Matthias Benkort | Cardano Foundation | Amaru, Aiken, Ogmios, Konduit |
+| Riley Kilgore | IOG | Aiken, Blaster integration |
 
 *(This board is distinct from the future stewardship board: the oversight board governs **this grant** and exists for its term; the stewardship board governs the **bridge** and is established for the long term.)* 
 
 **Independent Technical Assurer**
 
-Periodic third-party audits are performed by XXXXXXXX. Quarterly technical reviews are published to the Cardano community. XXXXXXXX holds no stake in Lantr Engineering / FluidTokens and is remunerated with funds explicitly allocated in this proposal for that purpose.
+Periodic third-party audits are performed by No.Witness Labs. Quarterly technical reviews are published to the Cardano community. No.Witness Labs holds no stake in Lantr Engineering / FluidTokens and is remunerated with funds explicitly allocated in this proposal for that purpose.
 
 **Independent Financial Audit**
 
-An external financial auditor will will review Phase 1 treasury management and fund use, with a report published at the close in Q2 2027. The auditor holds no stake in FluidTokens / Lantr Engineering and is remunerated from funds allocated in this proposal.
+An external financial auditor will review Phase 1 treasury management and fund use, with a report published at the close in Q2 2027. The auditor holds no stake in FluidTokens / Lantr Engineering and is remunerated from funds allocated in this proposal.
 
 **Permission Scheme**
 
@@ -802,13 +763,22 @@ The treasury contract enforces auto-abstain DRep delegation and no SPO delegatio
 
 Funds remaining in the contract after expiration sweep back to the Cardano Treasury automatically. Enforced at the contract level; cannot be overridden.
 
+**Prior Treasury Funding Disclosure**
+
+In accordance with Article II — Section 7.2 of the Constitution, Lantr Engineering discloses prior Treasury withdrawals. We also disclose earlier Project Catalyst support for Bifrost to provide a complete picture of prior Cardano community funding.
+
+| Team | Workstream | Allocation | Received | Reference |
+|------|------|------------|----------|-----------|
+| Lantr Engineering | 2025 Treasury Budget: Scalus DApps Development Platform  | ₳657,692  | 100% | Governance Action ID: 8ad3d454f3496a35cb0d07b0fd32f687f66338b7d60e787fc0a22939e5d8833e#17 |
+| FluidTokens, Lantr Engineering | Catalyst F14: Bifrost: Bitcoin-Cardano bridge secured by Cardano SPOs  | ₳739,000  | 33% | Project ID: 1400012 |
+
 ---
 
 ### Reporting
 
-**Milestone reports**. Each milestone, we will publish a full delivery report covering milestone progress, adoption progress, risks and mitigations, measurable outcomes, and next steps. These reports will be shared alongside disbursement requests to the oversight board and published in the proposal repository (https://github.com/bifrost-bridge/treasury-proposal).
+**Milestone reports**. Each milestone, we will publish a full delivery report covering milestone progress, adoption progress, risks and mitigations, measurable outcomes, and next steps. These reports will be shared alongside disbursement requests to the oversight board and published in the proposal repository (https://github.com/lantr-io/bifrost-treasury-proposal-2026).
 
-**Public transaction journal**. Every on-chain transaction (disbursements, claims, sweeps, reorganisations) is recorded in a public journal (https://github.com/bifrost-bridge/treasury-proposal/tree/main/journal): transaction hash, action type, amount, signers, justification, on-chain metadata hash. This follows the SundaeSwap metadata standard and can be independently verified on-chain.
+**Public transaction journal**. Every on-chain transaction (disbursements, claims, sweeps, reorganisations) is recorded in a public journal (https://github.com/lantr-io/bifrost-treasury-proposal-2026/tree/main/journal): transaction hash, action type, amount, signers, justification, on-chain metadata hash. This follows the SundaeSwap metadata standard and can be independently verified on-chain.
 
 **Community engagement**. Monthly updates at Cardano Forum, Bifrost/Lantr/FluidTokens X channels, Discord announcement channels.
 
@@ -817,19 +787,12 @@ Funds remaining in the contract after expiration sweep back to the Cardano Treas
 ### Risks & mitigations 
 
 Bifrost's design is driven by one principle: user assets must remain safe on both sides of the bridge — under adversarial conditions and operational failure alike. For each risk, we state not only the mitigation but the **residual exposure** that remains after it, including where that exposure is material. 
-<!-- The full technical register (chain-level, watchtower, quantum, and external scenarios) is in Annex [N]. -->
 
 | Risk | Likelihood | Impact | Mitigation | Residual risk |
 |---|---|---|---|---|
-| **Delivery slip / critical audit finding**: hardening or audit remediation delays launch | Medium | Medium | External audits and remediation start as early as M1, progressively reducing the risk. Audits are an explicit M2 deliverable *before* any mainnet exposure. M2/M3 schedules absorb audit-driven rework (backed by 10% refundable contingency), and the staged private→public rollout limits the cost of a late-discovered issue. | **Low–moderate.** Private mainnet release schedule may happen laster at M3; milestone gating and the refund clause protect Treasury funds against non-delivery. |
+| **Delivery slip / critical audit finding**: hardening or audit remediation delays launch | Medium | Medium | External audits and remediation start as early as M1, progressively reducing the risk. Audits are an explicit M2 deliverable *before* any mainnet exposure. M2/M3 schedules absorb audit-driven rework (backed by 10% refundable contingency), and the staged private→public rollout limits the cost of a late-discovered issue. | **Low–moderate.** Private mainnet release schedule may happen later at M3; milestone gating and the refund clause protect Treasury funds against non-delivery. |
 | **Smart-contract or cryptographic exploit**: a flaw in contracts or crypto primitives is exploited | Low | Critical | Full external audits (protocol contracts, cryptographic protocol, off-chain components) and formal verification of the critical paths. FROST and Taproot are well-studied primitives with reference implementations. A bug bounty runs from private mainnet, and a staged rollout with a TVL cap bounds exposure during the highest-risk early window. A successful exploit would need to defeat both the audit and the formal verification of the critical paths. | **Low.** Non-zero, as with any contract system; bounded early by the TVL cap and continuously by the bug bounty. |
 | **Custody during private mainnet**: real BTC locked on mainnet while the custody model is validated | Low | High | M3 deploys to Cardano mainnet and demonstrates both custody modes (federated fallback and full SPO threshold signing) with real BTC, under controlled, private access that bounds exposure. Both modes are independently audited and proven end-to-end before any public launch. Phase 2 adds public access and SPO scale, not a first trial of the custody model. | **Bounded.** The decentralised custody model is exercised on mainnet under limited exposure; what Phase 2 changes is reach and scale, not whether the model works. |
-
-<!--
-| **Weaker security during federated launch**: private mainnet runs in federated mode before full SPO mode | By design (launch window) | Medium | Federated mode is the launch configuration for private mainnet (M3), not the end state.  The SPO incentive program funded by this proposal is built to reach the participation threshold and transition to full SPO mode at public launch (M4), retiring federated mode as the primary path. | **Material but time-bound.** Concentrated trust exists only during the capped private-mainnet window, with a defined exit to SPO mode. |
-| **Self-sustainability not reached**: fee revenue fails to cover operations by Year 3 | Medium | High | Projections are anchored conservatively (a fraction of the closest peer's actuals) and modelled across bear/base/bull cases, with the Base case sized to fund Year 3 operations. An operational reserve accumulates through Bootstrap and Growth as a buffer. Fee parameters are governance-tunable to respond to adoption. If adoption tracks below Base for two consecutive quarters, Foundation governance triggers a course-correction review. | **Material.** Sustained bear-case adoption would draw down the reserve and could require the Foundation to petition for further Treasury support. Disclosed, not assumed away. |
-| **Adoption shortfall**: BTC liquidity and dApp integrations land below target | Medium | Medium–High | fBTC is a standard Cardano native token requiring no special integration work. The dual-mode design diversifies acquisition: direct rails *and* embedded integrations turn dApps into distribution channels rather than relying on direct inflow alone. Targets are set conservatively. | **Material.** Adoption is demand-driven and partly outside the team's control; it feeds directly into the sustainability risk above. |
--->
 
 ---
 
@@ -846,16 +809,64 @@ What the Treasury funds is public infrastructure, not a private protocol. There 
 We are asking the Cardano community to fund the road to a secure, audited Bitcoin bridge running on mainnet: the foundation for infrastructure that, once operating, lets Cardano compete for Bitcoin liquidity and pays the ecosystem back.
 
 ---
-<!--
-### - Constitutionality checklist
 
----
--->
-## Reference documents (IPFS)
+### Constitutionality Checklist
+
+**Article II - Section 3.1: use of smart contracts**
+
+- [x] We leverage multiple (open source and audited) smart contracts as detailed in the Administration section to administer the requested budget.
+
+**Article II - Section 6.1: format**
+
+- [ ] We have submitted this proposal in a standardised, legible format, which includes a URL and hash of all documented off-chain content. Moreover, the proposal metadata and appendix documents are hosted on immutable storage and content-addressed.
+
+**Article II - Section 6.2: relevance**
+
+- [x] We believe our rationale is detailed and sufficient. The proposal contains a title, abstract, reason for the proposal and relevant supporting materials.
+
+**Article II - Section 7.1: terms of withdrawal**
+
+This proposal includes:
+
+- [x] **a clear withdrawal purpose**: funding hardening, security audits and launch preparation of Bifrost bridge for the 9 months period;
+- [x] **a period for delivery of proposed activities which the withdrawal shall be used for**: July 2026 - March 2027, with a milestone breakdown and detailed scope provided;
+- [x] **relevant costs and expenses of the proposed activities**: clear separation between fixed costs and variable costs, modelled as FTE (Full-Time Equivalent).
+- [x] **circumstances under which the withdrawal might be refunded to the Cardano Treasury**
+
+**Article II - Section 7.2: past withdrawal(s) disclosure**
+
+- [x] We have disclosed that this is Lantr Engineering second withdrawal in the last 24 months. The previous was submitted in July 2025, and enacted in August 2025.
+
+**Article II - Section 7.3: net-change limit**
+
+- [x] This proposal follows a recently established net-change limit. At the moment of submission, this proposal is well within its boundaries.
+
+**Article II - Section 7.4: periodic audits**
+
+This proposal makes provisions for:
+
+- [x] periodic independent audits are explicitly detailed in the Budget & Administration section; 
+- [x] quarterly reports submitted as a part of the milestone disbursements.
+
+**Article II - Section 7.5: administration**
+
+- [x] This proposal specifies an administrator in accordance with this provision. 
+
+**Article II - Section 7.6: treasury oversight**
+
+- [x] This proposal withdraws funds in a separate script account which each provides a public oversight of all operations, and ensures that funds cannot be delegated to an SPO and can only be delegated to the always-abstain drep. In addition to the on-chain guarantees provided by the smart contracts, we also commit to an off-chain financial journaling.
+
+**Guardrails**
+
+- [x] In accordance with the guardrail TREASURY-02a, this withdrawal does not exceed the NCL at the moment of submission.
+- [x] In accordance with the guardrail TREASURY-03a, this proposal is ultimately denominated in ada.
+- [x] TREASURY-04a — We acknowledge this action requires greater than 50% of DRep active voting stake to be ratified.
+
+## Annexes
 
 ### Annex 1: Detailed scope and workstreams 
 
-#### Core development (35.1%)
+#### Core development (35.1%, 36 FTE/mo)
 
 Path from the Catalyst-funded testnet to an audited mainnet bridge across the stack:
 
@@ -869,7 +880,7 @@ Path from the Catalyst-funded testnet to an audited mainnet bridge across the st
 - Monitoring & observability infrastructure
 - Documentation, extensive testing coverage (property-based, fuzz, integration, edge cases)
 
-#### Security & Quality Assurance (32.1%)
+#### Security & Quality Assurance (32.1%, 1.5 FTE/mo + fixed 550k USD)
 
 External audits and security validation across the protocol surface:
 - Architecture review & threat model
@@ -880,11 +891,11 @@ External audits and security validation across the protocol surface:
 - Penetration testing across infrastructure and protocol layers
 - Bug bounty program
 
-#### Product management (8.8%)
+#### Product management (8.8%, 9 FTE/mo)
 
 Product lifecycle management, milestone execution, partner and user coordination, and delivery oversight across the proposal.
 
-#### Ecosystem bootstrap & Adoption (9.9%)
+#### Ecosystem readiness & partnerships (9.9%, 6 FTE/mo + fixed 125k USD)
 
 Builds the conditions and partner pipeline for a successful public launch in Phase 2:
 
@@ -894,7 +905,7 @@ Builds the conditions and partner pipeline for a successful public launch in Pha
   - Conferences & partner recruitment — Bitcoin Amsterdam, PlanB, Cardano Summit, and similar
   - BTC holder & institutional partnership development — family-office and institutional outreach, Bitcoin podcast circuit
 
-#### Legal, stewardship & economy (14.1%)
+#### Legal, stewardship & economy (14.1%, 6 FTE/mo + fixed 200k USD)
 
 - Economic model hardening — finalise fee, distribution, reserve, and SPO-incentive parameters against real mainnet operating data
 - Stewardship structure determination & setup — evaluate and stand up the long-term structure (foundation or equivalent independent form); governance charter
@@ -958,45 +969,6 @@ The trade-off is complexity and capital. Operators must pre-sign large numbers o
 
 Bifrost's choice of FROST comes down to one priority: making decentralised custody economically viable at the scale of Cardano's SPO network. Threshold schemes like tBTC's prove the model works in production; FROST advances it: a 400-SPO signing set costs the same on Bitcoin as a single-key transaction, and custody is anchored to Cardano's SPOs set. That combination of on-chain efficiency and stake-weighted decentralisation is what makes the security model work.
 
-<!-- 
-#### Trust assumptions & common risks
-
-Every existing Bitcoin solution solves part of the problem, but still makes trade-offs that weaken trust, availability, or both. 
-
-The challenge is to minimize the trust assumptions enough that serious Bitcoin capital would actually be willing to use it.
-
-| Solution | How it works | Advantages | Risks |
-|----------|-------------|------------|-------|
-| **wBTC** | Deposit real BTC with a custodian, receive an ERC-20 token on Ethereum | **Adoption**  the most widely used wrapped BTC across DeFi |  Complete trust in the custodian, if they fail or are hacked, your BTC is gone |
-| **sBTC (Stacks)** | Multisig bridge locks BTC, mints sBTC on the Stacks chain | **Liquid BTC staking**   earn yield on native BTC without giving it to an exchange |  Small set of signers controls the bridge, a coordinated failure or compromise unlocks all funds |
-| **Sui bridge** | Wraps existing wBTC (ERC-20) and moves it onto Sui, does not use native BTC | **Security**  100 validator multisig is larger than most bridges |  Not native BTC, inherits all wBTC custodian risk on top of the bridge risk Majority of validators are controlled by Sui network entities |
-
-If the destination chain cannot preserve enough of the Bitcoin trust model, the bridge will always struggle to attract serious BTC capital.
-
-#### Bitcoin DeFi per chain
-
-The current state of Bitcoin DeFi across chains shows how much remains uncaptured:
-
-| Chain | Solution | Team | TVL |
-|-------|----------|------|-----|
-| Ethereum | WBTC | BitGo, Ren, Kyber | \$9B (118,000 BTC) |
-| Stacks | sBTC Bridge | Stacks Foundation | \$545M |
-| Sui | Sui Bridge | Sui Foundation, Mysten Labs | \$196M |
-| Cardano | Existing bridged BTC | | ~\$0.6M (7 BTC) |
-
-#### ????
-
-| Bridge | Stacks Frost | BitVM2 (Citrea) | Multisig Bridge | **Bifrost** |
-|---|---|---|---|---|
-| Security assumption | Trust in small set of L2 nodes | At least 1 actor must honestly forget his private key | Trust in a set of nodes from a low marketcap blockchain | **Weighted-majority of Cardano SPOs must behave honestly** |
-| Peg-in & Peg-out Availability | L2 nodes must be collaborative | Pre-chosen fixed set of operators must be collaborative | Majority of guards must be collaborative | **Weighted-majority of Cardano SPOs must be collaborative** |
-| Peg-in & Peg-out Granularity | Any amount | Fixed static amounts | Any amount | **Any amount** |
-| Speed in good case | Minutes | Minutes | Minutes | **1 day** |
-| Speed in pessimistic case | Minutes | Weeks | Minutes | **5 days** |
-| Costs | Low | Medium | Low | **Medium** |
-
--->
-
 ## Supporting links
 
 - FluidTokens: https://fluidtokens.com/ 
@@ -1004,4 +976,6 @@ The current state of Bitcoin DeFi across chains shows how much remains uncapture
 - Bifrost Github: https://github.com/FluidTokens/ft-bifrost-bridge/
 - Bifrost Whitepaper: https://github.com/FluidTokens/ft-bifrost-bridge/blob/main/documentation/whitepaperV1.pdf 
 - Bifrost Testnet: https://bifrost.fluidtokens.com/ 
-- Scalus: https://scalus.org/ 
+- Scalus development platform: https://scalus.org/
+- Proposal repository: https://github.com/lantr-io/bifrost-treasury-proposal-2026
+- Treasury-contracts framework - Sundae Swap: https://github.com/SundaeSwap-finance/treasury-contracts
