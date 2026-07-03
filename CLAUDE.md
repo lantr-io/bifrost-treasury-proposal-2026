@@ -119,6 +119,11 @@ at the script, so USDC cannot be donated back to the Cardano Treasury.
 - Pinned versions in `package.json`; bumps are deliberate and justified in
   the commit message.
 - Commit style: conventional (`feat:`, `fix:`, `docs:`, `chore:`, `test:`).
+- **Record placement:** `journal/` is **only** for financial / administrative
+  logs — on-chain submissions, deposits/refunds, treasury movements, key
+  ceremonies, spend/sweep runs (the money-and-authority trail). Every other
+  record — designs, specs, rehearsal notes, test runs, research, how-tos — goes
+  under `docs/` (specs in `docs/superpowers/specs/`).
 - **Proposal source flow is one-way:** HackMD
   (https://hackmd.io/@lantr/bifrost-bridge-2026) is the canonical full-text
   source. `docs/proposal.md` is the synced mirror (`curl
