@@ -156,13 +156,13 @@ Three roles operate the bridge:
 
 A holder sends BTC to a Bifrost address: a Taproot script secured by the SPO threshold. Once the deposit is confirmed on Bitcoin and posted to Cardano by a Watchtower, the holder claims the equivalent fBTC on Cardano in a self-service transaction. No operator approval is required.
 
-![bifrost-deposit](https://gateway.pinata.cloud/ipfs/QmRkMZAJJDcAxHvKgiGotKHYXbpvDU7CmFKDC4KGPYkSEv)
+![bifrost-deposit](https://gateway.pinata.cloud/ipfs/QmQPXn5r67P9vTWhAZ6cUPMEZdhiThKgkkY3j4TMq2Bz4J)
 
 #### Withdrawal (Cardano → Bitcoin) 
 
 A holder returns fBTC on Cardano. A cryptographic threshold of SPOs co-signs the release transaction, which is then broadcast to Bitcoin so BTC arrives at the holder’s address. Withdrawals can be partial: a holder does not need to return the full original deposit.
 
-![bifrost-withdrawal](https://gateway.pinata.cloud/ipfs/QmQPXn5r67P9vTWhAZ6cUPMEZdhiThKgkkY3j4TMq2Bz4J)
+![bifrost-withdrawal](https://gateway.pinata.cloud/ipfs/QmRkMZAJJDcAxHvKgiGotKHYXbpvDU7CmFKDC4KGPYkSEv)
 
 #### Atomic swaps fast lane
 
