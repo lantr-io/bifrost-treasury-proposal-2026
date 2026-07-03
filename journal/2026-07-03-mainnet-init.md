@@ -41,10 +41,20 @@ permanently determines the registry policy and all script hashes.
 - Init spent the 10 ADA seed → ~7.8 ADA change; ~2 ADA locked in the registry
   NFT output; fee 0.20 ADA.
 
+## Register — stake creds registered + vote-delegated (2026-07-03)
+
+- **register tx:** `d044c22dc5f5dfae91f6a638835bff1baf60502a2b78323a955b5136c2bc9c9e`
+- Confirmed: **block 13630995**, fee 0.812114 ADA, **deposit 6 ADA** (3 × 2 ADA
+  stake registrations, refundable).
+- Registered + confirmed on-chain:
+  - treasury `stake179nmtusegux540zeqwpyapfjfvpxy75qxu4weq2emvcztqgtmwxw2` → **drep_always_abstain** ✓
+  - vendor `stake17x3pe0gdmghlydcmn6fcag5uap470pecce58gkaqpjnvkacke4mfr` → **drep_always_abstain** ✓
+  - K_op `stake1u8xvfz9ycfyn7uenfnhljpnupqcdxmh6excx6hjrmvfjspsf6q5p8` registered
+    (for the gov-deposit refund; no vote delegation needed on the personal key).
+
 ## Next (deferred until funded)
 
-- `register --network mainnet --submit` — register treasury/vendor stake creds
-  (AlwaysAbstain) + K_op stake key (needs ~6 ADA stake deposits).
 - `gov --network mainnet --submit` — the ₳12,332,031 treasury-withdrawal action.
   **Requires ~100,000 ADA gov-action deposit** at `addr1qx0dmpg…` (not yet
-  funded). Anchor reused from preview (body-identical, CID `QmZwHmFo…`).
+  funded). Anchor reused from preview (body-identical, CID `QmZwHmFo…`, hash
+  `f95bd746…`). Wallet after init+register: ~41 ADA.
