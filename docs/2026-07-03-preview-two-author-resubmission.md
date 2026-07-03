@@ -34,6 +34,26 @@ as a co-author on the CIP-100 anchor.
 - `docs/how-to-sign-anchor-fluidtokens.md` — the co-signer runbook handed to
   FluidTokens.
 
+## Update — superseding submission with corrected diagrams
+
+The proposal's flow diagrams were re-uploaded (new IPFS CIDs) and the
+deposit/withdrawal images were found mislabeled and swapped. The anchor was
+rebuilt over the corrected proposal, both authors re-signed, and a **second**
+preview gov action was submitted (the first, `862681db…`, remains live until it
+expires):
+
+- **New frozen body hash:** `22a9ed018ae8fe369219f161bd43ef17cd44ed4698710f9e707d95eee05ddea8`
+- **New anchor CID:** `ipfs://QmZwHmFoyhd18WMRhv9356CXfbUqjkPsKKGZtCpVLaWgcU`
+- **New anchor dataHash:** `f95bd74697b3499760bc768b7400d9c1f57d3ff447e1c51cb9f0ec24a94c782b`
+- **New gov-action tx:** `1d224afd89ab677c868edd6564608ad00dc34bc36356e830f18929c05657687c`
+  (block 4437078; deposit 1000 tADA, fee 0.299778 tADA).
+- Image CIDs embedded in the on-chain anchor body: deposit `QmQPXn…`,
+  withdrawal `QmRkMZ…`, atomic-swap `QmY9sX…`.
+- Verified post-submit: IPFS fetch hash == on-chain `meta_hash` (Koios), authors
+  `[Lantr Engineering, FluidTokens]`.
+
+The values below are from the **first** submission (kept for the record).
+
 ## Key facts / artifacts
 
 - **Frozen body hash** (what both parties signed):
