@@ -144,4 +144,40 @@ object ContractData {
     /** VendorDatum { vendor: MultisigScript, payouts: List<Payout> }. */
     def vendorDatum(vendor: Data, payouts: Seq[Data]): Data =
         Data.Constr(0, PList(vendor, Data.List(PList.from(payouts))))
+
+    // ---- Decoders (read on-chain VendorDatum for withdraw/adjudicate/modify) --
+
+    final case class DecodedPayout(maturationMs: BigInt, lovelace: Long, active: Boolean, raw: Data)
+
+    /** Lovelace held under the ADA key of a `Pairs<PolicyId, Pairs<AssetName,Int>>`
+      * value (ADA-only). */
+    def decodeAdaLovelace(v: Data): Long = v match
+        case Data.Map(policies) =>
+            policies.toScalaList
+                .collectFirst { case (Data.B(p), Data.Map(toks)) if p.toHex.isEmpty =>
+                    toks.toScalaList.collectFirst { case (Data.B(a), Data.I(n)) if a.toHex.isEmpty => n.toLong }.getOrElse(0L)
+                }
+                .getOrElse(0L)
+        case _ => 0L
+
+    /** Decode a VendorDatum into (vendor multisig Data, payouts). Each payout
+      * keeps its `raw` Data so it can be re-locked unchanged. */
+    def decodeVendorDatum(d: Data): (Data, Seq[DecodedPayout]) = d match
+        case Data.Constr(c, args) if c == 0L =>
+            args.toScalaList match
+                case vendor :: payoutsD :: Nil =>
+                    val ps = payoutsD match
+                        case Data.List(xs) => xs.toScalaList
+                        case _             => sys.error("VendorDatum.payouts is not a List")
+                    val payouts = ps.map {
+                        case p @ Data.Constr(pc, pargs) if pc == 0L =>
+                            pargs.toScalaList match
+                                case Data.I(mat) :: value :: Data.Constr(st, _) :: Nil =>
+                                    DecodedPayout(mat, decodeAdaLovelace(value), st == 0L, p)
+                                case _ => sys.error("unexpected Payout shape")
+                        case _ => sys.error("unexpected Payout constructor")
+                    }
+                    (vendor, payouts)
+                case _ => sys.error("unexpected VendorDatum shape")
+        case _ => sys.error("not a VendorDatum Constr")
 }

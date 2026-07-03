@@ -141,4 +141,34 @@ object Funding {
 
     /** ADA-only lovelace held by a UTxO. */
     def lovelaceOf(u: Utxo): Long = u.output.value.coin.value
+
+    /** Inline datum `Data` of a UTxO (script UTxOs carry inline datums). */
+    def inlineDatum(u: Utxo): Data =
+        u.output.datumOption
+            .flatMap(_.dataOption)
+            .getOrElse(sys.error(s"UTxO ${u.input.transactionId.toHex}#${u.input.index} has no inline datum"))
+
+    /** Build (with registry ref + required signers pre-added) → sign with the
+      * multisig members (+ K_op for fees) → complete → print → optionally submit,
+      * recording the tx under `label` in the deployment file. */
+    def runSpend(ctx: Ctx, submit: Boolean, label: String, required: Seq[Member])(
+        build: scalus.cardano.txbuilder.TxBuilder => scalus.cardano.txbuilder.TxBuilder
+    ): Unit = {
+        import scalus.cardano.txbuilder.TxBuilder
+        import scalus.utils.showDetailed
+        import scala.concurrent.Await
+        import scala.concurrent.duration.*
+        val b0 = TxBuilder(ctx.provider.cardanoInfo).references(ctx.registryRef).requireSignatures(ctx.pkhs(required))
+        val tx = Await.result(build(b0).complete(ctx.provider, ctx.adminAddr), 120.seconds).sign(ctx.signer(required)).transaction
+        println(s"\n[ok] built $label tx ${tx.id.toHex} (${tx.toCbor.length} bytes)")
+        println(tx.showDetailed)
+        if !submit then {
+            println("\n--dry-run (default): not submitting. Re-run with --submit to broadcast.")
+            return
+        }
+        println(s"\n[submit] broadcasting ${tx.id.toHex} …")
+        Chain.submit(ctx.provider, tx)
+        Deployment.save(ctx.d.slug, ctx.state.copy(txs = ctx.state.txs + (label -> tx.id.toHex)))
+        println(s"[done] submitted; updated ${Deployment.path(ctx.d.slug)}")
+    }
 }
