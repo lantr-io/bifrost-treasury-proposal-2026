@@ -126,7 +126,7 @@ object Config {
       * to ~1h ahead right before running its `init` (the value is baked into the
       * script hash, so it must stay fixed across that deployment's lifetime). */
     val previewTestSweep: RawConfig = previewTest.copy(
-      treasuryExpirationISO = "2026-07-03T23:00:00Z",
+      treasuryExpirationISO = "2026-07-03T11:40:00Z",
       vendorExpirationGraceDays = 0
     )
 

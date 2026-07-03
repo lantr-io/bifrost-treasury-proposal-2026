@@ -139,6 +139,16 @@ object Funding {
         us.maxBy(_.output.value.coin.value)
     }
 
+    /** Pick a vendor UTxO: `--utxo <txhash-prefix>` if given, else the largest. */
+    def vendorPick(ctx: Ctx, args: Seq[String]): Utxo = {
+        val us = vendorUtxos(ctx)
+        args.sliding(2).collectFirst { case Seq("--utxo", h) => h } match
+            case Some(h) =>
+                us.find(_.input.transactionId.toHex.startsWith(h))
+                    .getOrElse(sys.error(s"no vendor UTxO matching --utxo $h"))
+            case None => largest(us)
+    }
+
     /** ADA-only lovelace held by a UTxO. */
     def lovelaceOf(u: Utxo): Long = u.output.value.coin.value
 

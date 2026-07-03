@@ -40,7 +40,14 @@ object TreasuryActions {
         println(s"[done] submitted; updated ${Deployment.path(ctx.d.slug)}")
     }
 
-    private def beforeExpiry: Instant = Instant.now().plusSeconds(3600)
+    // validTo for the before-expiry actions: at most 1h out, but always strictly
+    // before the treasury expiration (else is_entirely_before(validity, expiration)
+    // fails) — matters on the short-T_max sweep deployment.
+    private def beforeExpiry(ctx: Funding.Ctx): Instant = {
+        val cap = (ctx.r.treasuryExpirationMs - 60_000).toLong
+        val hour = Instant.now().plusSeconds(3600).toEpochMilli
+        Instant.ofEpochMilli(math.min(hour, cap))
+    }
 
     // ---- reorganize (K_op alone) ---------------------------------------------
     @main def reorganize(args: String*): Unit = {
@@ -61,7 +68,7 @@ object TreasuryActions {
         println(s"[info] split into : ${splits.mkString(", ")} lovelace")
 
         run(ctx, submit, "reorganize", Seq(ctx.op)) { b =>
-            var t = b.spend(input, ContractData.reorganizeRedeemer, ctx.treasuryScript).validTo(beforeExpiry)
+            var t = b.spend(input, ContractData.reorganizeRedeemer, ctx.treasuryScript).validTo(beforeExpiry(ctx))
             for s <- splits do t = t.payTo(ctx.treasuryAddr, Value(Coin(s)), ContractData.void)
             t
         }
@@ -87,7 +94,7 @@ object TreasuryActions {
         run(ctx, submit, "disburse", required) { b =>
             var t = b
                 .spend(input, ContractData.disburseRedeemer(ContractData.adaValue(amount)), ctx.treasuryScript)
-                .validTo(beforeExpiry)
+                .validTo(beforeExpiry(ctx))
                 .payTo(recipient, Value(Coin(amount)))
             if remainder > 0 then t = t.payTo(ctx.treasuryAddr, Value(Coin(remainder)), ContractData.void)
             t
@@ -130,7 +137,7 @@ object TreasuryActions {
         run(ctx, submit, "fund", required) { b =>
             var t = b
                 .spend(input, ContractData.fundRedeemer(ContractData.adaValue(total)), ctx.treasuryScript)
-                .validTo(beforeExpiry)
+                .validTo(beforeExpiry(ctx))
                 .payTo(ctx.vendorAddr, Value(Coin(total)), datum)
             if remainder > 0 then t = t.payTo(ctx.treasuryAddr, Value(Coin(remainder)), ContractData.void)
             t

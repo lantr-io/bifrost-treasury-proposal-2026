@@ -72,7 +72,7 @@ object VendorActions {
     private def adjudicate(args: Seq[String], target: Boolean, label: String, required: Funding.Ctx => Seq[Funding.Member]): Unit = {
         val ctx = Funding.load(args)
         val submit = Cli.isSubmit(args)
-        val vu = Funding.largest(Funding.vendorUtxos(ctx))
+        val vu = Funding.vendorPick(ctx, args)
         val (vendor, payouts) = ContractData.decodeVendorDatum(Funding.inlineDatum(vu))
         val statuses = Seq.fill(payouts.size)(target)
         val newPayouts = payouts.map(p => ContractData.payout(p.maturationMs, ContractData.adaValue(p.lovelace), target))
@@ -144,29 +144,27 @@ object VendorActions {
         val submit = Cli.isSubmit(args)
         val nowMs = Instant.now().toEpochMilli
         val expMs = ctx.r.vendorExpirationMs
-        val inputs = Funding.vendorUtxos(ctx)
-        require(inputs.nonEmpty, "no vendor UTxO to sweep")
         require(nowMs > expMs, s"vendor not yet expired (now $nowMs <= expiration $expMs)")
-
-        var toTreasury = 0L
-        val plans = inputs.map { vu =>
-            val (vendor, payouts) = ContractData.decodeVendorDatum(Funding.inlineDatum(vu))
-            val carry = payouts.filter(p => p.active && p.maturationMs < nowMs)
-            val carrySum = carry.map(_.lovelace).sum
-            toTreasury += (Funding.lovelaceOf(vu) - carrySum)
-            (vu, vendor, carry, carrySum)
-        }
+        // The contract handles exactly one vendor input per sweep.
+        val vu = Funding.vendorPick(ctx, args)
+        val (vendor, payouts) = ContractData.decodeVendorDatum(Funding.inlineDatum(vu))
+        // Carried (kept at vendor): active AND matured. The rest (paused or
+        // unmatured) is swept back to the treasury contract.
+        val carry = payouts.filter(p => p.active && p.maturationMs < nowMs)
+        val carrySum = carry.map(_.lovelace).sum
+        val toTreasury = Funding.lovelaceOf(vu) - carrySum
 
         println(s"[info] profile   : ${ctx.d.slug}")
-        println(s"[info] → treasury : $toTreasury lovelace")
+        println(s"[info] vendor UTxO: ${vu.input.transactionId.toHex}#${vu.input.index}")
+        println(s"[info] carry@vendor: $carrySum lovelace (${carry.size} payout(s)); → treasury: $toTreasury lovelace")
 
         Funding.runSpend(ctx, submit, "vendorSweep", Seq.empty) { b0 =>
-            var b = b0.validFrom(Instant.ofEpochMilli((expMs + 1000).toLong)).validTo(soon)
-            for (vu, vendor, carry, carrySum) <- plans do {
-                b = b.spend(vu, ContractData.sweepVendorRedeemer, ctx.vendorScript)
-                if carry.nonEmpty then
-                    b = b.payTo(ctx.vendorAddr, Value(Coin(carrySum)), ContractData.vendorDatum(vendor, carry.map(_.raw)))
-            }
+            var b = b0
+                .spend(vu, ContractData.sweepVendorRedeemer, ctx.vendorScript)
+                .validFrom(Instant.ofEpochMilli((expMs + 1000).toLong))
+                .validTo(soon)
+            if carry.nonEmpty then
+                b = b.payTo(ctx.vendorAddr, Value(Coin(carrySum)), ContractData.vendorDatum(vendor, carry.map(_.raw)))
             if toTreasury > 0 then b = b.payTo(ctx.treasuryAddr, Value(Coin(toTreasury)), ContractData.void)
             b
         }
