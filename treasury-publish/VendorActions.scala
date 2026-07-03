@@ -11,7 +11,10 @@ import java.time.Instant
 // the appropriate multisig. Dry-run by default; `--submit` broadcasts. ADA-only.
 object VendorActions {
 
-    private def soon: Instant = Instant.now().plusSeconds(24 * 3600)
+    // validTo must stay within the node's slot→time forecast horizon (~7h on
+    // preview) or submit fails with TimeTranslationPastHorizon. 1h is safely
+    // inside it and well under adjudicate's 36h interval-length cap.
+    private def soon: Instant = Instant.now().plusSeconds(3600)
 
     // validFrom must sit at/behind the chain tip (which lags wall-clock by a
     // block), else the node rejects with OutsideValidityInterval. 90s back is
