@@ -1,4 +1,4 @@
-# Mainnet — registry init (one-shot NFT mint)
+# Mainnet — Bifrost Phase 1 standup (init → register → gov)
 
 **Date:** 2026-07-03 · **Network:** mainnet · **Operator:** K_op (Lantr,
 `9edd850b…`)
@@ -52,9 +52,32 @@ permanently determines the registry policy and all script hashes.
   - K_op `stake1u8xvfz9ycfyn7uenfnhljpnupqcdxmh6excx6hjrmvfjspsf6q5p8` registered
     (for the gov-deposit refund; no vote delegation needed on the personal key).
 
-## Next (deferred until funded)
+## Gov action — ₳12,332,031 treasury withdrawal SUBMITTED (2026-07-03)
 
-- `gov --network mainnet --submit` — the ₳12,332,031 treasury-withdrawal action.
-  **Requires ~100,000 ADA gov-action deposit** at `addr1qx0dmpg…` (not yet
-  funded). Anchor reused from preview (body-identical, CID `QmZwHmFo…`, hash
-  `f95bd746…`). Wallet after init+register: ~41 ADA.
+The Bifrost Phase 1 treasury-withdrawal governance action is **live on mainnet**.
+
+- **gov-action tx:** `dfd81f8db652fd9263e0ce3bef043b4823045ec3a5da10c817681ada7a23f034`
+- **gov_action id:** `gov_action1mlvplrdk2t7eyclqeca77ppmfq3sghkr5hdppjqhdqdd573r7q6qqms7jwt`
+- Confirmed: **block 13631199**, slot 191540148, fee 0.301538 ADA.
+- **Deposit: 100,000 ADA** locked (refunded to K_op `stake1u8xvfz9…` on
+  ratification or expiry).
+- **Withdrawal:** ₳12,332,031 → treasury reward account
+  `stake179nmtusegux540zeqwpyapfjfvpxy75qxu4weq2emvcztqgtmwxw2` (script
+  `67b5f219…`).
+- **Guardrails:** `fa24fb305126805cf2164c161d852a0e7330cf988f1fe558cf7d4a64`
+  (fetched from mainnet + hash-validated).
+- **Anchor:** `ipfs://QmZwHmFoyhd18WMRhv9356CXfbUqjkPsKKGZtCpVLaWgcU`, dataHash
+  `f95bd746…` — reused from preview (body-identical), authors Lantr + FluidTokens.
+- **Expires: epoch 647** if not ratified.
+
+Post-submit verification: IPFS gateway fetch hash == on-chain `meta_hash`;
+Koios mainnet `proposal_list` shows `meta_url`/`meta_hash`, type
+`TreasuryWithdrawals`.
+
+Tx funding: 100k deposit UTxO `13b0647f…#0` + 30 ADA `20dadaf3…#0` inputs; 10 ADA
+`6813270a…#0` collateral; ~29.7 ADA change back to K_op.
+
+## Standup complete
+
+`init → register → gov` all live on mainnet. Post-ratification funding
+(`fund`/`disburse`/`vendor-withdraw`) remains deferred.
