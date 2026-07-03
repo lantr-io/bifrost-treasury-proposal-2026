@@ -156,13 +156,13 @@ Three roles operate the bridge:
 
 A holder sends BTC to a Bifrost address: a Taproot script secured by the SPO threshold. Once the deposit is confirmed on Bitcoin and posted to Cardano by a Watchtower, the holder claims the equivalent fBTC on Cardano in a self-service transaction. No operator approval is required.
 
-![bifrost-deposit](https://gateway.pinata.cloud/ipfs/QmfCosxQoZJiZ8rUvUymT8HTaabrsG3h5v2d5dbHkF9sTK)
+![bifrost-deposit](https://gateway.pinata.cloud/ipfs/QmRkMZAJJDcAxHvKgiGotKHYXbpvDU7CmFKDC4KGPYkSEv)
 
 #### Withdrawal (Cardano → Bitcoin) 
 
 A holder returns fBTC on Cardano. A cryptographic threshold of SPOs co-signs the release transaction, which is then broadcast to Bitcoin so BTC arrives at the holder’s address. Withdrawals can be partial: a holder does not need to return the full original deposit.
 
-![bifrost-withdrawal](https://gateway.pinata.cloud/ipfs/QmXPNPshDHqiRPS5WmVqVwLgkd1WMTQFEzGcL5VSiCZHVd)
+![bifrost-withdrawal](https://gateway.pinata.cloud/ipfs/QmQPXn5r67P9vTWhAZ6cUPMEZdhiThKgkkY3j4TMq2Bz4J)
 
 #### Atomic swaps fast lane
 
@@ -172,7 +172,7 @@ The swap happens directly between two parties: a Bitcoin holder entering Cardano
 
 Both sides of the swap are cryptographically locked, so neither party can claim the asset without completing their side. The exchange settles in a few Bitcoin block confirmations, significantly faster than the standard deposit path.
 
-![bifrost-atomic-swaps](https://gateway.pinata.cloud/ipfs/QmXgABKM53F4rYWGpaEuQkW9Ubzj6QR8915ADXgqoxu2Fc)
+![bifrost-atomic-swaps](https://gateway.pinata.cloud/ipfs/QmY9sXBLDvNPGQaCgEvnBXyU2ytY9rKrJxipK5vxB7eZYd)
 
 #### Embedded integration
 
@@ -818,7 +818,7 @@ We are asking the Cardano community to fund the road to a secure, audited Bitcoi
 
 **Article II - Section 6.1: format**
 
-- [ ] We have submitted this proposal in a standardised, legible format, which includes a URL and hash of all documented off-chain content. Moreover, the proposal metadata and appendix documents are hosted on immutable storage and content-addressed.
+- [x] We have submitted this proposal in a standardised, legible format, which includes a URL and hash of all documented off-chain content. Moreover, the proposal metadata and appendix documents are hosted on immutable storage and content-addressed.
 
 **Article II - Section 6.2: relevance**
 
