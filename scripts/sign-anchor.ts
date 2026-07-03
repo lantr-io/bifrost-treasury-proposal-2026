@@ -44,9 +44,29 @@ const sodium = sodiumDefault as unknown as {
 import {
   Ed25519PrivateKey,
   Ed25519PrivateNormalKeyHex,
+  Ed25519PrivateExtendedKeyHex,
   HexBlob,
 } from "@blaze-cardano/core";
 import { assertAnchorValid } from "./lib/validate-anchor";
+
+/** Load an ed25519 signing key from a raw hex string, accepting BOTH key
+ *  shapes we deal with: a 32-byte "normal" key (64 hex — cardano-cli / our
+ *  gen-keys operator key) and a 64-byte "extended" Ed25519-BIP32 key (128 hex —
+ *  what a mnemonic/wallet-derived key is, e.g. FluidTokens' vendor key produced
+ *  by scripts/mnemonic-to-key.ts). Extended-key signatures verify under
+ *  standard ed25519, so downstream verification/insertion is identical. */
+function loadSigningKey(skHex: string): Ed25519PrivateKey {
+  const hex = skHex.trim().toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(hex)) {
+    return Ed25519PrivateKey.fromNormalHex(Ed25519PrivateNormalKeyHex(hex));
+  }
+  if (/^[0-9a-f]{128}$/.test(hex)) {
+    return Ed25519PrivateKey.fromExtendedHex(Ed25519PrivateExtendedKeyHex(hex));
+  }
+  throw new Error(
+    `key must be raw hex: 64 chars (32-byte normal) or 128 chars (64-byte extended); got ${hex.length} chars`,
+  );
+}
 
 interface Witness {
   witnessAlgorithm: string;
@@ -151,9 +171,8 @@ async function main(): Promise<void> {
   const bodyHashBytes = sodium.crypto_generichash(32, payloadBytes);
   const bodyHashHex = Buffer.from(bodyHashBytes).toString("hex");
 
-  // Step 5: ed25519 sign that hash.
-  const skHex = readFileSync(keyPath, "utf8").trim();
-  const sk = Ed25519PrivateKey.fromNormalHex(Ed25519PrivateNormalKeyHex(skHex));
+  // Step 5: ed25519 sign that hash (normal or extended key — auto-detected).
+  const sk = loadSigningKey(readFileSync(keyPath, "utf8"));
   const pk = sk.toPublic();
   const signature = sk.sign(HexBlob(bodyHashHex));
 

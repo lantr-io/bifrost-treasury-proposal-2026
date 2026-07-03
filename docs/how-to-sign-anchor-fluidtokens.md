@@ -73,36 +73,62 @@ hash **and** checks the key hashes to `1c471b31…` before writing.
 
 ---
 
-## Path A — use our script (recommended, guaranteed byte-identical)
-
-This reuses the exact canonicalization the maintainer uses, so there is zero
-risk of a recipe mismatch. It **writes nothing** and needs no secrets beyond
-your signing key file.
+## Setup (all paths)
 
 ```bash
-# 1. Clone the governance repo and install deps (bun — https://bun.sh)
 git clone https://github.com/lantr-io/bifrost-treasury-proposal-2026
 cd bifrost-treasury-proposal-2026
+nix develop        # if you have nix — provides bun + everything. Else install bun (https://bun.sh)
 bun install
+```
 
-# 2. Put your ed25519 signing key (raw 64-hex private key, the one behind
-#    pkh 1c471b31…) in a file, e.g. ft.skey  — a cardano-cli PaymentSigningKey
-#    'cborHex' works too if you strip the CBOR header to the raw 32-byte seed;
-#    ask us if unsure.
+Everything below uses our own scripts, which reuse the exact canonicalization
+the maintainer uses — zero risk of a recipe mismatch, and no third-party signer.
+
+## Path A — sign from your mnemonic / recovery phrase (most likely)
+
+If your vendor key lives in a wallet (seed phrase), it is a Cardano **extended**
+(Ed25519-BIP32) key. Our tooling handles that natively — you do **not** need
+`cardano-address` or `cardano-cli`.
+
+```bash
+# 1. Put your recovery phrase in a file (kept local, deleted after).
+#    Reads from a file or stdin — never a command-line arg, so it stays out of
+#    your shell history.
+printf '%s\n' "word1 word2 … word24" > phrase.txt
+
+# 2. Derive the payment key and CONFIRM it's the right one. This must print
+#    payment key hash: 1c471b31ea0b04c652bd8f76b239aea5f57139bdc5a2b28ab1e69175
+bun scripts/mnemonic-to-key.ts --phrase-file phrase.txt --out ft.skey
+#    (default path m/1852'/1815'/0'/0/0; if the hash doesn't match, the key is
+#     at a different index — try e.g. --path 1852H/1815H/0H/0/1 — or ping us.)
 
 # 3. Print your witness WITHOUT modifying the anchor:
 bun scripts/sign-anchor.ts gov/anchor.preview.json \
   --key ft.skey --author FluidTokens --print-only
+
+# 4. clean up the secrets
+shred -u ft.skey phrase.txt 2>/dev/null || rm -f ft.skey phrase.txt
 ```
 
-It prints `body blake2b-256`, `publicKey`, and `signature`. Confirm the body
+Step 3 prints `body blake2b-256`, `publicKey`, and `signature`. Confirm the body
 hash equals `6bca0ed8…`, then send us the `publicKey` and `signature` lines.
 
-## Path B — use `cardano-signer` (gitmachtl reference tool)
+## Path B — you already have a raw key file
 
-If you prefer the community reference tool
-(<https://github.com/gitmachtl/cardano-signer>), it implements the same
-CIP-100 recipe:
+If you hold the signing key as raw hex (32-byte "normal" key, 64 hex; or 64-byte
+"extended" key, 128 hex) in a file `ft.skey`, skip straight to:
+
+```bash
+bun scripts/sign-anchor.ts gov/anchor.preview.json \
+  --key ft.skey --author FluidTokens --print-only
+```
+
+## Path C — use `cardano-signer` (community reference tool, optional)
+
+If you'd rather use the community tool
+(<https://github.com/gitmachtl/cardano-signer>), it implements the same CIP-100
+recipe and also handles mnemonics/extended keys:
 
 ```bash
 cardano-signer sign --cip100 \
@@ -113,10 +139,10 @@ cardano-signer sign --cip100 \
 ```
 
 Open `anchor.ft-signed.json`, find the `FluidTokens` entry in `authors[]`, and
-send us its `witness.publicKey` and `witness.signature`. (cardano-signer also
-prints the canonicalized-body hash — verify it is `6bca0ed8…`.)
+send us its `witness.publicKey` and `witness.signature`. (It also prints the
+canonicalized-body hash — verify it is `6bca0ed8…`.)
 
-## Path C — raw recipe (your own tooling)
+## Path D — raw recipe (your own tooling)
 
 If you sign with your own code, the exact steps are:
 
