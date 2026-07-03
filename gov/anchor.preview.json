@@ -108,8 +108,8 @@
       "name": "FluidTokens",
       "witness": {
         "witnessAlgorithm": "ed25519",
-        "publicKey": "",
-        "signature": ""
+        "publicKey": "041a1295ee7145e95a946526320452a779b4d35975a7d0b37b467e21714de037",
+        "signature": "e56de6721ab5090d7fb6bd87e84c562186a00cada28cbbe2b742056867e1f92156a960bd9c2189d8192f34faae767bce0f7384772f035aedc423fd1a12466f09"
       }
     }
   ]
